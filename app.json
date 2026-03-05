@@ -26,8 +26,7 @@
     "scheme": "questforge",
     "plugins": [
       "expo-router",
-      "expo-font",
-      "expo-haptics"
+      "expo-font"
     ]
   }
 }
