@@ -15,5 +15,6 @@
       "@data/*": ["src/data/*"],
       "@types/*": ["src/types/*"]
     }
-  }
+  },
+  "exclude": ["supabase"]
 }
