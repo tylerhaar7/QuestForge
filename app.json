@@ -1,30 +1,33 @@
 {
   "expo": {
-    "name": "QuestForge-scaffold",
-    "slug": "QuestForge-scaffold",
-    "version": "1.0.0",
+    "name": "QuestForge",
+    "slug": "questforge",
+    "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#0d0a08"
     },
+    "assetBundlePatterns": ["**/*"],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.questforge.app"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundColor": "#0d0a08"
       },
-      "predictiveBackGestureEnabled": false
+      "package": "com.questforge.app"
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    }
+    "scheme": "questforge",
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-haptics"
+    ]
   }
 }
