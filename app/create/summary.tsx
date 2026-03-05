@@ -169,7 +169,7 @@ export default function CharacterSummaryScreen() {
       const computedAC = computeAC();
       const equipment: EquipmentItem[] = classData.startingEquipment;
 
-      await createCharacter({
+      const savedCharacter = await createCharacter({
         userId,
         name: name.trim(),
         race: resolvedRace,
@@ -196,8 +196,11 @@ export default function CharacterSummaryScreen() {
         personalQuestFlags,
       });
 
-      // Navigate to game
-      router.replace('/');
+      // Navigate to campaign start with character ID
+      router.replace({
+        pathname: '/create/campaign-start',
+        params: { characterId: savedCharacter.id },
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'An unexpected error occurred.';
       setError(message);
