@@ -2,7 +2,7 @@
 // Layout: Narrative (60%) → Party strip (15%) → Choices (25%)
 
 import React, { useCallback } from 'react';
-import { View, StyleSheet, FlatList, ActivityIndicator, Text, SafeAreaView } from 'react-native';
+import { View, StyleSheet, FlatList, ActivityIndicator, Text, SafeAreaView, TextInput, Pressable, Keyboard } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/theme/colors';
 import { fonts, spacing, textStyles } from '@/theme/typography';
@@ -11,6 +11,7 @@ import { NarrativeText } from '@/components/game/NarrativeText';
 import { ChoiceButton } from '@/components/game/ChoiceButton';
 import { PartyCard } from '@/components/game/PartyCard';
 import { ApprovalStack } from '@/components/game/ApprovalIndicator';
+import { submitAction } from '@/services/campaign';
 import type { Choice, Companion } from '@/types/game';
 
 export default function GameSessionScreen() {
@@ -19,6 +20,7 @@ export default function GameSessionScreen() {
     campaign,
     character,
     isLoading,
+    error,
     currentNarration,
     currentChoices,
     currentMode,
@@ -28,11 +30,34 @@ export default function GameSessionScreen() {
     setNarrationComplete,
   } = useGameStore();
 
-  const handleChoicePress = useCallback((choice: Choice) => {
-    // TODO: Send choice to AI via Edge Function
-    useGameStore.getState().setLoading(true);
-    console.log('Choice selected:', choice.text);
-  }, []);
+  const handleChoicePress = useCallback(async (choice: Choice) => {
+    if (!campaign) return;
+    const store = useGameStore.getState();
+    store.setLoading(true);
+    store.setNarrationComplete(false);
+    store.setError(null);
+
+    try {
+      const result = await submitAction(campaign.id, choice.text);
+
+      // Update companions in campaign
+      if (result.companions) {
+        store.setCampaign({
+          ...store.campaign!,
+          companions: result.companions,
+          turnCount: result.turnCount,
+        });
+      }
+
+      // Process AI response
+      store.processAIResponse(result.aiResponse);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Something went wrong';
+      store.setError(message);
+    } finally {
+      store.setLoading(false);
+    }
+  }, [campaign]);
 
   const handleNarrationComplete = useCallback(() => {
     setNarrationComplete(true);
@@ -41,6 +66,39 @@ export default function GameSessionScreen() {
   const handleApprovalsDismissed = useCallback(() => {
     // Clear pending approvals from store
   }, []);
+
+  const [freeformText, setFreeformText] = React.useState('');
+
+  const handleFreeformSubmit = useCallback(async () => {
+    if (!campaign || !freeformText.trim()) return;
+    Keyboard.dismiss();
+    const text = freeformText.trim();
+    setFreeformText('');
+
+    const store = useGameStore.getState();
+    store.setLoading(true);
+    store.setNarrationComplete(false);
+    store.setError(null);
+
+    try {
+      const result = await submitAction(campaign.id, text);
+
+      if (result.companions) {
+        store.setCampaign({
+          ...store.campaign!,
+          companions: result.companions,
+          turnCount: result.turnCount,
+        });
+      }
+
+      store.processAIResponse(result.aiResponse);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Something went wrong';
+      store.setError(message);
+    } finally {
+      store.setLoading(false);
+    }
+  }, [campaign, freeformText]);
 
   // Build party list: player character + companions
   const partyMembers = React.useMemo(() => {
@@ -161,6 +219,13 @@ export default function GameSessionScreen() {
         />
       </View>
 
+      {/* Error display */}
+      {error && (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      )}
+
       {/* Choice Area */}
       <View style={styles.choiceArea}>
         {isNarrationComplete && currentChoices.map((choice, index) => (
@@ -171,6 +236,27 @@ export default function GameSessionScreen() {
             disabled={isLoading}
           />
         ))}
+
+        {/* Freeform action input */}
+        {isNarrationComplete && !isLoading && (
+          <View style={styles.freeformContainer}>
+            <TextInput
+              style={styles.freeformInput}
+              value={freeformText}
+              onChangeText={setFreeformText}
+              placeholder="Or type your own action..."
+              placeholderTextColor={colors.text.tertiary}
+              onSubmitEditing={handleFreeformSubmit}
+              returnKeyType="send"
+              editable={!isLoading}
+            />
+            {freeformText.trim().length > 0 && (
+              <Pressable style={styles.freeformSend} onPress={handleFreeformSubmit}>
+                <Text style={styles.freeformSendText}>→</Text>
+              </Pressable>
+            )}
+          </View>
+        )}
       </View>
 
       {/* Approval Indicators */}
@@ -261,6 +347,42 @@ const styles = StyleSheet.create({
   emptySubtitle: {
     ...textStyles.narrative,
     color: colors.text.secondary,
+    textAlign: 'center',
+  },
+  freeformContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.gold.border,
+    borderRadius: 8,
+    backgroundColor: colors.bg.secondary,
+  },
+  freeformInput: {
+    flex: 1,
+    fontFamily: fonts.body,
+    fontSize: 14,
+    color: colors.text.primary,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  freeformSend: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  freeformSendText: {
+    fontFamily: fonts.heading,
+    fontSize: 18,
+    color: colors.gold.primary,
+  },
+  errorContainer: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+  },
+  errorText: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    color: colors.combat.red,
     textAlign: 'center',
   },
 });
