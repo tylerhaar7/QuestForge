@@ -4,10 +4,10 @@
 
 import 'react-native-url-polyfill/auto';
 import { createClient } from '@supabase/supabase-js';
-import { MMKV } from 'react-native-mmkv';
+import { createMMKV } from 'react-native-mmkv';
 
 // Local storage adapter for Supabase auth
-const storage = new MMKV({ id: 'supabase-auth' });
+const storage = createMMKV({ id: 'supabase-auth' });
 
 const mmkvStorageAdapter = {
   getItem: (key: string) => {
@@ -18,7 +18,7 @@ const mmkvStorageAdapter = {
     storage.set(key, value);
   },
   removeItem: (key: string) => {
-    storage.delete(key);
+    storage.remove(key);
   },
 };
 
