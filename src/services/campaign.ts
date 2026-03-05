@@ -9,6 +9,7 @@ export interface InitCampaignParams {
   mode: 'generated' | 'custom';
   customPrompt?: string;
   campaignName?: string;
+  companions?: any[];  // CompanionTemplate objects from companion selection
 }
 
 export interface InitCampaignResult {

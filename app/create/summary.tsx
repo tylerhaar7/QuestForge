@@ -196,9 +196,9 @@ export default function CharacterSummaryScreen() {
         personalQuestFlags,
       });
 
-      // Navigate to campaign start with character ID
+      // Navigate to companion selection with character ID
       router.replace({
-        pathname: '/create/campaign-start',
+        pathname: '/create/companions',
         params: { characterId: savedCharacter.id },
       });
     } catch (err) {

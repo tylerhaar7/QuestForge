@@ -24,7 +24,7 @@ type CampaignMode = 'generated' | 'custom';
 
 export default function CampaignStartScreen() {
   const router = useRouter();
-  const { characterId } = useLocalSearchParams<{ characterId: string }>();
+  const { characterId, companions: companionsJson } = useLocalSearchParams<{ characterId: string; companions?: string }>();
   const [mode, setMode] = useState<CampaignMode | null>(null);
   const [customPrompt, setCustomPrompt] = useState('');
   const [loading, setLoading] = useState(false);
@@ -44,11 +44,15 @@ export default function CampaignStartScreen() {
     setError(null);
 
     try {
+      // Parse companions from route params if provided
+      const parsedCompanions = companionsJson ? JSON.parse(companionsJson) : undefined;
+
       // Call campaign-init Edge Function
       const result = await initCampaign({
         characterId,
         mode: mode!,
         customPrompt: mode === 'custom' ? customPrompt.trim() : undefined,
+        companions: parsedCompanions,
       });
 
       // Load character and hydrate game store
