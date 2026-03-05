@@ -2,7 +2,7 @@
 // Layout: Narrative (60%) → Party strip (15%) → Choices (25%)
 
 import React, { useCallback } from 'react';
-import { View, StyleSheet, FlatList, ActivityIndicator, Text, SafeAreaView, TextInput, Pressable, Keyboard } from 'react-native';
+import { View, StyleSheet, FlatList, ActivityIndicator, Text, SafeAreaView, TextInput, Pressable, Keyboard, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/theme/colors';
 import { fonts, spacing, textStyles } from '@/theme/typography';
@@ -170,102 +170,113 @@ export default function GameSessionScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>{campaign.currentLocation}</Text>
-        <View style={styles.headerRight}>
-          <Text style={styles.turnLabel}>Turn {campaign.turnCount}</Text>
-        </View>
-      </View>
-
-      {/* Narrative Area */}
-      <View style={styles.narrativeArea}>
-        {isLoading ? (
-          <View style={styles.loading}>
-            <ActivityIndicator size="small" color={colors.gold.primary} />
-            <Text style={styles.loadingText}>The DM ponders...</Text>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>{campaign.currentLocation}</Text>
+          <View style={styles.headerRight}>
+            <Text style={styles.turnLabel}>Turn {campaign.turnCount}</Text>
           </View>
-        ) : (
-          <NarrativeText
-            text={currentNarration}
-            speed="normal"
-            onComplete={handleNarrationComplete}
-          />
-        )}
-      </View>
-
-      {/* Party Strip */}
-      <View style={styles.partyStrip}>
-        <FlatList
-          horizontal
-          data={partyMembers}
-          keyExtractor={item => item.key}
-          renderItem={({ item }) => (
-            <PartyCard
-              name={item.name}
-              className={item.className}
-              level={item.level}
-              currentHp={item.currentHp}
-              maxHp={item.maxHp}
-              ac={item.ac}
-              conditions={item.conditions}
-              isCompanion={item.isCompanion}
-              approvalScore={item.approvalScore}
-              relationshipStage={item.relationshipStage}
-            />
-          )}
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.partyList}
-        />
-      </View>
-
-      {/* Error display */}
-      {error && (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
         </View>
-      )}
 
-      {/* Choice Area */}
-      <View style={styles.choiceArea}>
-        {isNarrationComplete && currentChoices.map((choice, index) => (
-          <ChoiceButton
-            key={index}
-            choice={choice}
-            onPress={handleChoicePress}
-            disabled={isLoading}
-          />
-        ))}
-
-        {/* Freeform action input */}
-        {isNarrationComplete && !isLoading && (
-          <View style={styles.freeformContainer}>
-            <TextInput
-              style={styles.freeformInput}
-              value={freeformText}
-              onChangeText={setFreeformText}
-              placeholder="Or type your own action..."
-              placeholderTextColor={colors.text.tertiary}
-              onSubmitEditing={handleFreeformSubmit}
-              returnKeyType="send"
-              editable={!isLoading}
-            />
-            {freeformText.trim().length > 0 && (
-              <Pressable style={styles.freeformSend} onPress={handleFreeformSubmit}>
-                <Text style={styles.freeformSendText}>→</Text>
-              </Pressable>
+        <ScrollView
+          style={styles.flex}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Narrative Area */}
+          <View style={styles.narrativeArea}>
+            {isLoading ? (
+              <View style={styles.loading}>
+                <ActivityIndicator size="small" color={colors.gold.primary} />
+                <Text style={styles.loadingText}>The DM ponders...</Text>
+              </View>
+            ) : (
+              <NarrativeText
+                text={currentNarration}
+                speed="normal"
+                onComplete={handleNarrationComplete}
+              />
             )}
           </View>
-        )}
-      </View>
 
-      {/* Approval Indicators */}
-      {pendingApprovalChanges.length > 0 && (
-        <ApprovalStack
-          changes={pendingApprovalChanges}
-          onAllDismissed={handleApprovalsDismissed}
-        />
-      )}
+          {/* Party Strip */}
+          <View style={styles.partyStrip}>
+            <FlatList
+              horizontal
+              data={partyMembers}
+              keyExtractor={item => item.key}
+              renderItem={({ item }) => (
+                <PartyCard
+                  name={item.name}
+                  className={item.className}
+                  level={item.level}
+                  currentHp={item.currentHp}
+                  maxHp={item.maxHp}
+                  ac={item.ac}
+                  conditions={item.conditions}
+                  isCompanion={item.isCompanion}
+                  approvalScore={item.approvalScore}
+                  relationshipStage={item.relationshipStage}
+                />
+              )}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.partyList}
+            />
+          </View>
+
+          {/* Error display */}
+          {error && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          )}
+
+          {/* Choice Area */}
+          <View style={styles.choiceArea}>
+            {isNarrationComplete && currentChoices.map((choice, index) => (
+              <ChoiceButton
+                key={index}
+                choice={choice}
+                onPress={handleChoicePress}
+                disabled={isLoading}
+              />
+            ))}
+
+            {/* Freeform action input */}
+            {isNarrationComplete && !isLoading && (
+              <View style={styles.freeformContainer}>
+                <TextInput
+                  style={styles.freeformInput}
+                  value={freeformText}
+                  onChangeText={setFreeformText}
+                  placeholder="Or type your own action..."
+                  placeholderTextColor={colors.text.tertiary}
+                  onSubmitEditing={handleFreeformSubmit}
+                  returnKeyType="send"
+                  editable={!isLoading}
+                />
+                {freeformText.trim().length > 0 && (
+                  <Pressable style={styles.freeformSend} onPress={handleFreeformSubmit}>
+                    <Text style={styles.freeformSendText}>→</Text>
+                  </Pressable>
+                )}
+              </View>
+            )}
+          </View>
+        </ScrollView>
+
+        {/* Approval Indicators */}
+        {pendingApprovalChanges.length > 0 && (
+          <ApprovalStack
+            changes={pendingApprovalChanges}
+            onAllDismissed={handleApprovalsDismissed}
+          />
+        )}
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -274,6 +285,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bg.primary,
+  },
+  flex: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: spacing.xl,
   },
   header: {
     flexDirection: 'row',
@@ -302,8 +320,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   narrativeArea: {
-    flex: 1,
-    minHeight: '50%',
+    minHeight: 200,
   },
   loading: {
     flex: 1,
