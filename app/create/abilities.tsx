@@ -36,6 +36,22 @@ const RECOMMENDED_SCORES: Record<ClassName, Record<AbilityScore, number>> = {
   wizard:     { intelligence: 15, constitution: 14, dexterity: 13, wisdom: 12, charisma: 10, strength: 8 },
 };
 
+// Recommended skill picks per class (first N from this list, where N = skillChoices.pick)
+const RECOMMENDED_SKILLS: Record<ClassName, Skill[]> = {
+  barbarian:  ['athletics', 'perception'],
+  bard:       ['persuasion', 'performance', 'deception'],
+  cleric:     ['insight', 'medicine'],
+  druid:      ['perception', 'nature'],
+  fighter:    ['athletics', 'perception'],
+  monk:       ['acrobatics', 'stealth'],
+  paladin:    ['athletics', 'persuasion'],
+  ranger:     ['perception', 'stealth', 'survival'],
+  rogue:      ['stealth', 'perception', 'deception', 'acrobatics'],
+  sorcerer:   ['persuasion', 'arcana'],
+  warlock:    ['arcana', 'deception'],
+  wizard:     ['arcana', 'investigation'],
+};
+
 const ABILITY_LABELS: Record<AbilityScore, string> = {
   strength: 'Strength',
   dexterity: 'Dexterity',
@@ -142,6 +158,15 @@ export default function AbilityScoreScreen() {
     for (const ability of ABILITY_KEYS) {
       setAbilityScore(ability, recommended[ability]);
     }
+  };
+
+  const handleRecommendedSkills = () => {
+    if (!className || !classData) return;
+    const recommended = RECOMMENDED_SKILLS[className];
+    const validSkills = recommended
+      .filter(s => classData.skillChoices.from.includes(s))
+      .slice(0, classData.skillChoices.pick);
+    setSelectedSkills(validSkills);
   };
 
   const handleContinue = () => {
@@ -291,6 +316,9 @@ export default function AbilityScoreScreen() {
                 {selectedSkills.length} / {classData.skillChoices.pick}
               </Text>
             </View>
+            <Pressable style={styles.recommendedButton} onPress={handleRecommendedSkills}>
+              <Text style={styles.recommendedButtonText}>RECOMMENDED SKILLS</Text>
+            </Pressable>
             <View style={styles.skillsGrid}>
               {classData.skillChoices.from.map(skill => {
                 const isSelected = selectedSkills.includes(skill);
