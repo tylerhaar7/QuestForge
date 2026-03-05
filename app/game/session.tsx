@@ -1,8 +1,8 @@
 // Game Session — Main gameplay screen
 // Layout: Narrative (60%) → Party strip (15%) → Choices (25%)
 
-import React, { useCallback } from 'react';
-import { View, StyleSheet, FlatList, ActivityIndicator, Text, SafeAreaView, TextInput, Pressable, Keyboard, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { View, StyleSheet, FlatList, ActivityIndicator, Text, SafeAreaView, TextInput, Pressable, Keyboard, ScrollView, KeyboardAvoidingView, Platform, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/theme/colors';
 import { fonts, spacing, textStyles } from '@/theme/typography';
@@ -28,6 +28,7 @@ export default function GameSessionScreen() {
     pendingApprovalChanges,
     isNarrationComplete,
     setNarrationComplete,
+    resetSession,
   } = useGameStore();
 
   const handleChoicePress = useCallback(async (choice: Choice) => {
@@ -68,6 +69,23 @@ export default function GameSessionScreen() {
   }, []);
 
   const [freeformText, setFreeformText] = React.useState('');
+  const [menuVisible, setMenuVisible] = useState(false);
+
+  const handleNewCharacter = useCallback(() => {
+    setMenuVisible(false);
+    resetSession();
+    router.replace('/create');
+  }, [resetSession, router]);
+
+  const handleNewCampaign = useCallback(() => {
+    setMenuVisible(false);
+    const charId = character?.id;
+    resetSession();
+    router.replace({
+      pathname: '/create/companions',
+      params: { characterId: charId || '' },
+    });
+  }, [character, resetSession, router]);
 
   const handleFreeformSubmit = useCallback(async () => {
     if (!campaign || !freeformText.trim()) return;
@@ -176,7 +194,10 @@ export default function GameSessionScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>{campaign.currentLocation}</Text>
+          <Pressable onPress={() => setMenuVisible(true)} style={styles.menuButton}>
+            <Text style={styles.menuIcon}>{'\u22EE'}</Text>
+          </Pressable>
+          <Text style={[styles.headerTitle, { flex: 1 }]}>{campaign.currentLocation}</Text>
           <View style={styles.headerRight}>
             <Text style={styles.turnLabel}>Turn {campaign.turnCount}</Text>
           </View>
@@ -277,6 +298,34 @@ export default function GameSessionScreen() {
           />
         )}
       </KeyboardAvoidingView>
+
+      {/* Menu Modal */}
+      <Modal
+        visible={menuVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setMenuVisible(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setMenuVisible(false)}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>MENU</Text>
+
+            <Pressable style={styles.modalOption} onPress={handleNewCampaign}>
+              <Text style={styles.modalOptionText}>New Campaign</Text>
+              <Text style={styles.modalOptionDesc}>Keep your character, start a new adventure</Text>
+            </Pressable>
+
+            <Pressable style={styles.modalOption} onPress={handleNewCharacter}>
+              <Text style={styles.modalOptionText}>New Character</Text>
+              <Text style={styles.modalOptionDesc}>Start over with a new character</Text>
+            </Pressable>
+
+            <Pressable style={styles.modalCancel} onPress={() => setMenuVisible(false)}>
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -401,5 +450,69 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.combat.red,
     textAlign: 'center',
+  },
+  menuButton: {
+    paddingRight: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  menuIcon: {
+    fontFamily: fonts.heading,
+    fontSize: 20,
+    color: colors.gold.primary,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.xl,
+  },
+  modalCard: {
+    backgroundColor: colors.bg.secondary,
+    borderWidth: 1,
+    borderColor: colors.gold.border,
+    borderRadius: 12,
+    padding: spacing.lg,
+    width: '100%',
+    maxWidth: 320,
+  },
+  modalTitle: {
+    fontFamily: fonts.heading,
+    fontSize: 13,
+    color: colors.gold.primary,
+    letterSpacing: 2,
+    textAlign: 'center',
+    marginBottom: spacing.lg,
+  },
+  modalOption: {
+    borderWidth: 1,
+    borderColor: colors.gold.border,
+    borderRadius: 8,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+    backgroundColor: colors.bg.tertiary,
+  },
+  modalOptionText: {
+    fontFamily: fonts.heading,
+    fontSize: 14,
+    color: colors.text.primary,
+    letterSpacing: 0.5,
+  },
+  modalOptionDesc: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    color: colors.text.tertiary,
+    marginTop: 2,
+  },
+  modalCancel: {
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+    marginTop: spacing.xs,
+  },
+  modalCancelText: {
+    fontFamily: fonts.headingRegular,
+    fontSize: 13,
+    color: colors.text.tertiary,
+    letterSpacing: 1,
   },
 });
