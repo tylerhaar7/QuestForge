@@ -11,8 +11,8 @@ import {
 } from '../_shared/prompts.ts';
 import type { CompanionData } from '../_shared/types.ts';
 
-// Starter companions (server-side copy)
-const STARTER_COMPANIONS: CompanionData[] = [
+// Default fallback companions (used when client doesn't provide companions)
+const DEFAULT_COMPANIONS: CompanionData[] = [
   {
     name: 'Korrin',
     className: 'fighter',
@@ -63,6 +63,30 @@ const STARTER_COMPANIONS: CompanionData[] = [
   },
 ];
 
+/**
+ * Convert a CompanionTemplate (client-side shape) to CompanionData (server-side shape).
+ * Client sends: { name, className, level, maxHp, ac, portrait, color, personality, abilities }
+ * Server needs: { name, className, level, hp, maxHp, ac, approvalScore, relationshipStage, personality, conditions }
+ */
+function templateToCompanionData(template: any): CompanionData {
+  return {
+    name: template.name,
+    className: template.className,
+    level: template.level || 1,
+    hp: template.maxHp,
+    maxHp: template.maxHp,
+    ac: template.ac,
+    approvalScore: 50,
+    relationshipStage: 'neutral',
+    personality: {
+      approves: template.personality?.approves || [],
+      disapproves: template.personality?.disapproves || [],
+      voice: template.personality?.voice || '',
+    },
+    conditions: [],
+  };
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -94,13 +118,19 @@ Deno.serve(async (req) => {
     }
 
     // Parse request
-    const { characterId, mode, customPrompt, campaignName } = await req.json();
+    const { characterId, mode, customPrompt, campaignName, companions: rawCompanions } = await req.json();
     if (!characterId) {
       return new Response(JSON.stringify({ error: 'characterId required' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    // Use provided companions or fall back to defaults
+    const campaignCompanions: CompanionData[] =
+      Array.isArray(rawCompanions) && rawCompanions.length > 0
+        ? rawCompanions.map(templateToCompanionData)
+        : DEFAULT_COMPANIONS;
 
     // Service role client for writes
     const adminClient = createClient(
@@ -131,7 +161,7 @@ Deno.serve(async (req) => {
       current_location: 'Unknown',
       current_mood: 'tavern',
       current_mode: 'exploration',
-      companions: STARTER_COMPANIONS,
+      companions: campaignCompanions,
       combat_state: { isActive: false, round: 0, turnIndex: 0, initiativeOrder: [], enemies: [] },
       quest_log: [],
       story_summary: '',
@@ -166,7 +196,7 @@ Deno.serve(async (req) => {
     }
 
     // Create companion_states rows
-    for (const comp of STARTER_COMPANIONS) {
+    for (const comp of campaignCompanions) {
       await adminClient.from('companion_states').insert({
         campaign_id: campaign.id,
         companion_name: comp.name,
@@ -181,7 +211,7 @@ Deno.serve(async (req) => {
     }
 
     // Build prompt and call Claude for opening narration
-    const systemPrompt = buildSystemPrompt(campaign, character, STARTER_COMPANIONS);
+    const systemPrompt = buildSystemPrompt(campaign, character, campaignCompanions);
     const userMessage = mode === 'custom' && customPrompt
       ? buildCampaignInitCustomPrompt(customPrompt)
       : CAMPAIGN_INIT_GENERATED_PROMPT;
@@ -242,7 +272,7 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({
       campaignId: campaign.id,
       aiResponse,
-      companions: STARTER_COMPANIONS,
+      companions: campaignCompanions,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
