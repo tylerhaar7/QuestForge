@@ -36,22 +36,6 @@ const ALL_CLASSES: ClassName[] = [
   'paladin', 'ranger', 'rogue', 'sorcerer', 'warlock', 'wizard',
 ];
 
-// Color map for custom companions (pulled from class colors)
-const CLASS_COLORS: Record<ClassName, string> = {
-  barbarian: '#e25822',
-  bard: '#ab6dac',
-  cleric: '#91a1b2',
-  druid: '#7a853b',
-  fighter: '#7f513e',
-  monk: '#51a5c5',
-  paladin: '#b59e54',
-  ranger: '#507f62',
-  rogue: '#555752',
-  sorcerer: '#992e2e',
-  warlock: '#7b469b',
-  wizard: '#2a52be',
-};
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function capitalize(str: string): string {
@@ -144,6 +128,13 @@ export default function CompanionSelectionScreen() {
       return;
     }
 
+    // Check for duplicate name in roster + custom companions
+    const allCompanions = [...COMPANION_ROSTER, ...customCompanions];
+    if (allCompanions.some(c => c.name.toLowerCase() === trimmedName.toLowerCase())) {
+      setFormError('A companion with this name already exists.');
+      return;
+    }
+
     const stats = COMPANION_DEFAULT_STATS[formClass];
     const abilities = COMPANION_DEFAULT_ABILITIES[formClass];
 
@@ -163,7 +154,7 @@ export default function CompanionSelectionScreen() {
       maxHp: stats.maxHp,
       ac: stats.ac,
       portrait: '',
-      color: CLASS_COLORS[formClass],
+      color: colors.class[formClass],
       personality: {
         voice: formVoice.trim() || `A ${formClass} of few words.`,
         backstory: formBackstory.trim() || `A wandering ${formClass} seeking adventure.`,
@@ -374,7 +365,7 @@ export default function CompanionSelectionScreen() {
                 <View style={styles.statsPreview}>
                   <Text style={styles.statsPreviewText}>
                     HP {COMPANION_DEFAULT_STATS[formClass].maxHp} / AC{' '}
-                    {COMPANION_DEFAULT_STATS[formClass].ac} &mdash;{' '}
+                    {COMPANION_DEFAULT_STATS[formClass].ac} {'\u2014'}{' '}
                     {COMPANION_DEFAULT_ABILITIES[formClass]
                       .map((a) => a.name)
                       .join(', ')}
@@ -432,6 +423,7 @@ export default function CompanionSelectionScreen() {
                 onChangeText={setFormApproves}
                 placeholder="e.g., honor, bravery, kindness"
                 placeholderTextColor={colors.text.tertiary}
+                maxLength={200}
               />
 
               {/* Disapproves */}
@@ -444,6 +436,7 @@ export default function CompanionSelectionScreen() {
                 onChangeText={setFormDisapproves}
                 placeholder="e.g., cruelty, deception, cowardice"
                 placeholderTextColor={colors.text.tertiary}
+                maxLength={200}
               />
 
               {/* Form error */}
