@@ -1,9 +1,9 @@
 // Companion roster — 8 pre-built companions spanning diverse classes
 // Plus recommended personality/stats/abilities maps for all 12 classes
 
-import type { Companion, ClassName, CompanionAbility, Condition } from '@/types/game';
+import type { Companion, ClassName, CompanionAbility } from '@/types/game';
 
-export interface StarterCompanion {
+export interface CompanionTemplate {
   name: string;
   className: ClassName;
   level: number;
@@ -27,7 +27,7 @@ export interface StarterCompanion {
 
 // ─── Pre-built Companion Roster (8 companions) ─────────────────
 
-export const COMPANION_ROSTER: StarterCompanion[] = [
+export const COMPANION_ROSTER: CompanionTemplate[] = [
   // 1. Korrin — Fighter
   {
     name: 'Korrin',
@@ -191,6 +191,8 @@ export const COMPANION_ROSTER: StarterCompanion[] = [
 ];
 
 // ─── Recommended Companion Personality (all 12 classes) ─────────
+// Generic class-level defaults for CUSTOM-CREATED companions.
+// Pre-built roster entries above have their own unique personalities.
 
 export const RECOMMENDED_COMPANION_PERSONALITY: Record<
   ClassName,
@@ -345,7 +347,7 @@ export const COMPANION_DEFAULT_ABILITIES: Record<ClassName, CompanionAbility[]> 
 /**
  * Build a full Companion object from starter data for a new campaign
  */
-export function buildCompanion(starter: StarterCompanion): Companion {
+export function buildCompanion(starter: CompanionTemplate): Companion {
   return {
     name: starter.name,
     className: starter.className,
