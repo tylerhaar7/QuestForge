@@ -316,7 +316,7 @@ export default function AbilityScoreScreen() {
                 {selectedSkills.length} / {classData.skillChoices.pick}
               </Text>
             </View>
-            <Pressable style={styles.recommendedButton} onPress={handleRecommendedSkills}>
+            <Pressable style={[styles.recommendedButton, { marginBottom: spacing.sm }]} onPress={handleRecommendedSkills}>
               <Text style={styles.recommendedButtonText}>RECOMMENDED SKILLS</Text>
             </Pressable>
             <View style={styles.skillsGrid}>
