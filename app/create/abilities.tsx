@@ -12,13 +12,29 @@ import {
 import { RACES } from '@/data/races';
 import { CLASSES } from '@/data/classes';
 import { getModifier } from '@/engine/character';
-import type { AbilityScore, Skill } from '@/types/game';
+import type { AbilityScore, ClassName, Skill } from '@/types/game';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const ABILITY_KEYS: AbilityScore[] = [
   'strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma',
 ];
+
+// Recommended standard array distributions per class (15, 14, 13, 12, 10, 8)
+const RECOMMENDED_SCORES: Record<ClassName, Record<AbilityScore, number>> = {
+  barbarian:  { strength: 15, constitution: 14, dexterity: 13, wisdom: 12, charisma: 10, intelligence: 8 },
+  bard:       { charisma: 15, dexterity: 14, constitution: 13, wisdom: 12, intelligence: 10, strength: 8 },
+  cleric:     { wisdom: 15, constitution: 14, strength: 13, charisma: 12, dexterity: 10, intelligence: 8 },
+  druid:      { wisdom: 15, constitution: 14, dexterity: 13, intelligence: 12, charisma: 10, strength: 8 },
+  fighter:    { strength: 15, constitution: 14, dexterity: 13, wisdom: 12, charisma: 10, intelligence: 8 },
+  monk:       { dexterity: 15, wisdom: 14, constitution: 13, strength: 12, charisma: 10, intelligence: 8 },
+  paladin:    { strength: 15, charisma: 14, constitution: 13, wisdom: 12, dexterity: 10, intelligence: 8 },
+  ranger:     { dexterity: 15, wisdom: 14, constitution: 13, intelligence: 12, strength: 10, charisma: 8 },
+  rogue:      { dexterity: 15, constitution: 14, charisma: 13, wisdom: 12, intelligence: 10, strength: 8 },
+  sorcerer:   { charisma: 15, constitution: 14, dexterity: 13, wisdom: 12, intelligence: 10, strength: 8 },
+  warlock:    { charisma: 15, constitution: 14, dexterity: 13, wisdom: 12, intelligence: 10, strength: 8 },
+  wizard:     { intelligence: 15, constitution: 14, dexterity: 13, wisdom: 12, charisma: 10, strength: 8 },
+};
 
 const ABILITY_LABELS: Record<AbilityScore, string> = {
   strength: 'Strength',
@@ -120,6 +136,14 @@ export default function AbilityScoreScreen() {
     // At cap and skill not selected — ignore tap
   };
 
+  const handleRecommended = () => {
+    if (!className) return;
+    const recommended = RECOMMENDED_SCORES[className];
+    for (const ability of ABILITY_KEYS) {
+      setAbilityScore(ability, recommended[ability]);
+    }
+  };
+
   const handleContinue = () => {
     if (!canProceed) return;
     setStep(3);
@@ -139,6 +163,13 @@ export default function AbilityScoreScreen() {
           Distribute the standard array values across your six abilities.
           Race bonuses are applied automatically.
         </Text>
+        {className && (
+          <Pressable style={styles.recommendedButton} onPress={handleRecommended}>
+            <Text style={styles.recommendedButtonText}>
+              RECOMMENDED FOR {CLASSES[className].name.toUpperCase()}
+            </Text>
+          </Pressable>
+        )}
       </View>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
@@ -338,6 +369,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.text.secondary,
     lineHeight: 20,
+  },
+  recommendedButton: {
+    marginTop: spacing.sm,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.gold.primary,
+    backgroundColor: colors.gold.glow,
+    alignSelf: 'flex-start',
+  },
+  recommendedButtonText: {
+    fontFamily: fonts.heading,
+    fontSize: 11,
+    letterSpacing: 1.5,
+    color: colors.gold.primary,
   },
 
   // Scroll
