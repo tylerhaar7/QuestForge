@@ -214,6 +214,9 @@ export default function GameSessionScreen() {
           <Text style={[styles.headerTitle, { flex: 1 }]}>{campaign.currentLocation}</Text>
           <View style={styles.headerRight}>
             <Text style={styles.turnLabel}>Turn {campaign.turnCount}</Text>
+            <Pressable onPress={() => router.push('/settings')} style={styles.settingsButton}>
+              <Text style={styles.settingsIcon}>{'\u2699'}</Text>
+            </Pressable>
           </View>
         </View>
 
@@ -490,6 +493,15 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.combat.red,
     textAlign: 'center',
+  },
+  settingsButton: {
+    paddingLeft: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  settingsIcon: {
+    fontFamily: fonts.heading,
+    fontSize: 18,
+    color: colors.gold.primary,
   },
   menuButton: {
     paddingRight: spacing.sm,

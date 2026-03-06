@@ -20,6 +20,14 @@ export default function CreateWelcomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <Pressable
+        style={styles.settingsGear}
+        onPress={() => router.push('/settings')}
+        accessibilityRole="button"
+        accessibilityLabel="Settings"
+      >
+        <Text style={styles.settingsGearText}>{'\u2699'}</Text>
+      </Pressable>
       <View style={styles.content}>
         <Text style={styles.title}>Create Your{'\n'}Character</Text>
         <Text style={styles.subtitle}>
@@ -102,5 +110,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.text.secondary,
     lineHeight: 20,
+  },
+  settingsGear: {
+    position: 'absolute',
+    top: spacing.lg,
+    right: spacing.xl,
+    padding: spacing.sm,
+    zIndex: 1,
+  },
+  settingsGearText: {
+    fontFamily: fonts.heading,
+    fontSize: 18,
+    color: colors.gold.muted,
   },
 });
