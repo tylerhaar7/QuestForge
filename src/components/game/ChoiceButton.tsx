@@ -13,6 +13,7 @@ import { Pressable } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { colors } from '@/theme/colors';
 import { textStyles, spacing, fonts } from '@/theme/typography';
+import { useAccessibility } from '@/providers/AccessibilityProvider';
 import type { Choice } from '@/types/game';
 
 interface ChoiceButtonProps {
@@ -22,6 +23,7 @@ interface ChoiceButtonProps {
 }
 
 export function ChoiceButton({ choice, onPress, disabled }: ChoiceButtonProps) {
+  const { font: getFont, fontSize: scaleFontSize } = useAccessibility();
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -42,7 +44,7 @@ export function ChoiceButton({ choice, onPress, disabled }: ChoiceButtonProps) {
   const borderColor = hasSkillCheck ? colors.gold.primary : colors.gold.dim;
 
   return (
-    <Pressable onPress={handlePress} disabled={disabled}>
+    <Pressable onPress={handlePress} disabled={disabled} accessibilityRole="button" accessibilityLabel={choice.text}>
       <Animated.View
         style={[
           styles.container,
@@ -52,7 +54,7 @@ export function ChoiceButton({ choice, onPress, disabled }: ChoiceButtonProps) {
       >
         <View style={styles.row}>
           {choice.icon ? <Text style={styles.icon}>{choice.icon}</Text> : null}
-          <Text style={[styles.text, hasSkillCheck && styles.textGold]}>
+          <Text style={[styles.text, hasSkillCheck && styles.textGold, { fontFamily: getFont('body'), fontSize: scaleFontSize(15) }]}>
             {choice.text}
           </Text>
         </View>

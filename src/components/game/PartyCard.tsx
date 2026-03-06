@@ -5,6 +5,8 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { colors } from '@/theme/colors';
 import { fonts, textStyles, spacing } from '@/theme/typography';
+import { useAccessibility } from '@/providers/AccessibilityProvider';
+import { getColorblindColor } from '@/theme/accessibility';
 import { HpBar } from './HpBar';
 import type { Condition, RelationshipStage, ClassName } from '@/types/game';
 
@@ -45,13 +47,18 @@ export function PartyCard({
   relationshipStage,
   onPress,
 }: PartyCardProps) {
+  const { font: getFont, fontSize: scaleFontSize, settings } = useAccessibility();
   const classColor = colors.class[className] || colors.gold.muted;
 
+  const accessibilityLabel = `${name}, ${formatClassName(className)} Level ${level}, HP ${currentHp}/${maxHp}, AC ${ac}${
+    conditions.length > 0 ? `, ${conditions.map(formatCondition).join(', ')}` : ''
+  }${relationshipStage ? `, ${STAGE_LABELS[relationshipStage]}` : ''}`;
+
   return (
-    <Pressable onPress={onPress} style={[styles.card, { borderColor: classColor }]}>
+    <Pressable onPress={onPress} style={[styles.card, { borderColor: classColor }]} accessibilityLabel={accessibilityLabel}>
       {/* Portrait placeholder */}
       <View style={[styles.portrait, { backgroundColor: classColor + '30' }]}>
-        <Text style={styles.portraitText}>
+        <Text style={[styles.portraitText, { fontFamily: getFont('heading'), fontSize: scaleFontSize(22) }]}>
           {name.charAt(0).toUpperCase()}
         </Text>
       </View>
@@ -59,13 +66,13 @@ export function PartyCard({
       {/* Info */}
       <View style={styles.info}>
         <View style={styles.headerRow}>
-          <Text style={styles.name} numberOfLines={1}>{name}</Text>
+          <Text style={[styles.name, { fontFamily: getFont('heading'), fontSize: scaleFontSize(12) }]} numberOfLines={1}>{name}</Text>
           <View style={styles.acBadge}>
-            <Text style={styles.acText}>{ac}</Text>
+            <Text style={[styles.acText, { fontFamily: getFont('heading'), fontSize: scaleFontSize(10) }]}>{ac}</Text>
           </View>
         </View>
 
-        <Text style={styles.classLabel}>
+        <Text style={[styles.classLabel, { fontFamily: getFont('body'), fontSize: scaleFontSize(10) }]}>
           Lv{level} {formatClassName(className)}
         </Text>
 
@@ -75,8 +82,8 @@ export function PartyCard({
         {conditions.length > 0 && (
           <View style={styles.conditionRow}>
             {conditions.map(c => (
-              <View key={c} style={styles.conditionBadge}>
-                <Text style={styles.conditionText}>{formatCondition(c)}</Text>
+              <View key={c} style={[styles.conditionBadge, { backgroundColor: getColorblindColor('red', settings.colorblindMode) + '20' }]}>
+                <Text style={[styles.conditionText, { fontFamily: getFont('body'), fontSize: scaleFontSize(8), color: getColorblindColor('red', settings.colorblindMode) }]}>{formatCondition(c)}</Text>
               </View>
             ))}
           </View>
@@ -86,7 +93,7 @@ export function PartyCard({
         {isCompanion && relationshipStage && (
           <Text style={[
             styles.stageLabel,
-            { color: colors.approval[relationshipStage] || colors.text.tertiary },
+            { color: colors.approval[relationshipStage] || colors.text.tertiary, fontFamily: getFont('headingRegular'), fontSize: scaleFontSize(9) },
           ]}>
             {STAGE_LABELS[relationshipStage]}
           </Text>

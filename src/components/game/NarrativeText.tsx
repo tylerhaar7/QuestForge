@@ -7,6 +7,7 @@ import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-na
 import * as Haptics from 'expo-haptics';
 import { colors } from '@/theme/colors';
 import { textStyles, spacing } from '@/theme/typography';
+import { useAccessibility } from '@/providers/AccessibilityProvider';
 
 interface NarrativeTextProps {
   text: string;
@@ -21,7 +22,11 @@ const SPEED_MS: Record<string, number> = {
   slow: 50,
 };
 
-export function NarrativeText({ text, speed = 'normal', onComplete }: NarrativeTextProps) {
+export function NarrativeText({ text, speed, onComplete }: NarrativeTextProps) {
+  const { textSpeed: settingsSpeed, skipAnimations, hapticsEnabled, font: getFont, fontSize: scaleFontSize } = useAccessibility();
+  const effectiveSpeed = speed ?? settingsSpeed;
+  const delayMs = skipAnimations ? 0 : (SPEED_MS[effectiveSpeed] || SPEED_MS.normal);
+
   const [displayedText, setDisplayedText] = useState('');
   const [isComplete, setIsComplete] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -39,18 +44,21 @@ export function NarrativeText({ text, speed = 'normal', onComplete }: NarrativeT
     }
     setDisplayedText(text);
     setIsComplete(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onComplete?.();
-  }, [text, onComplete]);
+  }, [text, onComplete, hapticsEnabled]);
 
   useEffect(() => {
     // Reset on new text
     indexRef.current = 0;
     setDisplayedText('');
     setIsComplete(false);
-    opacity.value = withTiming(1, { duration: 300 });
 
-    const delayMs = SPEED_MS[speed] || SPEED_MS.normal;
+    if (skipAnimations) {
+      opacity.value = 1;
+    } else {
+      opacity.value = withTiming(1, { duration: 300 });
+    }
 
     if (delayMs === 0 || !text) {
       setDisplayedText(text);
@@ -66,7 +74,7 @@ export function NarrativeText({ text, speed = 'normal', onComplete }: NarrativeT
         setIsComplete(true);
         if (intervalRef.current) clearInterval(intervalRef.current);
         intervalRef.current = null;
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         onComplete?.();
       } else {
         setDisplayedText(text.slice(0, indexRef.current));
@@ -76,13 +84,13 @@ export function NarrativeText({ text, speed = 'normal', onComplete }: NarrativeT
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [text, speed]);
+  }, [text, effectiveSpeed, delayMs, skipAnimations, hapticsEnabled]);
 
   return (
     <Pressable onPress={isComplete ? undefined : completeText} style={styles.container}>
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         <Animated.View style={animatedStyle}>
-          <Text style={styles.text}>{displayedText}</Text>
+          <Text style={[styles.text, { fontFamily: getFont('narrative'), fontSize: scaleFontSize(16) }]}>{displayedText}</Text>
           {!isComplete && <Text style={styles.cursor}>|</Text>}
         </Animated.View>
       </ScrollView>
