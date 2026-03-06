@@ -3,13 +3,14 @@
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import Anthropic from 'npm:@anthropic-ai/sdk';
-import { corsHeaders } from '../_shared/cors.ts';
+import { getCorsHeaders } from '../_shared/cors.ts';
 import {
   buildSystemPrompt,
   CAMPAIGN_INIT_GENERATED_PROMPT,
   buildCampaignInitCustomPrompt,
 } from '../_shared/prompts.ts';
 import { parseAIJson, normalizeResponse } from '../_shared/ai-parser.ts';
+import { validateCampaignInitInput, errorResponse, checkRateLimit } from '../_shared/guards.ts';
 import type { CompanionData } from '../_shared/types.ts';
 
 // Default fallback companions (used when client doesn't provide companions)
@@ -21,13 +22,20 @@ const DEFAULT_COMPANIONS: CompanionData[] = [
     hp: 12,
     maxHp: 12,
     ac: 16,
+    portrait: '',
+    color: '#c4a035',
     approvalScore: 50,
     relationshipStage: 'neutral',
     personality: {
       approves: ['honor', 'protection', 'honesty', 'bravery', 'defending_innocents'],
       disapproves: ['deception', 'cowardice', 'harming_innocents', 'betrayal', 'cruelty'],
       voice: 'Steadfast and earnest. Speaks plainly. Believes in doing the right thing even when it costs.',
+      backstory: 'A disgraced soldier seeking redemption through honest service.',
     },
+    abilities: [
+      { name: 'Second Wind', type: 'heal', description: 'Recover 1d10+1 HP', icon: '💨' },
+      { name: 'Protection', type: 'reaction', description: 'Impose disadvantage on attack targeting adjacent ally', icon: '🛡️' },
+    ],
     conditions: [],
   },
   {
@@ -37,13 +45,20 @@ const DEFAULT_COMPANIONS: CompanionData[] = [
     hp: 9,
     maxHp: 9,
     ac: 14,
+    portrait: '',
+    color: '#8b5cf6',
     approvalScore: 50,
     relationshipStage: 'neutral',
     personality: {
       approves: ['cleverness', 'loyalty', 'street_smarts', 'pragmatism', 'wit'],
       disapproves: ['naivety', 'blind_authority', 'unnecessary_cruelty', 'stupidity'],
       voice: 'Sharp-tongued and quick. Uses humor to deflect. Fiercely loyal once trust is earned.',
+      backstory: 'A former street urchin who learned that trust is a luxury.',
     },
+    abilities: [
+      { name: 'Sneak Attack', type: 'attack', description: 'Extra 1d6 damage with advantage', icon: '🗡️' },
+      { name: 'Cunning Action', type: 'bonus', description: 'Dash, Disengage, or Hide as bonus action', icon: '💨' },
+    ],
     conditions: [],
   },
   {
@@ -53,13 +68,20 @@ const DEFAULT_COMPANIONS: CompanionData[] = [
     hp: 9,
     maxHp: 9,
     ac: 13,
+    portrait: '',
+    color: '#22c55e',
     approvalScore: 50,
     relationshipStage: 'neutral',
     personality: {
       approves: ['nature_protection', 'patience', 'wisdom', 'empathy', 'balance'],
       disapproves: ['destruction', 'haste', 'fire_use', 'greed', 'waste'],
       voice: 'Thoughtful and measured. Speaks with quiet authority. Occasionally cryptic.',
+      backstory: 'A wandering druid whose grove was destroyed. Seeks to understand why the natural order is breaking.',
     },
+    abilities: [
+      { name: 'Healing Word', type: 'heal', description: 'Heal 1d4+2 at range as bonus action', icon: '🌿' },
+      { name: 'Entangle', type: 'spell', description: 'Restrain creatures in a 20ft area', icon: '🌱' },
+    ],
     conditions: [],
   },
 ];
@@ -90,31 +112,31 @@ function templateToCompanionData(template: any): CompanionData {
     hp: template.maxHp,
     maxHp: template.maxHp,
     ac: template.ac,
+    portrait: template.portrait || '',
+    color: template.color || '#b48c3c',
     approvalScore: 50,
     relationshipStage: 'neutral',
     personality: {
       approves: template.personality?.approves || [],
       disapproves: template.personality?.disapproves || [],
       voice: template.personality?.voice || '',
+      backstory: template.personality?.backstory || '',
     },
+    abilities: template.abilities || [],
     conditions: [],
   };
 }
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight
+  const headers = getCorsHeaders(req.headers.get('origin'));
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers });
   }
 
   try {
-    // Auth: get user from JWT
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Missing authorization' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return errorResponse('Missing authorization', 401, headers);
     }
 
     const supabase = createClient(
@@ -125,20 +147,24 @@ Deno.serve(async (req) => {
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return errorResponse('Unauthorized', 401, headers);
     }
 
-    // Parse request
-    const { characterId, mode, customPrompt, campaignName, companions: rawCompanions } = await req.json();
-    if (!characterId) {
-      return new Response(JSON.stringify({ error: 'characterId required' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    // Parse and validate request
+    const body = await req.json();
+    const inputError = validateCampaignInitInput(body);
+    if (inputError) return errorResponse(inputError, 400, headers);
+    const { characterId, mode, customPrompt, campaignName, companions: rawCompanions } = body;
+
+    // Service role client for writes
+    const adminClient = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    );
+
+    // Rate limit: 5 campaign inits per minute per user
+    const allowed = await checkRateLimit(adminClient, user.id, 'campaign-init', 5);
+    if (!allowed) return errorResponse('Rate limited. Please wait a moment.', 429, headers);
 
     // Use provided companions or fall back to defaults
     // Tutorial mode always uses DEFAULT_COMPANIONS regardless of client input
@@ -149,12 +175,6 @@ Deno.serve(async (req) => {
           ? rawCompanions.map(templateToCompanionData)
           : DEFAULT_COMPANIONS;
 
-    // Service role client for writes
-    const adminClient = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    );
-
     // Fetch character
     const { data: character, error: charError } = await adminClient
       .from('characters')
@@ -164,10 +184,7 @@ Deno.serve(async (req) => {
       .single();
 
     if (charError || !character) {
-      return new Response(JSON.stringify({ error: 'Character not found' }), {
-        status: 404,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return errorResponse('Character not found', 404, headers);
     }
 
     // Create campaign row
@@ -207,15 +224,12 @@ Deno.serve(async (req) => {
       .single();
 
     if (campaignError || !campaign) {
-      return new Response(JSON.stringify({ error: `Failed to create campaign: ${campaignError?.message}` }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return errorResponse('Failed to create campaign.', 500, headers);
     }
 
     // Create companion_states rows
     for (const comp of campaignCompanions) {
-      await adminClient.from('companion_states').insert({
+      const { error: compError } = await adminClient.from('companion_states').insert({
         campaign_id: campaign.id,
         companion_name: comp.name,
         approval_score: 50,
@@ -226,6 +240,9 @@ Deno.serve(async (req) => {
         unlocked_abilities: [],
         gift_history: [],
       });
+      if (compError) {
+        return errorResponse(`Failed to create companion state for ${comp.name}.`, 500, headers);
+      }
     }
 
     // Build prompt and call Claude for opening narration
@@ -285,22 +302,21 @@ Deno.serve(async (req) => {
       updates.current_mood = 'tavern';
     }
 
-    await adminClient.from('campaigns').update(updates).eq('id', campaign.id);
+    const { error: updateError } = await adminClient.from('campaigns').update(updates).eq('id', campaign.id);
+    if (updateError) {
+      return errorResponse('Failed to update campaign.', 500, headers);
+    }
 
-    // Return to client
     return new Response(JSON.stringify({
       campaignId: campaign.id,
       aiResponse,
       companions: campaignCompanions,
     }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...headers, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
     console.error('campaign-init error:', error);
-    return new Response(JSON.stringify({ error: error.message || 'Internal error' }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return errorResponse('An unexpected error occurred. Please try again.', 500, headers);
   }
 });

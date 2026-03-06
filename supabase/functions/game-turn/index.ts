@@ -3,91 +3,14 @@
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import Anthropic from 'npm:@anthropic-ai/sdk';
-import { corsHeaders } from '../_shared/cors.ts';
+import { getCorsHeaders } from '../_shared/cors.ts';
 import { buildSystemPrompt, selectModel } from '../_shared/prompts.ts';
 import { processDiceRequests } from '../_shared/dice-engine.ts';
+import { parseAIJson, normalizeResponse } from '../_shared/ai-parser.ts';
+import { validateGameTurnInput, errorResponse, checkRateLimit } from '../_shared/guards.ts';
 import type { CompanionData } from '../_shared/types.ts';
 
 const MAX_TURN_HISTORY = 20;
-
-function parseAIJson(rawText: string): any {
-  try {
-    const codeBlockMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (codeBlockMatch) return JSON.parse(codeBlockMatch[1].trim());
-    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-    if (jsonMatch) return JSON.parse(jsonMatch[0]);
-    return { mode: 'exploration', narration: rawText };
-  } catch {
-    return { mode: 'exploration', narration: rawText };
-  }
-}
-
-function normalizeResponse(raw: any): any {
-  const result: any = {
-    mode: raw.mode || 'exploration',
-    narration: raw.narration || raw.narrative || '',
-  };
-
-  if (raw.location) result.location = raw.location;
-  if (raw.mood) result.mood = raw.mood;
-  if (raw.ambient_hint || raw.ambientHint) result.ambientHint = raw.ambient_hint || raw.ambientHint;
-
-  if (Array.isArray(raw.companion_actions || raw.companionActions)) {
-    result.companionActions = raw.companion_actions || raw.companionActions;
-  }
-
-  if (Array.isArray(raw.choices)) {
-    result.choices = raw.choices.map((c: any) => ({
-      text: c.text || '',
-      type: c.type || 'action',
-      icon: c.icon || '',
-      skillCheck: c.skill_check || c.skillCheck ? {
-        skill: (c.skill_check || c.skillCheck).skill,
-        dc: Number((c.skill_check || c.skillCheck).dc) || 10,
-        modifier: Number((c.skill_check || c.skillCheck).modifier) || 0,
-        successChance: Number((c.skill_check || c.skillCheck).success_chance || (c.skill_check || c.skillCheck).successChance) || 50,
-        advantage: Boolean((c.skill_check || c.skillCheck).advantage),
-      } : undefined,
-    }));
-  }
-
-  if (Array.isArray(raw.dice_requests || raw.diceRequests)) {
-    result.diceRequests = (raw.dice_requests || raw.diceRequests).map((d: any) => ({
-      type: d.type,
-      roller: d.roller || '',
-      ability: d.ability,
-      target: d.target,
-      dc: d.dc ? Number(d.dc) : undefined,
-      formula: d.formula,
-    }));
-  }
-
-  if (Array.isArray(raw.state_changes || raw.stateChanges)) {
-    result.stateChanges = raw.state_changes || raw.stateChanges;
-  }
-
-  if (Array.isArray(raw.approval_changes || raw.approvalChanges)) {
-    result.approvalChanges = (raw.approval_changes || raw.approvalChanges).map((a: any) => ({
-      companion: a.companion || '',
-      delta: Number(a.delta) || 0,
-      reason: a.reason || '',
-    }));
-  }
-
-  if (Array.isArray(raw.enemy_intentions || raw.enemyIntentions)) {
-    result.enemyIntentions = (raw.enemy_intentions || raw.enemyIntentions).map((e: any) => ({
-      target: e.target || '',
-      action: e.action || '',
-      predictedDamage: e.predicted_damage || e.predictedDamage || '',
-      special: e.special,
-      description: e.description || '',
-    }));
-  }
-
-  if (raw.tutorial_complete || raw.tutorialComplete) result.tutorialComplete = true;
-
-  return result;
-}
 
 const TUTORIAL_TURN_INSTRUCTIONS: Record<number, string> = {
   1: `TUTORIAL TURN 1 — TEACHING: Narrative Choices
@@ -134,18 +57,16 @@ This is the FINAL tutorial turn.
 
 
 Deno.serve(async (req) => {
+  const headers = getCorsHeaders(req.headers.get('origin'));
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers });
   }
 
   try {
     // Auth
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Missing authorization' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return errorResponse('Missing authorization', 401, headers);
     }
 
     const supabase = createClient(
@@ -156,25 +77,23 @@ Deno.serve(async (req) => {
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return errorResponse('Unauthorized', 401, headers);
     }
 
-    // Parse request
-    const { campaignId, action } = await req.json();
-    if (!campaignId || !action) {
-      return new Response(JSON.stringify({ error: 'campaignId and action required' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    // Parse and validate request
+    const body = await req.json();
+    const inputError = validateGameTurnInput(body);
+    if (inputError) return errorResponse(inputError, 400, headers);
+    const { campaignId, action } = body;
 
     const adminClient = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
+
+    // Rate limit: 10 requests per minute per user
+    const allowed = await checkRateLimit(adminClient, user.id, 'game-turn', 10);
+    if (!allowed) return errorResponse('Rate limited. Please wait a moment.', 429, headers);
 
     // Fetch campaign
     const { data: campaign, error: campError } = await adminClient
@@ -185,10 +104,7 @@ Deno.serve(async (req) => {
       .single();
 
     if (campError || !campaign) {
-      return new Response(JSON.stringify({ error: 'Campaign not found' }), {
-        status: 404,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return errorResponse('Campaign not found', 404, headers);
     }
 
     // Fetch character
@@ -199,10 +115,7 @@ Deno.serve(async (req) => {
       .single();
 
     if (charError || !character) {
-      return new Response(JSON.stringify({ error: 'Character not found' }), {
-        status: 404,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return errorResponse('Character not found', 404, headers);
     }
 
     // Get companions from campaign
@@ -373,14 +286,11 @@ Deno.serve(async (req) => {
       companions: updatedCompanions,
       turnCount: campaign.turn_count + 1,
     }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...headers, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
     console.error('game-turn error:', error);
-    return new Response(JSON.stringify({ error: error.message || 'Internal error' }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return errorResponse('An unexpected error occurred. Please try again.', 500, headers);
   }
 });

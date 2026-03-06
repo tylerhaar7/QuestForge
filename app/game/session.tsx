@@ -107,11 +107,29 @@ export default function GameSessionScreen() {
     router.replace('/create/race');
   }, [resetSession, router]);
 
-  const handleTutorialContinue = useCallback(() => {
+  const handleTutorialContinue = useCallback(async () => {
     const store = useGameStore.getState();
     store.clearTutorialComplete();
-    // Tutorial character continues as a real campaign
-  }, []);
+
+    // If the store already has narration + choices, the player can keep playing.
+    // But if the last turn left the store empty (edge case), fire a recovery turn.
+    const { currentNarration: narr, currentChoices: ch } = store;
+    if ((!narr || narr === 'The story continues...') && ch.length === 0 && campaign) {
+      store.setLoading(true);
+      store.setError(null);
+      try {
+        const result = await submitAction(campaign.id, 'I look around and decide what to do next.');
+        if (result.companions) {
+          store.setCampaign({ ...store.campaign!, companions: result.companions, turnCount: result.turnCount });
+        }
+        store.processAIResponse(result.aiResponse);
+      } catch (err) {
+        store.setError(err instanceof Error ? err.message : 'Something went wrong');
+      } finally {
+        store.setLoading(false);
+      }
+    }
+  }, [campaign]);
 
   const handleFreeformSubmit = useCallback(async () => {
     if (!campaign || !freeformText.trim()) return;

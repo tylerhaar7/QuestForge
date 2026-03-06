@@ -80,12 +80,21 @@ export interface CompanionData {
   hp: number;
   maxHp: number;
   ac: number;
+  portrait: string;
+  color: string;
   approvalScore: number;
   relationshipStage: string;
   personality: {
     approves: string[];
     disapproves: string[];
     voice: string;
+    backstory: string;
   };
+  abilities: {
+    name: string;
+    type: string;
+    description: string;
+    icon: string;
+  }[];
   conditions: string[];
 }

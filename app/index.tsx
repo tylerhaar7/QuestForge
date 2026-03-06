@@ -6,17 +6,15 @@ import { colors } from '@/theme/colors';
 
 function parseAIContent(content: string): any | null {
   try {
-    // Try direct JSON parse first
     const direct = JSON.parse(content);
-    if (direct.narration) return direct;
-    // If narration itself contains a JSON code block (AI nested response), extract it
+    // If narration contains a JSON code block (AI nested response), extract inner
     if (typeof direct.narration === 'string' && direct.narration.includes('```')) {
       const inner = extractJson(direct.narration);
       if (inner?.narration) return inner;
     }
+    if (direct.narration || direct.narrative) return direct;
     return direct;
   } catch {
-    // Try extracting JSON from markdown code blocks
     return extractJson(content);
   }
 }
@@ -91,26 +89,34 @@ export default function IndexScreen() {
       }
 
       setDebugMsg('Loading campaign...');
-      // Has campaign — load into store and go to game
+      // Has campaign — use the single raw row as the authoritative source
+      const campaignRow = campaigns[0];
+
       const { getCharacter } = await import('@/services/character');
-      const { getActiveCampaign } = await import('@/services/campaign');
+      const { getCampaign } = await import('@/services/campaign');
       const { useGameStore } = await import('@/stores/useGameStore');
 
-      const character = await getCharacter(characters[0].id);
-      const campaign = await getActiveCampaign(session.user.id);
+      let character;
+      try {
+        character = await getCharacter(campaignRow.character_id);
+      } catch {
+        // Character for this campaign no longer exists
+        router.replace('/create');
+        return;
+      }
 
-      if (campaign) {
-        const store = useGameStore.getState();
-        store.setCharacter(character);
-        store.setCampaign(campaign);
+      const campaign = await getCampaign(campaignRow.id);
+      const store = useGameStore.getState();
+      store.setCharacter(character);
+      store.setCampaign(campaign);
 
-        const turnHistory = (campaigns[0].turn_history || []) as any[];
-        const lastAssistant = [...turnHistory].reverse().find((t: any) => t.role === 'assistant');
-        if (lastAssistant) {
-          const parsed = parseAIContent(lastAssistant.content);
-          if (parsed) {
-            store.processAIResponse(parsed);
-          }
+      // Restore last narration from turn history
+      const turnHistory = (campaignRow.turn_history || []) as any[];
+      const lastAssistant = [...turnHistory].reverse().find((t: any) => t.role === 'assistant');
+      if (lastAssistant) {
+        const parsed = parseAIContent(lastAssistant.content);
+        if (parsed) {
+          store.processAIResponse(parsed);
         }
       }
 
