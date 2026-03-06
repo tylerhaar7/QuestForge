@@ -265,6 +265,7 @@ export interface AIResponse {
   threadUpdates?: ThreadUpdate[];
   mood?: MoodType;
   ambientHint?: string;
+  tutorialComplete?: boolean;
 }
 
 export interface CompanionAction {

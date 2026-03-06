@@ -27,6 +27,7 @@ interface GameState {
   showDiceRoll: boolean;
   lastDiceResult: number | null;
   pendingApprovalChanges: ApprovalChange[];
+  isTutorialComplete: boolean;
 
   // Actions
   setCampaign: (campaign: Campaign) => void;
@@ -46,6 +47,9 @@ interface GameState {
   // Companions
   updateCompanionApproval: (name: string, delta: number) => void;
 
+  // Tutorial
+  clearTutorialComplete: () => void;
+
   // Reset
   resetSession: () => void;
 }
@@ -64,6 +68,7 @@ const initialState = {
   showDiceRoll: false,
   lastDiceResult: null,
   pendingApprovalChanges: [],
+  isTutorialComplete: false,
 };
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -91,6 +96,11 @@ export const useGameStore = create<GameState>((set, get) => ({
       if (campaign) {
         set({ campaign: { ...campaign, currentLocation: response.location } });
       }
+    }
+
+    // Check for tutorial completion
+    if (response.tutorialComplete) {
+      set({ isTutorialComplete: true });
     }
   },
 
@@ -123,6 +133,8 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     set({ campaign: { ...campaign, companions } });
   },
+
+  clearTutorialComplete: () => set({ isTutorialComplete: false }),
 
   resetSession: () => set(initialState),
 }));

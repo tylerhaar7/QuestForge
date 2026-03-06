@@ -27,6 +27,7 @@ export default function GameSessionScreen() {
     currentMood,
     pendingApprovalChanges,
     isNarrationComplete,
+    isTutorialComplete,
     setNarrationComplete,
     resetSession,
   } = useGameStore();
@@ -86,6 +87,19 @@ export default function GameSessionScreen() {
       params: { characterId: charId || '' },
     });
   }, [character, resetSession, router]);
+
+  const handleTutorialCreate = useCallback(() => {
+    const store = useGameStore.getState();
+    store.clearTutorialComplete();
+    resetSession();
+    router.replace('/create/race');
+  }, [resetSession, router]);
+
+  const handleTutorialContinue = useCallback(() => {
+    const store = useGameStore.getState();
+    store.clearTutorialComplete();
+    // Tutorial character continues as a real campaign
+  }, []);
 
   const handleFreeformSubmit = useCallback(async () => {
     if (!campaign || !freeformText.trim()) return;
@@ -326,6 +340,32 @@ export default function GameSessionScreen() {
           </View>
         </Pressable>
       </Modal>
+
+      {/* Tutorial Complete Modal */}
+      <Modal
+        visible={isTutorialComplete}
+        transparent
+        animationType="fade"
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.tutorialCompleteTitle}>YOUR ADVENTURE{'\n'}BEGINS</Text>
+            <Text style={styles.tutorialCompleteDesc}>
+              You've learned the basics of combat, skill checks, and companion dynamics. The rest of your story is yours to write.
+            </Text>
+
+            <Pressable style={styles.tutorialCreateBtn} onPress={handleTutorialCreate}>
+              <Text style={styles.tutorialCreateBtnText}>CREATE MY CHARACTER</Text>
+              <Text style={styles.tutorialCreateBtnDesc}>Build a unique hero from scratch</Text>
+            </Pressable>
+
+            <Pressable style={styles.modalOption} onPress={handleTutorialContinue}>
+              <Text style={styles.modalOptionText}>Continue Playing</Text>
+              <Text style={styles.modalOptionDesc}>Keep this character and keep adventuring</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -514,5 +554,44 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.text.tertiary,
     letterSpacing: 1,
+  },
+  tutorialCompleteTitle: {
+    fontFamily: fonts.heading,
+    fontSize: 20,
+    color: colors.gold.primary,
+    letterSpacing: 2,
+    textAlign: 'center',
+    marginBottom: spacing.md,
+    textTransform: 'uppercase',
+  },
+  tutorialCompleteDesc: {
+    fontFamily: fonts.narrative,
+    fontSize: 15,
+    color: colors.text.secondary,
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: spacing.xl,
+  },
+  tutorialCreateBtn: {
+    borderWidth: 1,
+    borderColor: colors.gold.primary,
+    borderRadius: 8,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+    backgroundColor: colors.gold.primary,
+  },
+  tutorialCreateBtnText: {
+    fontFamily: fonts.heading,
+    fontSize: 14,
+    color: colors.bg.primary,
+    letterSpacing: 0.5,
+    textAlign: 'center',
+  },
+  tutorialCreateBtnDesc: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    color: colors.bg.secondary,
+    marginTop: 2,
+    textAlign: 'center',
   },
 });
