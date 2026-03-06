@@ -3,6 +3,19 @@
 
 import type { AbilityScore, AbilityScores, CharacterRow, DiceRequest, Skill } from './types.ts';
 
+export interface StructuredDiceResult {
+  type: 'skill_check' | 'attack_roll' | 'saving_throw' | 'damage';
+  roller: string;
+  roll: number;
+  modifier: number;
+  total: number;
+  dc?: number;
+  success?: boolean;
+  isCritical: boolean;
+  isFumble: boolean;
+  label: string;
+}
+
 // ─── Core Dice ──────────────────────────────────────
 
 function rollDie(sides: number): number {
@@ -78,6 +91,7 @@ function getAttackModifier(char: CharacterRow): number {
 
 interface DiceResolutionResult {
   results: string[];
+  structuredResults: StructuredDiceResult[];
   hpChanges: { target: string; delta: number }[];
 }
 
@@ -87,6 +101,7 @@ export function processDiceRequests(
   enemies: { name: string; ac: number; hp: number; maxHp: number }[]
 ): DiceResolutionResult {
   const results: string[] = [];
+  const structuredResults: StructuredDiceResult[] = [];
   const hpChanges: { target: string; delta: number }[] = [];
 
   for (const req of requests) {
@@ -113,6 +128,18 @@ export function processDiceRequests(
             `MECHANICAL RESULT: ${req.roller}'s ${req.ability || 'attack'} misses ${req.target || 'target'} (rolled ${total} vs AC ${targetAC}).`
           );
         }
+        structuredResults.push({
+          type: 'attack_roll',
+          roller: req.roller || character.name,
+          roll: d20,
+          modifier: attackMod,
+          total,
+          dc: targetAC,
+          success: hit,
+          isCritical: isCrit,
+          isFumble,
+          label: `${req.ability || 'Attack'} vs ${req.target || 'target'}`,
+        });
         break;
       }
 
@@ -128,6 +155,18 @@ export function processDiceRequests(
         results.push(
           `MECHANICAL RESULT: ${req.roller} ${success ? 'succeeds' : 'fails'} ${req.ability || ''} save (rolled ${total} vs DC ${dc}).`
         );
+        structuredResults.push({
+          type: 'saving_throw',
+          roller: req.roller || character.name,
+          roll: d20,
+          modifier: saveMod,
+          total,
+          dc,
+          success,
+          isCritical: d20 === 20,
+          isFumble: d20 === 1,
+          label: `${req.ability || 'Constitution'} Save`,
+        });
         break;
       }
 
@@ -142,6 +181,18 @@ export function processDiceRequests(
         results.push(
           `MECHANICAL RESULT: ${req.roller}'s ${req.ability || 'check'} ${success ? 'succeeds' : 'fails'} (rolled ${total} vs DC ${dc}, margin ${margin >= 0 ? '+' : ''}${margin}).`
         );
+        structuredResults.push({
+          type: 'skill_check',
+          roller: req.roller || character.name,
+          roll: d20,
+          modifier: skillMod,
+          total,
+          dc,
+          success,
+          isCritical: d20 === 20,
+          isFumble: d20 === 1,
+          label: `${req.ability || 'Perception'} Check`,
+        });
         break;
       }
 
@@ -161,5 +212,5 @@ export function processDiceRequests(
     }
   }
 
-  return { results, hpChanges };
+  return { results, structuredResults, hpChanges };
 }

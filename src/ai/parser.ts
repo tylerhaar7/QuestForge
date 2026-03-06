@@ -141,19 +141,31 @@ export function parseAIResponse(raw: string): AIResponse {
 
     const mapped = mapResponseKeys(parsed);
 
-    // Ensure required fields
+    // Ensure narration doesn't contain JSON
+    let narration = mapped.narration || 'The world shifts around you...';
+    const trimmedNarration = narration.trim();
+    if (trimmedNarration.startsWith('{') || trimmedNarration.startsWith('[')) {
+      narration = 'The world shifts around you...';
+    }
+
     return {
       ...EMPTY_RESPONSE,
       ...mapped,
-      narration: mapped.narration || 'The world shifts around you...',
+      narration,
     };
   } catch (error) {
     console.warn('[AI Parser] JSON parse failed, extracting narrative from raw text:', error);
 
-    // Fallback: treat the entire response as narration
+    // Fallback: strip JSON artifacts instead of dumping raw text
+    const cleaned = raw
+      .replace(/\{[\s\S]*\}/g, '')
+      .replace(/\[[\s\S]*\]/g, '')
+      .replace(/```[\s\S]*?```/g, '')
+      .trim();
+
     return {
       ...EMPTY_RESPONSE,
-      narration: raw.trim(),
+      narration: cleaned.length > 20 ? cleaned : 'The world shifts around you...',
     };
   }
 }

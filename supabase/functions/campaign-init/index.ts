@@ -9,6 +9,7 @@ import {
   CAMPAIGN_INIT_GENERATED_PROMPT,
   buildCampaignInitCustomPrompt,
 } from '../_shared/prompts.ts';
+import { parseAIJson, normalizeResponse } from '../_shared/ai-parser.ts';
 import type { CompanionData } from '../_shared/types.ts';
 
 // Default fallback companions (used when client doesn't provide companions)
@@ -252,24 +253,17 @@ Deno.serve(async (req) => {
       .map((block: any) => block.text)
       .join('');
 
-    // Parse AI response (simple JSON extraction)
-    let aiResponse;
-    try {
-      const jsonMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)```/) || rawText.match(/\{[\s\S]*\}/);
-      const jsonStr = jsonMatch ? (jsonMatch[1] || jsonMatch[0]).trim() : rawText;
-      aiResponse = JSON.parse(jsonStr);
-    } catch {
-      // Fallback: treat as narration
-      aiResponse = {
-        mode: 'exploration',
-        narration: rawText,
-        choices: [
-          { text: 'Look around carefully', type: 'knowledge', icon: '👁️' },
-          { text: 'Introduce yourself to nearby people', type: 'diplomatic', icon: '🗣️' },
-          { text: 'Find a quiet corner to plan', type: 'stealth', icon: '🤔' },
-        ],
-        mood: 'tavern',
-      };
+    // Parse and normalize AI response (shared parser handles malformed JSON)
+    const parsedResponse = parseAIJson(rawText);
+    const aiResponse = normalizeResponse(parsedResponse);
+
+    // Ensure fallback choices if none provided
+    if (!aiResponse.choices || aiResponse.choices.length === 0) {
+      aiResponse.choices = [
+        { text: 'Look around carefully', type: 'knowledge', icon: '👁️' },
+        { text: 'Introduce yourself to nearby people', type: 'diplomatic', icon: '🗣️' },
+        { text: 'Find a quiet corner to plan', type: 'stealth', icon: '🤔' },
+      ];
     }
 
     // Update campaign with initial state from AI

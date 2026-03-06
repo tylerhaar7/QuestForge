@@ -1,6 +1,6 @@
 // Campaign service — calls Supabase Edge Functions and manages campaign state
 import { supabase } from './supabase';
-import type { Campaign, Character, Companion, AIResponse } from '@/types/game';
+import type { Campaign, Character, Companion, AIResponse, DiceRollResult } from '@/types/game';
 
 // ─── Edge Function callers ──────────────────────────
 
@@ -31,6 +31,7 @@ export async function initCampaign(params: InitCampaignParams): Promise<InitCamp
 export interface SubmitActionResult {
   aiResponse: AIResponse;
   diceResults: string[];
+  diceRollResults?: DiceRollResult[];
   companions: Companion[];
   turnCount: number;
 }

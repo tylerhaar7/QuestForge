@@ -1,7 +1,7 @@
 // Game Session — Main gameplay screen
 // Layout: Narrative (60%) → Party strip (15%) → Choices (25%)
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, StyleSheet, FlatList, ActivityIndicator, Text, SafeAreaView, TextInput, Pressable, Keyboard, ScrollView, KeyboardAvoidingView, Platform, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/theme/colors';
@@ -25,12 +25,19 @@ export default function GameSessionScreen() {
     currentChoices,
     currentMode,
     currentMood,
+    activeDiceRoll,
     pendingApprovalChanges,
     isNarrationComplete,
     isTutorialComplete,
     setNarrationComplete,
+    shiftDiceRoll,
     resetSession,
   } = useGameStore();
+
+  // Auto-drain dice queue until 3D overlay is available (needs native rebuild)
+  useEffect(() => {
+    if (activeDiceRoll) shiftDiceRoll();
+  }, [activeDiceRoll, shiftDiceRoll]);
 
   const handleChoicePress = useCallback(async (choice: Choice) => {
     if (!campaign) return;
@@ -49,6 +56,11 @@ export default function GameSessionScreen() {
           companions: result.companions,
           turnCount: result.turnCount,
         });
+      }
+
+      // Queue dice roll animations before narration
+      if (result.diceRollResults && result.diceRollResults.length > 0) {
+        store.queueDiceRolls(result.diceRollResults);
       }
 
       // Process AI response
@@ -121,6 +133,11 @@ export default function GameSessionScreen() {
           companions: result.companions,
           turnCount: result.turnCount,
         });
+      }
+
+      // Queue dice roll animations before narration
+      if (result.diceRollResults && result.diceRollResults.length > 0) {
+        store.queueDiceRolls(result.diceRollResults);
       }
 
       store.processAIResponse(result.aiResponse);
@@ -284,6 +301,13 @@ export default function GameSessionScreen() {
               />
             ))}
 
+            {/* Freeform hint when no choices */}
+            {isNarrationComplete && !isLoading && currentChoices.length === 0 && (
+              <Text style={styles.freeformHint}>
+                No preset choices — type any action you want to try!
+              </Text>
+            )}
+
             {/* Freeform action input */}
             {isNarrationComplete && !isLoading && (
               <View style={styles.freeformContainer}>
@@ -291,7 +315,7 @@ export default function GameSessionScreen() {
                   style={styles.freeformInput}
                   value={freeformText}
                   onChangeText={setFreeformText}
-                  placeholder="Or type your own action..."
+                  placeholder={currentChoices.length === 0 ? "What do you do?" : "Or type your own action..."}
                   placeholderTextColor={colors.text.tertiary}
                   onSubmitEditing={handleFreeformSubmit}
                   returnKeyType="send"
@@ -314,6 +338,8 @@ export default function GameSessionScreen() {
             onAllDismissed={handleApprovalsDismissed}
           />
         )}
+
+        {/* 3D DiceOverlay disabled until native rebuild (expo-gl required) */}
       </KeyboardAvoidingView>
 
       {/* Menu Modal */}
@@ -483,6 +509,14 @@ const styles = StyleSheet.create({
     fontFamily: fonts.heading,
     fontSize: 18,
     color: colors.gold.primary,
+  },
+  freeformHint: {
+    fontFamily: fonts.narrative,
+    fontSize: 14,
+    fontStyle: 'italic',
+    color: colors.gold.muted,
+    textAlign: 'center',
+    marginBottom: spacing.sm,
   },
   errorContainer: {
     paddingHorizontal: spacing.lg,

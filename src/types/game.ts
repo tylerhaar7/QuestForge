@@ -298,6 +298,19 @@ export interface DiceRequest {
   formula?: string;
 }
 
+export interface DiceRollResult {
+  type: 'skill_check' | 'attack_roll' | 'saving_throw' | 'damage';
+  roller: string;
+  roll: number;          // raw d20 result (1-20)
+  modifier: number;
+  total: number;         // roll + modifier
+  dc?: number;
+  success?: boolean;
+  isCritical: boolean;
+  isFumble: boolean;
+  label: string;         // "Stealth Check", "Longsword Attack"
+}
+
 export interface StateChange {
   type: 'hp' | 'condition' | 'item' | 'xp' | 'spell_slot' | 'quest' | 'location';
   target: string;

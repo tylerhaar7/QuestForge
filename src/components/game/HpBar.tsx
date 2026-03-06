@@ -20,27 +20,27 @@ interface HpBarProps {
   showLabel?: boolean;
 }
 
-function getHpColor(ratio: number): string {
-  if (ratio > 0.5) return '#4a8c3c';   // Green — healthy
-  if (ratio > 0.2) return '#b48c3c';   // Gold/yellow — wounded
-  return colors.combat.red;             // Red — critical
-}
+const HP_GREEN = '#4a8c3c';
+const HP_YELLOW = '#b48c3c';
+const HP_RED = colors.combat.red;
+const DAMAGE_FLASH = colors.combat.damageFlash;
+const HEAL_FLASH = colors.combat.healFlash;
 
 export function HpBar({ current, max, label, showLabel = true }: HpBarProps) {
   const ratio = max > 0 ? Math.max(0, Math.min(1, current / max)) : 0;
   const widthAnim = useSharedValue(ratio);
   const flashOpacity = useSharedValue(0);
-  const prevCurrent = useSharedValue(current);
+  const tookDamage = useSharedValue(false);
 
   useEffect(() => {
-    const delta = current - prevCurrent.value;
-    prevCurrent.value = current;
+    const prevRatio = widthAnim.value;
+    tookDamage.value = ratio < prevRatio;
 
     // Animate width
     widthAnim.value = withTiming(ratio, { duration: 400, easing: Easing.out(Easing.cubic) });
 
     // Flash on change
-    if (delta !== 0) {
+    if (ratio !== prevRatio) {
       flashOpacity.value = withSequence(
         withTiming(0.6, { duration: 100 }),
         withTiming(0, { duration: 400 })
@@ -48,17 +48,23 @@ export function HpBar({ current, max, label, showLabel = true }: HpBarProps) {
     }
   }, [current, max]);
 
-  const barStyle = useAnimatedStyle(() => ({
-    width: `${widthAnim.value * 100}%`,
-    backgroundColor: getHpColor(widthAnim.value),
-  }));
+  const barStyle = useAnimatedStyle(() => {
+    'worklet';
+    const r = widthAnim.value;
+    const bg = r > 0.5 ? HP_GREEN : r > 0.2 ? HP_YELLOW : HP_RED;
+    return {
+      width: `${r * 100}%`,
+      backgroundColor: bg,
+    };
+  });
 
-  const flashStyle = useAnimatedStyle(() => ({
-    opacity: flashOpacity.value,
-    backgroundColor: current < prevCurrent.value
-      ? colors.combat.damageFlash
-      : colors.combat.healFlash,
-  }));
+  const flashStyle = useAnimatedStyle(() => {
+    'worklet';
+    return {
+      opacity: flashOpacity.value,
+      backgroundColor: tookDamage.value ? DAMAGE_FLASH : HEAL_FLASH,
+    };
+  });
 
   return (
     <View style={styles.container}>

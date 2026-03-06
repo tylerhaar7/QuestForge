@@ -11,22 +11,33 @@
       "resizeMode": "contain",
       "backgroundColor": "#0d0a08"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.questforge.app"
+      "bundleIdentifier": "com.fauni.questforge",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundColor": "#0d0a08"
       },
-      "package": "com.questforge.app"
+      "package": "com.fauni.questforge"
     },
     "scheme": "questforge",
     "plugins": [
       "expo-router",
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "a8b3635a-9bba-496a-971d-e3164413b6c5"
+      }
+    }
   }
 }

@@ -23,6 +23,8 @@ interface SettingsState {
   setTextSpeed: (speed: TextSpeed) => void;
   setHapticFeedback: (enabled: boolean) => void;
   resetAccessibility: () => void;
+  selectedDiceSkin: string;
+  setDiceSkin: (skinId: string) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -47,6 +49,8 @@ export const useSettingsStore = create<SettingsState>()(
         set((s) => ({ accessibility: { ...s.accessibility, hapticFeedback } })),
       resetAccessibility: () =>
         set({ accessibility: DEFAULT_ACCESSIBILITY }),
+      selectedDiceSkin: 'obsidian',
+      setDiceSkin: (selectedDiceSkin) => set({ selectedDiceSkin }),
     }),
     {
       name: 'settings-storage',
