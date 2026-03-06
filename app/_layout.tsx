@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { View, ActivityIndicator } from 'react-native';
 import { colors } from '@/theme/colors';
+import { AccessibilityProvider } from '@/providers/AccessibilityProvider';
 
 const queryClient = new QueryClient();
 
@@ -32,14 +33,16 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
-        <StatusBar style="light" />
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: colors.bg.primary },
-            animation: 'fade',
-          }}
-        />
+        <AccessibilityProvider>
+          <StatusBar style="light" />
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: colors.bg.primary },
+              animation: 'fade',
+            }}
+          />
+        </AccessibilityProvider>
       </QueryClientProvider>
     </GestureHandlerRootView>
   );
