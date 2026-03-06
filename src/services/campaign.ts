@@ -6,7 +6,7 @@ import type { Campaign, Character, Companion, AIResponse } from '@/types/game';
 
 export interface InitCampaignParams {
   characterId: string;
-  mode: 'generated' | 'custom';
+  mode: 'generated' | 'custom' | 'tutorial';
   customPrompt?: string;
   campaignName?: string;
   companions?: any[];  // CompanionTemplate objects from companion selection
