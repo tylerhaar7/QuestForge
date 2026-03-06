@@ -10,6 +10,49 @@ import type { CompanionData } from '../_shared/types.ts';
 
 const MAX_TURN_HISTORY = 20;
 
+const TUTORIAL_TURN_INSTRUCTIONS: Record<number, string> = {
+  1: `TUTORIAL TURN 1 — TEACHING: Narrative Choices
+You are running a tutorial. This is the player's FIRST turn.
+- Present a simple, low-stakes situation
+- Offer 3 clear choices with distinct approaches
+- DO NOT include combat, dice rolls, or complex mechanics yet
+- Add a brief meta-hint in parentheses after each choice
+- Keep narration short (1-2 paragraphs)`,
+
+  2: `TUTORIAL TURN 2 — TEACHING: Combat Basics
+- Introduce a simple combat encounter (2-3 weak enemies like goblins)
+- Set mode to "combat"
+- Include enemy_intentions for each enemy
+- Present 3 tactical choices (attack, use environment, defensive action)
+- Include dice_requests for attacks
+- Add meta-note: "Combat tip: enemies telegraph their moves so you can plan!"`,
+
+  3: `TUTORIAL TURN 3 — TEACHING: Skill Checks
+- Present a situation requiring a skill check
+- Include at least 2 choices with skill_check objects (show DC, modifier, success_chance)
+- Include one choice without a skill check as an alternative
+- Add meta-note: "Skill tip: your abilities affect your chances. Higher is better!"`,
+
+  4: `TUTORIAL TURN 4 — TEACHING: Companion Approval
+- Create a moral or tactical dilemma where companions disagree
+- Have at least 2 companions speak with distinct voices
+- Include approval_changes based on the player's last choice
+- Add meta-note: "Your companions remember your choices. Their approval affects their loyalty."`,
+
+  5: `TUTORIAL TURN 5 — TEACHING: Freeform Input
+- Present an open-ended situation (empty choices array)
+- Narrate a moment that invites creative thinking
+- Add meta-note: "You can type ANY action you want to try. Be creative!"`,
+
+  6: `TUTORIAL TURN 6 — TEACHING: Consequences
+This is the FINAL tutorial turn.
+- Present a meaningful decision with real trade-offs
+- After the player chooses, narrate the consequence
+- End narration with: "And so your story truly begins..."
+- Include "tutorial_complete": true in your JSON response
+- Include choices: "Create my own character" and "Continue with this character"`,
+};
+
 function parseAIJson(rawText: string): any {
   try {
     const codeBlockMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)```/);
@@ -84,6 +127,8 @@ function normalizeResponse(raw: any): any {
       description: e.description || '',
     }));
   }
+
+  if (raw.tutorial_complete) result.tutorialComplete = true;
 
   return result;
 }
@@ -164,7 +209,16 @@ Deno.serve(async (req) => {
     const companions: CompanionData[] = campaign.companions || [];
 
     // Build system prompt
-    const systemPrompt = buildSystemPrompt(campaign, character, companions);
+    let systemPrompt = buildSystemPrompt(campaign, character, companions);
+
+    // Tutorial instruction injection
+    if (campaign.is_tutorial) {
+      const turnNum = campaign.turn_count + 1;
+      const tutorialInstruction = TUTORIAL_TURN_INSTRUCTIONS[turnNum];
+      if (tutorialInstruction) {
+        systemPrompt += '\n\n---\n\n' + tutorialInstruction;
+      }
+    }
 
     // Build messages from turn history + current action
     const messages: { role: 'user' | 'assistant'; content: string }[] = [];

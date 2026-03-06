@@ -63,6 +63,19 @@ const DEFAULT_COMPANIONS: CompanionData[] = [
   },
 ];
 
+const TUTORIAL_OPENING_PROMPT = `You are starting a tutorial campaign called "The First Door."
+This is a new player learning D&D for the first time through play.
+
+Create an opening scene that:
+1. Places the player outside a mysterious tavern at dusk — "The First Door Inn"
+2. The atmosphere is welcoming but intriguing — not threatening
+3. Introduce the three companions (Korrin, Sera, Thaelen) as fellow travelers who just arrived
+4. Present 3 simple choices for what to do next (enter the tavern, investigate the area, talk to companions)
+5. Add brief meta-hints in parentheses explaining each choice type
+6. Keep it SHORT — 2 paragraphs max
+
+Remember: NO dice rolls, NO combat. Just narrative choices.`;
+
 /**
  * Convert a CompanionTemplate (client-side shape) to CompanionData (server-side shape).
  * Client sends: { name, className, level, maxHp, ac, portrait, color, personality, abilities }
@@ -127,10 +140,13 @@ Deno.serve(async (req) => {
     }
 
     // Use provided companions or fall back to defaults
+    // Tutorial mode always uses DEFAULT_COMPANIONS regardless of client input
     const campaignCompanions: CompanionData[] =
-      Array.isArray(rawCompanions) && rawCompanions.length > 0
-        ? rawCompanions.map(templateToCompanionData)
-        : DEFAULT_COMPANIONS;
+      mode === 'tutorial'
+        ? DEFAULT_COMPANIONS
+        : Array.isArray(rawCompanions) && rawCompanions.length > 0
+          ? rawCompanions.map(templateToCompanionData)
+          : DEFAULT_COMPANIONS;
 
     // Service role client for writes
     const adminClient = createClient(
@@ -158,6 +174,7 @@ Deno.serve(async (req) => {
       user_id: user.id,
       character_id: characterId,
       name: campaignName || `${character.name}'s Adventure`,
+      is_tutorial: mode === 'tutorial',
       current_location: 'Unknown',
       current_mood: 'tavern',
       current_mode: 'exploration',
@@ -212,9 +229,11 @@ Deno.serve(async (req) => {
 
     // Build prompt and call Claude for opening narration
     const systemPrompt = buildSystemPrompt(campaign, character, campaignCompanions);
-    const userMessage = mode === 'custom' && customPrompt
-      ? buildCampaignInitCustomPrompt(customPrompt)
-      : CAMPAIGN_INIT_GENERATED_PROMPT;
+    const userMessage = mode === 'tutorial'
+      ? TUTORIAL_OPENING_PROMPT
+      : mode === 'custom' && customPrompt
+        ? buildCampaignInitCustomPrompt(customPrompt)
+        : CAMPAIGN_INIT_GENERATED_PROMPT;
 
     const anthropic = new Anthropic({
       apiKey: Deno.env.get('ANTHROPIC_API_KEY'),
@@ -265,6 +284,12 @@ Deno.serve(async (req) => {
     if (aiResponse.location) updates.current_location = aiResponse.location;
     if (aiResponse.mood) updates.current_mood = aiResponse.mood;
     if (aiResponse.mode) updates.current_mode = aiResponse.mode;
+
+    // Tutorial mode overrides location and mood
+    if (mode === 'tutorial') {
+      updates.current_location = 'The First Door Inn';
+      updates.current_mood = 'tavern';
+    }
 
     await adminClient.from('campaigns').update(updates).eq('id', campaign.id);
 
