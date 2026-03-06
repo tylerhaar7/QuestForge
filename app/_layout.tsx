@@ -18,6 +18,7 @@ export default function RootLayout() {
     'CrimsonText-Italic': require('../assets/fonts/CrimsonText-Italic.ttf'),
     'IMFellEnglish-Regular': require('../assets/fonts/IMFellEnglish-Regular.ttf'),
     'IMFellEnglish-Italic': require('../assets/fonts/IMFellEnglish-Italic.ttf'),
+    'OpenDyslexic-Regular': require('../assets/fonts/OpenDyslexic-Regular.ttf'),
   });
 
   if (!fontsLoaded) {
