@@ -126,7 +126,7 @@ export function buildSystemPrompt(
 - HP: ${character.hp}/${character.max_hp}, AC: ${character.ac}
 - STR ${character.ability_scores.strength} DEX ${character.ability_scores.dexterity} CON ${character.ability_scores.constitution} INT ${character.ability_scores.intelligence} WIS ${character.ability_scores.wisdom} CHA ${character.ability_scores.charisma}
 - Conditions: ${character.conditions.length > 0 ? character.conditions.join(', ') : 'none'}
-- Origin: ${character.origin_story || 'Unknown'}`);
+- Origin: ${character.origin_story || 'Unknown'}${character.origin_ai_context ? `\n\nORIGIN CONTEXT (weave this into the narrative naturally):\n${character.origin_ai_context}` : ''}`);
 
   // Location
   layers.push(`CURRENT LOCATION: ${campaign.current_location || 'Unknown'}`);

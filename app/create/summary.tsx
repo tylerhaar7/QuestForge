@@ -193,6 +193,7 @@ export default function CharacterSummaryScreen() {
         features,
         conditions: [],
         originStory: originId ?? '',
+        originAiContext: originData?.aiContext ?? customOrigin ?? '',
         personalQuestFlags,
       });
 
