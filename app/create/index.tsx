@@ -11,9 +11,11 @@ export default function CreateWelcomeScreen() {
 
   const handleStart = (track: 'new' | 'veteran') => {
     reset();  // Clear any previous creation state
-    // Both tracks go to race selection for now
-    // Tutorial ("The First Door") will be added in Phase 3
-    router.push('/create/race');
+    if (track === 'new') {
+      router.push('/create/tutorial');
+    } else {
+      router.push('/create/race');
+    }
   };
 
   return (
