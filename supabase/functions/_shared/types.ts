@@ -52,6 +52,7 @@ export interface CharacterRow {
   equipment: any[];
   conditions: string[];
   origin_story: string;
+  origin_ai_context: string;
 }
 
 export interface CampaignRow {

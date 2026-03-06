@@ -71,6 +71,7 @@ export interface Character {
   features: string[];          // Class/race feature IDs
   conditions: Condition[];
   originStory: string;         // Origin story ID
+  originAiContext: string;     // AI prompt context for origin
   personalQuestFlags: Record<string, boolean>;
   portraitUrl?: string;
   createdAt: string;

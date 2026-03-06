@@ -28,6 +28,7 @@ function toRow(char: Omit<Character, 'id' | 'createdAt' | 'updatedAt'>) {
     features: char.features,
     conditions: char.conditions,
     origin_story: char.originStory,
+    origin_ai_context: char.originAiContext ?? '',
     personal_quest_flags: char.personalQuestFlags,
     portrait_url: char.portraitUrl ?? null,
   };
@@ -60,6 +61,7 @@ function fromRow(row: any): Character {
     features: row.features ?? [],
     conditions: row.conditions ?? [],
     originStory: row.origin_story ?? '',
+    originAiContext: row.origin_ai_context ?? '',
     personalQuestFlags: row.personal_quest_flags ?? {},
     portraitUrl: row.portrait_url ?? undefined,
     createdAt: row.created_at,
