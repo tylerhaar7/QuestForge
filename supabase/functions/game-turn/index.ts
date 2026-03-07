@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Auth
+    // Auth: verify JWT manually (verify_jwt disabled at gateway due to ES256 incompatibility)
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       return errorResponse('Missing authorization', 401, headers);
@@ -75,7 +75,9 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    // Pass JWT explicitly — newer SDK versions don't use global headers for getUser()
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
       return errorResponse('Unauthorized', 401, headers);
     }

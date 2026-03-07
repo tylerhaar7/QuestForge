@@ -23,7 +23,15 @@ export async function initCampaign(params: InitCampaignParams): Promise<InitCamp
     body: params,
   });
 
-  if (error) throw new Error(`Campaign init failed: ${error.message}`);
+  if (error) {
+    // Extract the actual error message from the Edge Function response
+    let message = error.message;
+    try {
+      const body = await (error as any).context?.json();
+      if (body?.error) message = body.error;
+    } catch {}
+    throw new Error(`Campaign init failed: ${message}`);
+  }
   if (data?.error) throw new Error(data.error);
   return data;
 }
@@ -41,7 +49,14 @@ export async function submitAction(campaignId: string, action: string): Promise<
     body: { campaignId, action },
   });
 
-  if (error) throw new Error(`Game turn failed: ${error.message}`);
+  if (error) {
+    let message = error.message;
+    try {
+      const body = await (error as any).context?.json();
+      if (body?.error) message = body.error;
+    } catch {}
+    throw new Error(`Game turn failed: ${message}`);
+  }
   if (data?.error) throw new Error(data.error);
   return data;
 }
