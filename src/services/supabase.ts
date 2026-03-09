@@ -5,6 +5,7 @@
 import 'react-native-url-polyfill/auto';
 import { createClient } from '@supabase/supabase-js';
 import { createMMKV } from 'react-native-mmkv';
+import { AppState } from 'react-native';
 
 const storage = createMMKV({ id: 'supabase-auth' });
 
@@ -31,6 +32,16 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     persistSession: true,
     detectSessionInUrl: false,
   },
+});
+
+// React Native does not have browser visibility events; wire app foreground/background
+// to auth auto-refresh so access tokens are refreshed reliably for Edge Function calls.
+AppState.addEventListener('change', (state) => {
+  if (state === 'active') {
+    supabase.auth.startAutoRefresh();
+  } else {
+    supabase.auth.stopAutoRefresh();
+  }
 });
 
 // Helper: Get current user ID (throws if not logged in)

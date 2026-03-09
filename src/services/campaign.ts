@@ -19,21 +19,7 @@ export interface InitCampaignResult {
 }
 
 export async function initCampaign(params: InitCampaignParams): Promise<InitCampaignResult> {
-  const { data, error } = await supabase.functions.invoke('campaign-init', {
-    body: params,
-  });
-
-  if (error) {
-    // Extract the actual error message from the Edge Function response
-    let message = error.message;
-    try {
-      const body = await (error as any).context?.json();
-      if (body?.error) message = body.error;
-    } catch {}
-    throw new Error(`Campaign init failed: ${message}`);
-  }
-  if (data?.error) throw new Error(data.error);
-  return data;
+  return invokeEdgeFunction<InitCampaignResult>('campaign-init', params, 'Campaign init failed');
 }
 
 export interface SubmitActionResult {
@@ -45,20 +31,49 @@ export interface SubmitActionResult {
 }
 
 export async function submitAction(campaignId: string, action: string): Promise<SubmitActionResult> {
-  const { data, error } = await supabase.functions.invoke('game-turn', {
-    body: { campaignId, action },
+  return invokeEdgeFunction<SubmitActionResult>('game-turn', { campaignId, action }, 'Game turn failed');
+}
+
+async function invokeEdgeFunction<T>(
+  fnName: 'campaign-init' | 'game-turn',
+  body: Record<string, any>,
+  failurePrefix: string
+): Promise<T> {
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError || !sessionData.session) {
+    throw new Error(`${failurePrefix}: Not authenticated. Please sign in again.`);
+  }
+
+  let accessToken = sessionData.session.access_token;
+  const expiresAt = sessionData.session.expires_at ?? 0;
+  const now = Math.floor(Date.now() / 1000);
+  const expiresSoon = expiresAt > 0 && expiresAt - now < 90;
+
+  if (expiresSoon) {
+    const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+    if (!refreshError && refreshed.session?.access_token) {
+      accessToken = refreshed.session.access_token;
+    }
+  }
+
+  const { data, error } = await supabase.functions.invoke(fnName, {
+    body,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
   });
 
   if (error) {
     let message = error.message;
     try {
-      const body = await (error as any).context?.json();
-      if (body?.error) message = body.error;
+      const errorBody = await (error as any).context?.json();
+      if (errorBody?.error) message = errorBody.error;
     } catch {}
-    throw new Error(`Game turn failed: ${message}`);
+    throw new Error(`${failurePrefix}: ${message}`);
   }
-  if (data?.error) throw new Error(data.error);
-  return data;
+
+  if ((data as any)?.error) throw new Error((data as any).error);
+  return data as T;
 }
 
 // ─── Supabase queries ───────────────────────────────

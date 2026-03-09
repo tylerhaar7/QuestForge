@@ -36,35 +36,36 @@ COMPANION APPROVAL:
 After EVERY player choice with moral, tactical, or personal implications, include approval_changes.
 Small changes (-3 to +3) for minor choices, medium (-5 to +5) for significant ones, large (-10 to +10) for major moral decisions.
 
-RESPONSE FORMAT — Always respond with valid JSON:
+EVERY RESPONSE MUST INCLUDE:
+- "narration": engaging prose (REQUIRED)
+- "choices": 2-4 options for the player (REQUIRED unless dice_requests present)
+- "companion_actions": at least 1 companion reacting (REQUIRED)
+- "approval_changes": if the player made any meaningful choice (REQUIRED when applicable)
+
+RESPONSE FORMAT — Return a single raw JSON object. Example:
+{"mode":"exploration","narration":"The tavern door creaks open, spilling warm light across the rain-slicked cobblestones. A half-dozen faces turn toward you — most with idle curiosity, one with something sharper. The barkeep, a broad woman with flour-dusted arms, nods you toward an empty table near the hearth.\\nKorrin is already moving toward the fire, his hand resting easy on his sword pommel. Sera slips past you both, her eyes cataloguing exits.","location":"The Guttered Lantern","companion_actions":[{"companion":"Korrin","action":"Takes position near the hearth, scanning the room","dialogue":"Decent enough place. I've slept in worse."},{"companion":"Sera","action":"Slides into the booth with her back to the wall","dialogue":"Two exits. Cellar hatch behind the bar. Not bad."}],"choices":[{"text":"Approach the barkeep and ask for rooms","type":"diplomatic","icon":"🗣️"},{"text":"Study the sharp-eyed patron more closely","type":"knowledge","icon":"👁️","skill_check":{"skill":"insight","dc":13,"modifier":0,"success_chance":55,"advantage":false}},{"text":"Find a quiet corner and let the room come to you","type":"stealth","icon":"🤫"}],"mood":"tavern"}
+
+CRITICAL OUTPUT RULES:
+1. Return ONLY a raw JSON object — no markdown, no code fences, no \`\`\`json wrapper
+2. The "narration" field must contain ONLY prose text — never JSON, never code blocks
+3. NEVER nest a JSON object inside "narration" — it is a plain string of story text
+4. ALWAYS include "choices" (2-4 options) so the player is never stuck
+5. Only include fields that are relevant. "choices" and "dice_requests" should not both appear.
+
+JSON SCHEMA:
 {
   "mode": "exploration|combat|social|rest|camp|threshold",
-  "narration": "The narrative text...",
-  "location": "Current location name (if changed)",
-  "companion_actions": [
-    {"companion": "Name", "action": "What they do", "dialogue": "What they say"}
-  ],
-  "choices": [
-    {"text": "Choice description", "type": "aggressive|diplomatic|stealth|knowledge|creative", "icon": "emoji",
-     "skill_check": {"skill": "persuasion", "dc": 14, "modifier": 0, "success_chance": 60, "advantage": false}}
-  ],
-  "dice_requests": [
-    {"type": "attack_roll|saving_throw|skill_check|damage|initiative", "roller": "Name", "ability": "Eldritch Blast", "target": "Goblin", "dc": 15, "formula": "1d10+4"}
-  ],
-  "state_changes": [
-    {"type": "hp|condition|item|xp|spell_slot|quest|location", "target": "Name", "value": "..."}
-  ],
-  "approval_changes": [
-    {"companion": "Name", "delta": -5, "reason": "disapproves of deception"}
-  ],
-  "enemy_intentions": [
-    {"enemy": "Goblin", "target": "Player", "action": "Slash", "predicted_damage": "1d6+2", "description": "raises its blade"}
-  ],
+  "narration": "string — pure narrative prose, no JSON or markdown",
+  "location": "string — current location name (if changed)",
+  "companion_actions": [{"companion": "Name", "action": "What they do", "dialogue": "What they say"}],
+  "choices": [{"text": "Choice description", "type": "aggressive|diplomatic|stealth|knowledge|creative", "icon": "emoji", "skill_check": {"skill": "persuasion", "dc": 14, "modifier": 0, "success_chance": 60, "advantage": false}}],
+  "dice_requests": [{"type": "attack_roll|saving_throw|skill_check|damage|initiative", "roller": "Name", "ability": "Eldritch Blast", "target": "Goblin", "dc": 15, "formula": "1d10+4"}],
+  "state_changes": [{"type": "hp|condition|item|xp|spell_slot|quest|location", "target": "Name", "value": "..."}],
+  "approval_changes": [{"companion": "Name", "delta": -5, "reason": "disapproves of deception"}],
+  "enemy_intentions": [{"enemy": "Goblin", "target": "Player", "action": "Slash", "predicted_damage": "1d6+2", "description": "raises its blade"}],
   "mood": "dungeon|combat|tavern|forest|town|camp|threshold|boss",
   "ambient_hint": "dungeon_drip"
-}
-
-Only include fields that are relevant. choices and dice_requests should not both appear.`;
+}`;
 
 export const MECHANICAL_ENFORCEMENT = `
 REMINDER: You are the narrator, not the calculator.

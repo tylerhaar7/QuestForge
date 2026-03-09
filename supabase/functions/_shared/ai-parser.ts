@@ -14,39 +14,29 @@ export function parseAIJson(rawText: string): any {
   // Strategy 1: Code block extraction
   const codeBlockMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (codeBlockMatch) {
-    try {
-      return JSON.parse(codeBlockMatch[1].trim());
-    } catch {
-      // Code block found but invalid JSON — continue to next strategy
-    }
+    const parsed = tryParseJson(codeBlockMatch[1].trim());
+    if (parsed) return parsed;
   }
 
   // Strategy 2: Outermost JSON object extraction
   const jsonMatch = rawText.match(/\{[\s\S]*\}/);
   if (jsonMatch) {
-    try {
-      return JSON.parse(jsonMatch[0]);
-    } catch {
-      // Matched braces but invalid JSON — continue
-    }
+    const parsed = tryParseJson(jsonMatch[0]);
+    if (parsed) return parsed;
   }
 
   // Strategy 3: Try to find a JSON array (Claude sometimes returns just choices)
   const arrayMatch = rawText.match(/\[[\s\S]*\]/);
   if (arrayMatch) {
-    try {
-      const arr = JSON.parse(arrayMatch[0]);
-      if (Array.isArray(arr) && arr.length > 0 && arr[0].text) {
-        // Looks like a choices array — wrap it
-        const narrativeText = extractNarrativeText(rawText, arrayMatch.index ?? 0);
-        return {
-          mode: 'exploration',
-          narration: narrativeText || 'The story continues...',
-          choices: arr,
-        };
-      }
-    } catch {
-      // Continue to fallback
+    const arr = tryParseJson(arrayMatch[0]);
+    if (Array.isArray(arr) && arr.length > 0 && arr[0].text) {
+      // Looks like a choices array — wrap it
+      const narrativeText = extractNarrativeText(rawText, arrayMatch.index ?? 0);
+      return {
+        mode: 'exploration',
+        narration: narrativeText || 'The story continues...',
+        choices: arr,
+      };
     }
   }
 
@@ -54,8 +44,37 @@ export function parseAIJson(rawText: string): any {
   const cleanedNarration = stripJsonArtifacts(rawText);
   return {
     mode: 'exploration',
-    narration: cleanedNarration || 'The world shifts around you...',
+    narration: isNarrativeText(cleanedNarration) ? cleanedNarration : 'The world shifts around you...',
   };
+}
+
+function tryParseJson(text: string): any | null {
+  try {
+    return JSON.parse(text);
+  } catch {
+    // Common repair: trailing commas before closing braces/brackets
+    const noTrailingCommas = text.replace(/,\s*([}\]])/g, '$1');
+    if (noTrailingCommas !== text) {
+      try {
+        return JSON.parse(noTrailingCommas);
+      } catch {
+        // Continue to second repair
+      }
+    }
+
+    // Common repair: smart quotes copied from rich text sources
+    const normalizedQuotes = noTrailingCommas
+      .replace(/[“”]/g, '"')
+      .replace(/[‘’]/g, "'");
+    if (normalizedQuotes !== noTrailingCommas) {
+      try {
+        return JSON.parse(normalizedQuotes);
+      } catch {
+        // Give up
+      }
+    }
+  }
+  return null;
 }
 
 /**
@@ -74,14 +93,17 @@ function extractNarrativeText(rawText: string, jsonStartIndex: number): string {
  * Used as a last-resort fallback to avoid showing raw JSON to users.
  */
 function stripJsonArtifacts(text: string): string {
-  // Remove JSON objects and arrays
-  let cleaned = text.replace(/[{[\]]/g, '').replace(/[}\]]/g, '');
+  // Remove braces/brackets while preserving prose
+  let cleaned = text.replace(/[{}\[\]]/g, '');
   // Remove JSON-like key-value patterns
   cleaned = cleaned.replace(/"[\w_]+":\s*/g, '');
   // Remove standalone quoted strings that look like JSON values
   cleaned = cleaned.replace(/^\s*"[^"]*",?\s*$/gm, '');
   // Remove lines that are mostly punctuation/brackets
   cleaned = cleaned.replace(/^\s*[{}\[\],]+\s*$/gm, '');
+  // Remove value-only lines (e.g. "14,", "false", "-1,") that leak from malformed JSON
+  cleaned = cleaned.replace(/^\s*-?\d+(?:\.\d+)?,?\s*$/gm, '');
+  cleaned = cleaned.replace(/^\s*(?:true|false|null),?\s*$/gim, '');
   // Collapse multiple newlines
   cleaned = cleaned.replace(/\n{3,}/g, '\n\n').trim();
 
@@ -104,28 +126,21 @@ export function normalizeResponse(raw: any): any {
   if (cbMatch) {
     const inner = cbMatch[1].trim();
     // Try parsing as JSON to extract real narration
-    try {
-      const parsed = JSON.parse(inner.match(/\{[\s\S]*\}/)?.[0] || inner);
-      narration = parsed.narration || parsed.narrative || inner;
-    } catch {
-      // Not JSON inside the code block — use the raw inner text
-      narration = inner || narration;
-    }
+    const parsed = tryParseJson(inner.match(/\{[\s\S]*\}/)?.[0] || inner);
+    narration = parsed ? (parsed.narration || parsed.narrative || inner) : (inner || narration);
   }
 
   // Detect if narration still contains JSON
   if (narration && looksLikeJson(narration)) {
-    try {
-      const inner = JSON.parse(narration);
-      if (inner.narration || inner.narrative) {
-        narration = inner.narration || inner.narrative;
-      } else {
-        narration = 'The story continues...';
-      }
-    } catch {
+    const inner = tryParseJson(narration);
+    if (inner && (inner.narration || inner.narrative)) {
+      narration = inner.narration || inner.narrative;
+    } else {
       const cleaned = stripJsonArtifacts(narration);
-      narration = cleaned || 'The story continues...';
+      narration = isNarrativeText(cleaned) ? cleaned : 'The story continues...';
     }
+  } else if (!isNarrativeText(narration)) {
+    narration = 'The story continues...';
   }
 
   const result: any = {
@@ -203,4 +218,18 @@ function looksLikeJson(text: string): boolean {
   // Check for high density of JSON-like patterns
   const jsonPatterns = (text.match(/"[\w_]+":\s*["{[\d]/g) || []).length;
   return jsonPatterns >= 3;
+}
+
+function isNarrativeText(text: string): boolean {
+  if (!text) return false;
+  const trimmed = text.trim();
+  if (trimmed.length < 20) return false;
+
+  const alphaChars = (trimmed.match(/[A-Za-z]/g) || []).length;
+  const totalChars = trimmed.length;
+  const alphaRatio = totalChars > 0 ? alphaChars / totalChars : 0;
+  if (alphaRatio < 0.45) return false;
+
+  const words = (trimmed.match(/[A-Za-z]{2,}/g) || []).length;
+  return words >= 6;
 }

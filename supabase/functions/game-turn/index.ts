@@ -153,14 +153,17 @@ Deno.serve(async (req) => {
       apiKey: Deno.env.get('ANTHROPIC_API_KEY'),
     });
 
+    // Prefill assistant with '{' to force raw JSON output (no code fences)
+    const prefillMessages = [...messages, { role: 'assistant' as const, content: '{' }];
+
     const claudeResponse = await anthropic.messages.create({
       model,
       max_tokens: 1024,
       system: systemPrompt,
-      messages,
+      messages: prefillMessages,
     });
 
-    const rawText = claudeResponse.content
+    const rawText = '{' + claudeResponse.content
       .filter((block: any) => block.type === 'text')
       .map((block: any) => block.text)
       .join('');
@@ -205,14 +208,16 @@ Deno.serve(async (req) => {
         },
       ];
 
+      const followUpPrefill = [...followUpMessages, { role: 'assistant' as const, content: '{' }];
+
       const followUpResponse = await anthropic.messages.create({
         model,
         max_tokens: 1024,
         system: systemPrompt,
-        messages: followUpMessages,
+        messages: followUpPrefill,
       });
 
-      const followUpText = followUpResponse.content
+      const followUpText = '{' + followUpResponse.content
         .filter((block: any) => block.type === 'text')
         .map((block: any) => block.text)
         .join('');
