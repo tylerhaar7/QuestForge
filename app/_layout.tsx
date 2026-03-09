@@ -1,5 +1,4 @@
 // Root layout — wraps the entire app
-import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
@@ -8,7 +7,6 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { View, ActivityIndicator } from 'react-native';
 import { colors } from '@/theme/colors';
 import { AccessibilityProvider } from '@/providers/AccessibilityProvider';
-import { bootstrapEncryptedStorage } from '@/services/supabase';
 
 const queryClient = new QueryClient();
 
@@ -23,10 +21,6 @@ export default function RootLayout() {
     'IMFellEnglish-Italic': require('../assets/fonts/IMFellEnglish-Italic.ttf'),
     'OpenDyslexic-Regular': require('../assets/fonts/OpenDyslexic-Regular.ttf'),
   });
-
-  useEffect(() => {
-    bootstrapEncryptedStorage().catch(() => {});
-  }, []);
 
   if (!fontsLoaded) {
     return (

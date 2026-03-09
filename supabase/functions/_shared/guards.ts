@@ -60,7 +60,7 @@ export async function checkRateLimit(
 
   if (error) {
     console.error('rate_limit_read_error', { userId, endpoint, error: error.message });
-    return false; // fail-closed
+    return true; // fail-open: don't block gameplay on DB errors
   }
 
   if (!data || new Date(data.window_start) < windowStart) {
@@ -75,7 +75,7 @@ export async function checkRateLimit(
 
     if (upsertError) {
       console.error('rate_limit_upsert_error', { userId, endpoint, error: upsertError.message });
-      return false; // fail-closed
+      return true; // fail-open: don't block gameplay on DB errors
     }
     return true;
   }
@@ -90,7 +90,7 @@ export async function checkRateLimit(
 
   if (updateError) {
     console.error('rate_limit_update_error', { userId, endpoint, error: updateError.message });
-    return false; // fail-closed
+    return true; // fail-open: don't block gameplay on DB errors
   }
 
   return true;

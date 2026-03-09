@@ -97,26 +97,41 @@ function stripJsonArtifacts(text: string): string {
  * Handles both snake_case and camelCase input.
  */
 export function normalizeResponse(raw: any): any {
-  const result: any = {
-    mode: raw.mode || 'exploration',
-    narration: raw.narration || raw.narrative || '',
-  };
+  let narration = raw.narration || raw.narrative || '';
 
-  // Detect if narration accidentally contains JSON
-  if (result.narration && looksLikeJson(result.narration)) {
+  // Strip markdown code block wrappers from narration (Claude sometimes nests them)
+  const cbMatch = narration.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (cbMatch) {
+    const inner = cbMatch[1].trim();
+    // Try parsing as JSON to extract real narration
     try {
-      const inner = JSON.parse(result.narration);
-      if (inner.narration || inner.narrative) {
-        result.narration = inner.narration || inner.narrative;
-      } else {
-        result.narration = 'The story continues...';
-      }
+      const parsed = JSON.parse(inner.match(/\{[\s\S]*\}/)?.[0] || inner);
+      narration = parsed.narration || parsed.narrative || inner;
     } catch {
-      // Not valid JSON — strip artifacts
-      const cleaned = stripJsonArtifacts(result.narration);
-      result.narration = cleaned || 'The story continues...';
+      // Not JSON inside the code block — use the raw inner text
+      narration = inner || narration;
     }
   }
+
+  // Detect if narration still contains JSON
+  if (narration && looksLikeJson(narration)) {
+    try {
+      const inner = JSON.parse(narration);
+      if (inner.narration || inner.narrative) {
+        narration = inner.narration || inner.narrative;
+      } else {
+        narration = 'The story continues...';
+      }
+    } catch {
+      const cleaned = stripJsonArtifacts(narration);
+      narration = cleaned || 'The story continues...';
+    }
+  }
+
+  const result: any = {
+    mode: raw.mode || 'exploration',
+    narration,
+  };
 
   if (raw.location) result.location = raw.location;
   if (raw.mood) result.mood = raw.mood;

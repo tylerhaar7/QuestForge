@@ -262,8 +262,8 @@ Deno.serve(async (req) => {
       campaignUpdates.combat_state = campaign.combat_state;
     }
 
-    // Auto-end tutorial after turn 6 or if AI signals completion
-    if (campaign.is_tutorial && (normalized.tutorialComplete || campaign.turn_count + 1 >= 6)) {
+    // Auto-end tutorial after player responds to turn 6 (visible turn 7)
+    if (campaign.is_tutorial && (normalized.tutorialComplete || campaign.turn_count + 1 >= 7)) {
       campaignUpdates.is_tutorial = false;
       normalized.tutorialComplete = true;
     }
@@ -293,6 +293,7 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('game-turn error:', error);
-    return errorResponse('An unexpected error occurred. Please try again.', 500, headers);
+    const msg = error instanceof Error ? error.message : String(error);
+    return errorResponse(`Server error: ${msg}`, 500, headers);
   }
 });
