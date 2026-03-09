@@ -1,6 +1,5 @@
-import { supabase, getCurrentUserId } from './supabase';
+import { supabase } from './supabase';
 import type { Character, AbilityScores } from '@/types/game';
-import type { EquipmentItem } from '@/types/game';
 
 // Map Character object to Supabase row (camelCase → snake_case)
 function toRow(char: Omit<Character, 'id' | 'createdAt' | 'updatedAt'>) {
@@ -82,18 +81,6 @@ export async function createCharacter(
   return fromRow(data);
 }
 
-export async function getCharacters(): Promise<Character[]> {
-  const userId = await getCurrentUserId();
-  const { data, error } = await supabase
-    .from('characters')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
-
-  if (error) throw new Error(`Failed to fetch characters: ${error.message}`);
-  return (data ?? []).map(fromRow);
-}
-
 export async function getCharacter(id: string): Promise<Character> {
   const { data, error } = await supabase
     .from('characters')
@@ -103,13 +90,4 @@ export async function getCharacter(id: string): Promise<Character> {
 
   if (error) throw new Error(`Failed to fetch character: ${error.message}`);
   return fromRow(data);
-}
-
-export async function deleteCharacter(id: string): Promise<void> {
-  const { error } = await supabase
-    .from('characters')
-    .delete()
-    .eq('id', id);
-
-  if (error) throw new Error(`Failed to delete character: ${error.message}`);
 }

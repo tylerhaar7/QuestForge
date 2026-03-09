@@ -58,12 +58,18 @@ export default function IndexScreen() {
 
       setDebugMsg('Logged in, checking characters...');
       // Check if user has any characters
-      const { data: characters } = await supabase
+      const { data: characters, error: charactersError } = await supabase
         .from('characters')
         .select('*')
         .eq('user_id', session.user.id)
         .order('created_at', { ascending: false })
         .limit(1);
+
+      if (charactersError) {
+        console.error('Failed to load characters:', charactersError);
+        setDebugMsg(`Error loading characters: ${charactersError.message}`);
+        return;
+      }
 
       if (!characters || characters.length === 0) {
         setDebugMsg('No characters, going to create...');
@@ -73,12 +79,18 @@ export default function IndexScreen() {
 
       setDebugMsg('Found character, checking campaigns...');
       // Check for active campaign
-      const { data: campaigns } = await supabase
+      const { data: campaigns, error: campaignsError } = await supabase
         .from('campaigns')
         .select('*')
         .eq('user_id', session.user.id)
         .order('updated_at', { ascending: false })
         .limit(1);
+
+      if (campaignsError) {
+        console.error('Failed to load campaigns:', campaignsError);
+        setDebugMsg(`Error loading campaigns: ${campaignsError.message}`);
+        return;
+      }
 
       if (!campaigns || campaigns.length === 0) {
         router.replace({

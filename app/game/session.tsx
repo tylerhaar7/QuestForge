@@ -78,7 +78,7 @@ export default function GameSessionScreen() {
   }, [setNarrationComplete]);
 
   const handleApprovalsDismissed = useCallback(() => {
-    // Clear pending approvals from store
+    useGameStore.getState().clearPendingApprovals();
   }, []);
 
   const [freeformText, setFreeformText] = React.useState('');

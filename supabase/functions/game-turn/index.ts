@@ -153,17 +153,14 @@ Deno.serve(async (req) => {
       apiKey: Deno.env.get('ANTHROPIC_API_KEY'),
     });
 
-    // Prefill assistant with '{' to force raw JSON output (no code fences)
-    const prefillMessages = [...messages, { role: 'assistant' as const, content: '{' }];
-
     const claudeResponse = await anthropic.messages.create({
       model,
       max_tokens: 1024,
       system: systemPrompt,
-      messages: prefillMessages,
+      messages,
     });
 
-    const rawText = '{' + claudeResponse.content
+    const rawText = claudeResponse.content
       .filter((block: any) => block.type === 'text')
       .map((block: any) => block.text)
       .join('');
@@ -208,16 +205,14 @@ Deno.serve(async (req) => {
         },
       ];
 
-      const followUpPrefill = [...followUpMessages, { role: 'assistant' as const, content: '{' }];
-
       const followUpResponse = await anthropic.messages.create({
         model,
         max_tokens: 1024,
         system: systemPrompt,
-        messages: followUpPrefill,
+        messages: followUpMessages,
       });
 
-      const followUpText = '{' + followUpResponse.content
+      const followUpText = followUpResponse.content
         .filter((block: any) => block.type === 'text')
         .map((block: any) => block.text)
         .join('');
@@ -238,11 +233,14 @@ Deno.serve(async (req) => {
           comp.approvalScore = Math.max(0, Math.min(100, comp.approvalScore + change.delta));
         }
         // Also update companion_states table
-        await adminClient
+        const { error: compUpdateErr } = await adminClient
           .from('companion_states')
           .update({ approval_score: comp?.approvalScore ?? 50 })
           .eq('campaign_id', campaignId)
           .eq('companion_name', change.companion);
+        if (compUpdateErr) {
+          console.error('companion_states update failed', { campaignId, companion: change.companion, error: compUpdateErr.message });
+        }
       }
     }
 
@@ -273,14 +271,21 @@ Deno.serve(async (req) => {
       normalized.tutorialComplete = true;
     }
 
-    await adminClient.from('campaigns').update(campaignUpdates).eq('id', campaignId);
+    const { error: campUpdateErr } = await adminClient.from('campaigns').update(campaignUpdates).eq('id', campaignId);
+    if (campUpdateErr) {
+      console.error('campaign update failed', { campaignId, error: campUpdateErr.message });
+      return errorResponse('Failed to save game state.', 500, headers);
+    }
 
     // Apply HP changes to character if needed
     if (normalized.stateChanges) {
       for (const change of normalized.stateChanges) {
         if (change.type === 'hp' && change.target === character.name) {
           const newHp = Math.max(0, Math.min(character.max_hp, character.hp + Number(change.value)));
-          await adminClient.from('characters').update({ hp: newHp }).eq('id', character.id);
+          const { error: hpUpdateErr } = await adminClient.from('characters').update({ hp: newHp }).eq('id', character.id);
+          if (hpUpdateErr) {
+            console.error('character HP update failed', { characterId: character.id, error: hpUpdateErr.message });
+          }
         }
       }
     }

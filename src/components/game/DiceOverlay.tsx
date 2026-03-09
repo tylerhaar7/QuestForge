@@ -9,6 +9,8 @@ import { DICE_SKINS, DEFAULT_DICE_SKIN } from '@/data/diceSkins';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import type { DiceRollResult } from '@/types/game';
 
+// TODO(feature-flag): Feature-staged for combat UI. Not yet wired into game session. See docs/tech-debt.md.
+
 interface DiceOverlayProps {
   roll: DiceRollResult;
   onComplete: () => void;

@@ -48,6 +48,11 @@ export function parseAIJson(rawText: string): any {
   };
 }
 
+/**
+ * Attempt JSON.parse with two repair strategies for common Claude output issues:
+ * 1. Remove trailing commas before closing braces/brackets
+ * 2. Normalize smart quotes (curly quotes from rich-text sources) to straight quotes
+ */
 function tryParseJson(text: string): any | null {
   try {
     return JSON.parse(text);
@@ -143,6 +148,15 @@ export function normalizeResponse(raw: any): any {
     narration = 'The story continues...';
   }
 
+  // Claude sometimes double-escapes characters in JSON string values.
+  // When the response is JSON.stringify'd again for the HTTP response,
+  // literal "\n" sequences survive as two characters instead of a newline.
+  narration = narration
+    .replace(/\\n/g, '\n')
+    .replace(/\\"/g, '"')
+    .replace(/\\\\/g, '\\')
+    .replace(/\\\//g, '/');
+
   const result: any = {
     mode: raw.mode || 'exploration',
     narration,
@@ -220,6 +234,10 @@ function looksLikeJson(text: string): boolean {
   return jsonPatterns >= 3;
 }
 
+/**
+ * Heuristic to detect whether text is actual prose vs JSON/code debris.
+ * Requires: >= 20 chars, >= 45% alphabetic characters, >= 6 words.
+ */
 function isNarrativeText(text: string): boolean {
   if (!text) return false;
   const trimmed = text.trim();

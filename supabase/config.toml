@@ -1,0 +1,7 @@
+# Edge Functions — JWT verification disabled at gateway level.
+# Auth is handled manually inside each function via supabase.auth.getUser().
+[functions.campaign-init]
+verify_jwt = false
+
+[functions.game-turn]
+verify_jwt = false

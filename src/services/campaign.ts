@@ -47,21 +47,26 @@ async function invokeEdgeFunction<T>(
   let accessToken = sessionData.session.access_token;
   const expiresAt = sessionData.session.expires_at ?? 0;
   const now = Math.floor(Date.now() / 1000);
-  const expiresSoon = expiresAt > 0 && expiresAt - now < 90;
 
-  if (expiresSoon) {
+  if (expiresAt > 0 && expiresAt - now < 90) {
     const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
     if (!refreshError && refreshed.session?.access_token) {
       accessToken = refreshed.session.access_token;
     }
   }
 
-  const { data, error } = await supabase.functions.invoke(fnName, {
-    body,
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
+  let data: any;
+  let error: any;
+  try {
+    const result = await supabase.functions.invoke(fnName, {
+      body,
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    data = result.data;
+    error = result.error;
+  } catch (fetchErr: any) {
+    throw new Error(`${failurePrefix}: Network error — ${fetchErr?.message || 'check your connection'}`);
+  }
 
   if (error) {
     let message = error.message;

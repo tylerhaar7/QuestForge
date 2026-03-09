@@ -45,9 +45,13 @@ AI-powered solo D&D 5e mobile RPG. Claude serves as the Dungeon Master, narratin
 
 5. Deploy Edge Functions:
    ```bash
-   supabase functions deploy game-turn
-   supabase functions deploy campaign-init
+   supabase functions deploy game-turn --no-verify-jwt --project-ref <your-project-ref>
+   supabase functions deploy campaign-init --no-verify-jwt --project-ref <your-project-ref>
    ```
+   > **Important:** `--no-verify-jwt` is required. This project verifies JWTs inside
+   > each function via `supabase.auth.getUser()`. The Supabase gateway's legacy JWT
+   > verification must remain disabled — CLI deploys reset it to enabled by default.
+   > The `supabase/config.toml` also sets `verify_jwt = false` per function.
 
 6. Start the dev server:
    ```bash
@@ -120,7 +124,7 @@ supabase/
 - Dynamic CORS with env-configurable allowed origins
 - Sanitized error responses (no internal details leak to clients)
 - MMKV encryption key stored in device keychain via expo-secure-store
-- JWT gateway verification enabled on all Edge Functions
+- JWT gateway verification disabled; each Edge Function verifies tokens via `supabase.auth.getUser()`
 - Anthropic API key lives only in Supabase secrets (never in client code)
 
 See `docs/security-smoke-tests.md` for the full verification checklist.

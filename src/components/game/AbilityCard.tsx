@@ -7,6 +7,8 @@ import * as Haptics from 'expo-haptics';
 import { colors } from '@/theme/colors';
 import { fonts, spacing } from '@/theme/typography';
 
+// TODO(feature-flag): Feature-staged for combat UI. Not yet wired into game session. See docs/tech-debt.md.
+
 type AbilityType = 'attack' | 'spell' | 'reaction' | 'bonus' | 'heal';
 
 interface AbilityCardProps {

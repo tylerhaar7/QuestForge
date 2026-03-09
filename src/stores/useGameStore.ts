@@ -51,6 +51,9 @@ interface GameState {
   // Tutorial
   clearTutorialComplete: () => void;
 
+  // Approvals
+  clearPendingApprovals: () => void;
+
   // Reset
   resetSession: () => void;
 }
@@ -115,6 +118,13 @@ export const useGameStore = create<GameState>((set, get) => ({
         narration = 'The story continues...';
       }
     }
+
+    // Clean up escaped characters that survive JSON serialization
+    narration = narration
+      .replace(/\\n/g, '\n')
+      .replace(/\\"/g, '"')
+      .replace(/\\\\/g, '\\')
+      .replace(/\\\//g, '/');
 
     set({
       currentNarration: narration,
@@ -182,6 +192,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   clearTutorialComplete: () => set({ isTutorialComplete: false }),
+
+  clearPendingApprovals: () => set({ pendingApprovalChanges: [] }),
 
   resetSession: () => set(initialState),
 }));

@@ -3,6 +3,8 @@ import { useFrame } from '@react-three/fiber/native';
 import * as THREE from 'three';
 import type { DiceSkin } from '@/data/diceSkins';
 
+// TODO(feature-flag): Feature-staged for combat UI. Not yet wired into game session. See docs/tech-debt.md.
+
 interface D20MeshProps {
   skin: DiceSkin;
   phase: 'tumbling' | 'landing' | 'settled';

@@ -259,19 +259,16 @@ Deno.serve(async (req) => {
       apiKey: Deno.env.get('ANTHROPIC_API_KEY'),
     });
 
-    // Prefill assistant with '{' to force raw JSON output (no code fences)
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 1024,
       system: systemPrompt,
       messages: [
         { role: 'user', content: userMessage },
-        { role: 'assistant', content: '{' },
       ],
     });
 
-    // Extract text from response (prepend the '{' we used as prefill)
-    const rawText = '{' + response.content
+    const rawText = response.content
       .filter((block: any) => block.type === 'text')
       .map((block: any) => block.text)
       .join('');
@@ -322,7 +319,8 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('campaign-init error:', error);
-    return errorResponse('An unexpected error occurred. Please try again.', 500, headers);
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error('campaign-init error:', msg, error);
+    return errorResponse(`Server error: ${msg}`, 500, headers);
   }
 });
