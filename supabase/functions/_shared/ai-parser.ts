@@ -40,7 +40,13 @@ export function parseAIJson(rawText: string): any {
     }
   }
 
-  // Strategy 4: Fallback — extract only the non-JSON prose as narration
+  // Strategy 4: Regex extraction of individual fields from malformed JSON.
+  // Claude's JSON often fails to parse due to unescaped quotes in dialogue,
+  // but individual field values (especially narration) are usually intact.
+  const regexExtracted = extractFieldsViaRegex(rawText);
+  if (regexExtracted) return regexExtracted;
+
+  // Strategy 5: Last resort — extract only the non-JSON prose as narration
   const cleanedNarration = stripJsonArtifacts(rawText);
   return {
     mode: 'exploration',
@@ -91,6 +97,69 @@ function extractNarrativeText(rawText: string, jsonStartIndex: number): string {
     return before;
   }
   return '';
+}
+
+/**
+ * Extract individual fields from malformed JSON using regex.
+ * When Claude's JSON has unescaped quotes in dialogue (e.g. He said "hello"),
+ * JSON.parse fails but the individual field values are usually intact.
+ * We extract narration (and other key fields) directly via pattern matching.
+ */
+function extractFieldsViaRegex(rawText: string): any | null {
+  // Try to extract narration — the most important field.
+  // Match "narration": "..." or "narrative": "..." accounting for escaped quotes inside.
+  const narrationMatch = rawText.match(/"narrat(?:ion|ive)"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+  if (!narrationMatch) return null;
+
+  let narration: string;
+  try {
+    // Parse the matched string value to handle escape sequences properly
+    narration = JSON.parse('"' + narrationMatch[1] + '"');
+  } catch {
+    // If JSON.parse fails on the extracted value, manually unescape common sequences
+    narration = narrationMatch[1]
+      .replace(/\\n/g, '\n')
+      .replace(/\\"/g, '"')
+      .replace(/\\\\/g, '\\')
+      .replace(/\\\//g, '/');
+  }
+
+  if (!isNarrativeText(narration)) return null;
+
+  const result: any = { narration };
+
+  // Extract mode
+  const modeMatch = rawText.match(/"mode"\s*:\s*"(exploration|combat|social|camp|threshold)"/);
+  result.mode = modeMatch ? modeMatch[1] : 'exploration';
+
+  // Extract location
+  const locationMatch = rawText.match(/"location"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+  if (locationMatch) result.location = locationMatch[1];
+
+  // Extract mood
+  const moodMatch = rawText.match(/"mood"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+  if (moodMatch) result.mood = moodMatch[1];
+
+  // Try to extract choices array — find each choice text
+  const choiceTexts = [...rawText.matchAll(/"text"\s*:\s*"((?:[^"\\]|\\.)*)"/g)];
+  if (choiceTexts.length > 0) {
+    result.choices = choiceTexts.map((m) => ({
+      text: m[1].replace(/\\"/g, '"').replace(/\\n/g, '\n'),
+      type: 'action',
+    }));
+  }
+
+  // Try to extract approval_changes
+  const approvalMatches = [...rawText.matchAll(/"companion"\s*:\s*"((?:[^"\\]|\\.)*)"\s*,\s*"delta"\s*:\s*(-?\d+)/g)];
+  if (approvalMatches.length > 0) {
+    result.approval_changes = approvalMatches.map((m) => ({
+      companion: m[1],
+      delta: Number(m[2]),
+      reason: '',
+    }));
+  }
+
+  return result;
 }
 
 /**
@@ -147,6 +216,11 @@ export function normalizeResponse(raw: any): any {
   } else if (!isNarrativeText(narration)) {
     narration = 'The story continues...';
   }
+
+  // Light sanitization: strip residual JSON artifacts that survive even when
+  // narration passes isNarrativeText (e.g. scattered quotes, commas, colons
+  // from partially stripped JSON values mixed into prose).
+  narration = stripNarrationResidues(narration);
 
   // Claude sometimes double-escapes characters in JSON string values.
   // When the response is JSON.stringify'd again for the HTTP response,
@@ -221,6 +295,32 @@ export function normalizeResponse(raw: any): any {
   if (raw.tutorial_complete || raw.tutorialComplete) result.tutorialComplete = true;
 
   return result;
+}
+
+/**
+ * Light cleanup pass for narration that is mostly prose but has scattered
+ * JSON residue — quoted field values, trailing commas, key-colon patterns.
+ * Unlike stripJsonArtifacts (which aggressively removes everything non-prose),
+ * this preserves the narrative structure while removing obvious artifacts.
+ */
+function stripNarrationResidues(text: string): string {
+  let cleaned = text;
+  // Remove JSON key patterns like "mode": or "narration":
+  cleaned = cleaned.replace(/"[\w_]+":\s*/g, '');
+  // Remove isolated quoted short tokens (JSON values like "tavern", "combat")
+  // but preserve longer quoted dialogue
+  cleaned = cleaned.replace(/(?<!\w)"([^"]{1,20})"(?=[,\s}\]]|$)/gm, '$1');
+  // Remove trailing/leading commas that aren't part of prose
+  cleaned = cleaned.replace(/^\s*,\s*/gm, '');
+  cleaned = cleaned.replace(/,\s*$/gm, '');
+  // Remove isolated braces/brackets
+  cleaned = cleaned.replace(/^\s*[{}\[\]]\s*$/gm, '');
+  // Remove lines that are just numbers or booleans (leaked JSON values)
+  cleaned = cleaned.replace(/^\s*-?\d+(?:\.\d+)?\s*$/gm, '');
+  cleaned = cleaned.replace(/^\s*(?:true|false|null)\s*$/gim, '');
+  // Collapse multiple newlines
+  cleaned = cleaned.replace(/\n{3,}/g, '\n\n').trim();
+  return cleaned;
 }
 
 /**

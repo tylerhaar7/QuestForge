@@ -119,6 +119,19 @@ export const useGameStore = create<GameState>((set, get) => ({
       }
     }
 
+    // Light cleanup: strip residual JSON artifacts (key patterns, short quoted tokens,
+    // isolated numbers/booleans) that may survive even when narration is mostly prose.
+    narration = narration
+      .replace(/"[\w_]+":\s*/g, '')
+      .replace(/(?<!\w)"([^"]{1,20})"(?=[,\s}\]]|$)/gm, '$1')
+      .replace(/^\s*,\s*/gm, '')
+      .replace(/,\s*$/gm, '')
+      .replace(/^\s*[{}\[\]]\s*$/gm, '')
+      .replace(/^\s*-?\d+(?:\.\d+)?\s*$/gm, '')
+      .replace(/^\s*(?:true|false|null)\s*$/gim, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+
     // Clean up escaped characters that survive JSON serialization
     narration = narration
       .replace(/\\n/g, '\n')
