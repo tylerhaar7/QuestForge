@@ -155,7 +155,7 @@ Deno.serve(async (req) => {
 
     const claudeResponse = await anthropic.messages.create({
       model,
-      max_tokens: 1024,
+      max_tokens: 2048,
       system: systemPrompt,
       messages,
     });
@@ -207,7 +207,7 @@ Deno.serve(async (req) => {
 
       const followUpResponse = await anthropic.messages.create({
         model,
-        max_tokens: 1024,
+        max_tokens: 2048,
         system: systemPrompt,
         messages: followUpMessages,
       });
