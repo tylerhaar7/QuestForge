@@ -74,7 +74,8 @@ function renderMarkdown(
 export function NarrativeText({ text, speed, onComplete }: NarrativeTextProps) {
   const { textSpeed: settingsSpeed, skipAnimations, hapticsEnabled, font: getFont, fontSize: scaleFontSize } = useAccessibility();
   const effectiveSpeed = speed ?? settingsSpeed;
-  const delayMs = skipAnimations ? 0 : (SPEED_MS[effectiveSpeed] || SPEED_MS.normal);
+  const delayMs = skipAnimations ? 0 : (SPEED_MS[effectiveSpeed] ?? SPEED_MS.normal);
+  console.log('[NarrativeText] speed debug', { speed, settingsSpeed, effectiveSpeed, delayMs });
 
   const [displayedText, setDisplayedText] = useState('');
   const [isComplete, setIsComplete] = useState(false);

@@ -276,7 +276,6 @@ export default function GameSessionScreen() {
             ) : (
               <NarrativeText
                 text={currentNarration}
-                speed="normal"
                 onComplete={handleNarrationComplete}
               />
             )}

@@ -196,6 +196,8 @@ export const CAMPAIGN_INIT_GENERATED_PROMPT = `Create an opening adventure for t
 3. Introduction of the three companions (Korrin, Sera, Thaelen) naturally in the scene
 4. 3-4 initial choices for the player
 
+NAMING: Avoid overused fantasy words like "ash", "shadow", "raven", "thorn", "veil" — use them sparingly if at all. Draw from varied sources: geology, trade, weather, local history. Be creative and surprising.
+
 Set the mood and location. Make it feel like the first page of an epic novel.`;
 
 export function buildCampaignInitCustomPrompt(customPrompt: string): string {
