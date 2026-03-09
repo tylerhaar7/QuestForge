@@ -1,7 +1,7 @@
 // Game Session — Main gameplay screen
 // Layout: Narrative (60%) → Party strip (15%) → Choices (25%)
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, StyleSheet, FlatList, ActivityIndicator, Text, SafeAreaView, TextInput, Pressable, Keyboard, ScrollView, KeyboardAvoidingView, Platform, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/theme/colors';
@@ -11,6 +11,7 @@ import { NarrativeText } from '@/components/game/NarrativeText';
 import { ChoiceButton } from '@/components/game/ChoiceButton';
 import { PartyCard } from '@/components/game/PartyCard';
 import { ApprovalStack } from '@/components/game/ApprovalIndicator';
+import { DiceOverlay2D } from '@/components/game/DiceOverlay2D';
 import { submitAction } from '@/services/campaign';
 import type { Choice, Companion } from '@/types/game';
 
@@ -34,10 +35,9 @@ export default function GameSessionScreen() {
     resetSession,
   } = useGameStore();
 
-  // Auto-drain dice queue until 3D overlay is available (needs native rebuild)
-  useEffect(() => {
-    if (activeDiceRoll) shiftDiceRoll();
-  }, [activeDiceRoll, shiftDiceRoll]);
+  const handleDiceComplete = useCallback(() => {
+    shiftDiceRoll();
+  }, [shiftDiceRoll]);
 
   const handleChoicePress = useCallback(async (choice: Choice) => {
     if (!campaign) return;
@@ -47,7 +47,13 @@ export default function GameSessionScreen() {
     store.setError(null);
 
     try {
-      const result = await submitAction(campaign.id, choice.text);
+      // If the choice has a skill check, include it so the server can enforce dice_requests
+      let actionText = choice.text;
+      if (choice.skillCheck) {
+        actionText += ` [SKILL CHECK REQUIRED: ${choice.skillCheck.skill} DC ${choice.skillCheck.dc}]`;
+      }
+
+      const result = await submitAction(campaign.id, actionText);
 
       // Update companions in campaign
       if (result.companions) {
@@ -357,7 +363,10 @@ export default function GameSessionScreen() {
           />
         )}
 
-        {/* 3D DiceOverlay disabled until native rebuild (expo-gl required) */}
+        {/* Dice Roll Overlay */}
+        {activeDiceRoll && (
+          <DiceOverlay2D roll={activeDiceRoll} onComplete={handleDiceComplete} />
+        )}
       </KeyboardAvoidingView>
 
       {/* Menu Modal */}

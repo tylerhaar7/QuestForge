@@ -12,6 +12,59 @@ import type { CompanionData } from '../_shared/types.ts';
 
 const MAX_TURN_HISTORY = 20;
 
+// Maps natural language patterns to D&D skills for freeform skill check detection.
+// Each entry: [regex pattern, skill name, default DC]
+const SKILL_PATTERNS: [RegExp, string, number][] = [
+  // Explicit skill mentions: "roll arcana", "make a stealth check", "pass a perception check"
+  [/(?:roll|check|pass|make|attempt|try).*?\b(stealth)\b/i, 'stealth', 14],
+  [/(?:roll|check|pass|make|attempt|try).*?\b(perception)\b/i, 'perception', 13],
+  [/(?:roll|check|pass|make|attempt|try).*?\b(arcana)\b/i, 'arcana', 14],
+  [/(?:roll|check|pass|make|attempt|try).*?\b(religion)\b/i, 'religion', 13],
+  [/(?:roll|check|pass|make|attempt|try).*?\b(history)\b/i, 'history', 12],
+  [/(?:roll|check|pass|make|attempt|try).*?\b(nature)\b/i, 'nature', 12],
+  [/(?:roll|check|pass|make|attempt|try).*?\b(investigation)\b/i, 'investigation', 13],
+  [/(?:roll|check|pass|make|attempt|try).*?\b(insight)\b/i, 'insight', 13],
+  [/(?:roll|check|pass|make|attempt|try).*?\b(persuasion)\b/i, 'persuasion', 14],
+  [/(?:roll|check|pass|make|attempt|try).*?\b(deception)\b/i, 'deception', 14],
+  [/(?:roll|check|pass|make|attempt|try).*?\b(intimidation)\b/i, 'intimidation', 14],
+  [/(?:roll|check|pass|make|attempt|try).*?\b(athletics)\b/i, 'athletics', 13],
+  [/(?:roll|check|pass|make|attempt|try).*?\b(acrobatics)\b/i, 'acrobatics', 13],
+  [/(?:roll|check|pass|make|attempt|try).*?\b(medicine)\b/i, 'medicine', 12],
+  [/(?:roll|check|pass|make|attempt|try).*?\b(survival)\b/i, 'survival', 12],
+  [/(?:roll|check|pass|make|attempt|try).*?\b(performance)\b/i, 'performance', 13],
+  [/(?:roll|check|pass|make|attempt|try).*?\b(sleight.?of.?hand)\b/i, 'sleight_of_hand', 14],
+  [/(?:roll|check|pass|make|attempt|try).*?\b(animal.?handling)\b/i, 'animal_handling', 12],
+  // Action-based detection: "I try to sneak", "I attempt to persuade"
+  [/\b(?:sneak|hide|creep|slip)\b/i, 'stealth', 14],
+  [/\b(?:persuade|convince|talk.*into|reason with)\b/i, 'persuasion', 14],
+  [/\b(?:deceive|lie|bluff|trick)\b/i, 'deception', 14],
+  [/\b(?:intimidate|threaten|scare|menace)\b/i, 'intimidation', 14],
+  [/\b(?:pick.*lock|lockpick|pickpocket|steal)\b/i, 'sleight_of_hand', 14],
+  [/\b(?:climb|jump|swim|lift|break.*down|force.*open)\b/i, 'athletics', 13],
+  [/\b(?:dodge|tumble|balance|flip)\b/i, 'acrobatics', 13],
+  [/\b(?:search|look.*for|examine|inspect|investigate)\b/i, 'investigation', 13],
+  [/\b(?:listen|watch|spot|notice|sense)\b/i, 'perception', 13],
+  [/\b(?:heal|treat|bandage|stabilize)\b/i, 'medicine', 12],
+  [/\b(?:track|forage|navigate|survive)\b/i, 'survival', 12],
+  [/\b(?:read.*motive|sense.*lie|see.*through)\b/i, 'insight', 13],
+  [/\b(?:recall|remember|identify.*magic|detect.*magic|commune|pray)\b/i, 'arcana', 14],
+];
+
+function detectSkillCheckFromText(text: string): { skill: string; dc: number } | null {
+  const lower = text.toLowerCase();
+  // Skip if the text is clearly conversational (very short or no action verbs)
+  if (lower.length < 10) return null;
+  // Skip if it's just dialogue or a simple statement
+  if (/^["']/.test(lower) || /^i\s+say\b/i.test(lower)) return null;
+
+  for (const [pattern, skill, dc] of SKILL_PATTERNS) {
+    if (pattern.test(text)) {
+      return { skill, dc };
+    }
+  }
+  return null;
+}
+
 const TUTORIAL_TURN_INSTRUCTIONS: Record<number, string> = {
   1: `TUTORIAL TURN 1 — TEACHING: Narrative Choices
 You are running a tutorial. This is the player's FIRST turn.
@@ -143,7 +196,48 @@ Deno.serve(async (req) => {
     for (const turn of recentHistory) {
       messages.push({ role: turn.role, content: turn.content });
     }
-    messages.push({ role: 'user', content: action });
+    // Detect skill check requirements and resolve dice before calling Claude.
+    // Source 1: [SKILL CHECK REQUIRED: skill DC X] tag from choice buttons
+    // Source 2: Freeform text that implies a skill check (e.g. "I try to sneak")
+    let preRolledResults: string[] = [];
+    let preRolledStructured: any[] = [];
+    let cleanAction = action;
+
+    const tagMatch = action.match(/\[SKILL CHECK REQUIRED:\s*(\w+)\s+DC\s*(\d+)\]/i);
+
+    if (tagMatch) {
+      const skill = tagMatch[1].toLowerCase();
+      const dc = parseInt(tagMatch[2]);
+      cleanAction = action.replace(tagMatch[0], '').trim();
+
+      const { results, structuredResults: sr } = processDiceRequests(
+        [{ type: 'skill_check', roller: character.name, ability: skill, target: '', dc, formula: '' }],
+        character, []
+      );
+      preRolledResults = results;
+      preRolledStructured = sr;
+    } else {
+      // Detect freeform skill check intent from natural language
+      const detected = detectSkillCheckFromText(action);
+      if (detected) {
+        const { results, structuredResults: sr } = processDiceRequests(
+          [{ type: 'skill_check', roller: character.name, ability: detected.skill, target: '', dc: detected.dc, formula: '' }],
+          character, []
+        );
+        preRolledResults = results;
+        preRolledStructured = sr;
+      }
+    }
+
+    // If we pre-rolled a skill check, inject the result into the user message
+    if (preRolledResults.length > 0) {
+      messages.push({
+        role: 'user',
+        content: `${cleanAction}\n\n[GAME ENGINE RESULTS]\n${preRolledResults.join('\n')}\n\nNarrate this outcome. Do NOT recalculate. Include new choices for the player.`,
+      });
+    } else {
+      messages.push({ role: 'user', content: action });
+    }
 
     // Select model
     const model = selectModel(campaign.current_mode, campaign.current_mood);
@@ -167,10 +261,20 @@ Deno.serve(async (req) => {
 
     let aiResponse = parseAIJson(rawText);
 
+    // Debug: log whether Claude returned dice_requests
+    const rawDiceCheck = aiResponse.dice_requests || aiResponse.diceRequests || [];
+    console.log('game-turn debug', {
+      hasDiceRequests: rawDiceCheck.length > 0,
+      diceRequestCount: rawDiceCheck.length,
+      mode: aiResponse.mode,
+      hasChoices: Array.isArray(aiResponse.choices) && aiResponse.choices.length > 0,
+      actionSnippet: action.substring(0, 80),
+    });
+
     // If dice_requests present, resolve and call Claude again for narration
     const diceRequests = aiResponse.dice_requests || aiResponse.diceRequests || [];
-    let diceResults: string[] = [];
-    let structuredResults: any[] = [];
+    let diceResults: string[] = [...preRolledResults];
+    let structuredResults: any[] = [...preRolledStructured];
 
     if (diceRequests.length > 0) {
       // Extract enemies from combat state

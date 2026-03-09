@@ -1,13 +1,15 @@
 // NarrativeText — Typewriter text with tap-to-complete
 // Font: IM Fell English (narrative), warm off-white text on dark bg
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Text, Pressable, StyleSheet, ScrollView } from 'react-native';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { Text, Pressable, StyleSheet, ScrollView, type TextStyle } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { colors } from '@/theme/colors';
-import { textStyles, spacing } from '@/theme/typography';
+import { textStyles, spacing, fonts } from '@/theme/typography';
 import { useAccessibility } from '@/providers/AccessibilityProvider';
+
+type FontKey = keyof typeof fonts;
 
 interface NarrativeTextProps {
   text: string;
@@ -21,6 +23,53 @@ const SPEED_MS: Record<string, number> = {
   normal: 30,
   slow: 50,
 };
+
+// Parse **bold** and *italic* markdown into styled Text spans
+function renderMarkdown(
+  text: string,
+  baseStyle: TextStyle,
+  getFont: (key: FontKey) => string,
+): React.ReactNode[] {
+  // Split on bold (**text**) and italic (*text*) patterns
+  // Order matters: check bold first since ** contains *
+  const parts: React.ReactNode[] = [];
+  const regex = /(\*\*(.+?)\*\*|\*(.+?)\*)/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  let key = 0;
+
+  while ((match = regex.exec(text)) !== null) {
+    // Add preceding plain text
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+
+    if (match[2]) {
+      // Bold: **text**
+      parts.push(
+        <Text key={key++} style={{ fontFamily: getFont('headingRegular') }}>
+          {match[2]}
+        </Text>
+      );
+    } else if (match[3]) {
+      // Italic: *text*
+      parts.push(
+        <Text key={key++} style={{ fontStyle: 'italic' }}>
+          {match[3]}
+        </Text>
+      );
+    }
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Add remaining text
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return parts.length > 0 ? parts : [text];
+}
 
 export function NarrativeText({ text, speed, onComplete }: NarrativeTextProps) {
   const { textSpeed: settingsSpeed, skipAnimations, hapticsEnabled, font: getFont, fontSize: scaleFontSize } = useAccessibility();
@@ -86,11 +135,22 @@ export function NarrativeText({ text, speed, onComplete }: NarrativeTextProps) {
     };
   }, [text, effectiveSpeed, delayMs, skipAnimations, hapticsEnabled]);
 
+  const baseTextStyle: TextStyle = useMemo(() => ({
+    ...textStyles.narrative,
+    color: colors.text.primary,
+    fontFamily: getFont('narrative'),
+    fontSize: scaleFontSize(16),
+  }), [getFont, scaleFontSize]);
+
+  const renderedText = useMemo(() => {
+    return renderMarkdown(displayedText, baseTextStyle, getFont);
+  }, [displayedText, baseTextStyle, getFont]);
+
   return (
     <Pressable onPress={isComplete ? undefined : completeText} style={styles.container}>
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         <Animated.View style={animatedStyle}>
-          <Text style={[styles.text, { fontFamily: getFont('narrative'), fontSize: scaleFontSize(16) }]}>{displayedText}</Text>
+          <Text style={baseTextStyle}>{renderedText}</Text>
           {!isComplete && <Text style={styles.cursor}>|</Text>}
         </Animated.View>
       </ScrollView>
