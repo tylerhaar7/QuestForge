@@ -7,6 +7,7 @@ import { getCorsHeaders } from '../_shared/cors.ts';
 import {
   buildSystemPrompt,
   CAMPAIGN_INIT_GENERATED_PROMPT,
+  CAMPAIGN_INIT_DISCOVER_PROMPT,
   buildCampaignInitCustomPrompt,
 } from '../_shared/prompts.ts';
 import { parseAIJson, normalizeResponse } from '../_shared/ai-parser.ts';
@@ -156,7 +157,8 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const inputError = validateCampaignInitInput(body);
     if (inputError) return errorResponse(inputError, 400, headers);
-    const { characterId, mode, customPrompt, campaignName, companions: rawCompanions } = body;
+    const { characterId, mode, customPrompt, campaignName, companions: rawCompanions, recruitmentMode: reqRecruitmentMode } = body;
+    const recruitmentMode = reqRecruitmentMode === 'discover' ? 'discover' : 'choose';
 
     // Service role client for writes
     const adminClient = createClient(
@@ -189,6 +191,25 @@ Deno.serve(async (req) => {
       return errorResponse('Character not found', 404, headers);
     }
 
+    // Build companion pool for discover mode
+    const companionPool = recruitmentMode === 'discover'
+      ? campaignCompanions.map((c, i) => ({
+          ...c,
+          recruited: false,
+          introduced: false,
+          aiGenerated: false,
+          introductionTurn: [5, 15, 25, 35][i] || 5 + i * 10,
+        }))
+      : campaignCompanions.map(c => ({
+          ...c,
+          recruited: true,
+          introduced: true,
+          aiGenerated: false,
+        }));
+
+    // In discover mode, active party starts empty; in choose mode, all join immediately
+    const activeCompanions = recruitmentMode === 'discover' ? [] : campaignCompanions;
+
     // Create campaign row
     const campaignData = {
       user_id: user.id,
@@ -198,7 +219,9 @@ Deno.serve(async (req) => {
       current_location: 'Unknown',
       current_mood: 'tavern',
       current_mode: 'exploration',
-      companions: campaignCompanions,
+      companions: activeCompanions,
+      companion_pool: companionPool,
+      recruitment_mode: recruitmentMode,
       combat_state: { isActive: false, round: 0, turnIndex: 0, initiativeOrder: [], enemies: [] },
       quest_log: [],
       story_summary: '',
@@ -217,6 +240,7 @@ Deno.serve(async (req) => {
       adventure_map: null,
       turn_count: 0,
       turn_history: [],
+      last_session_at: new Date().toISOString(),
     };
 
     const { data: campaign, error: campaignError } = await adminClient
@@ -229,8 +253,8 @@ Deno.serve(async (req) => {
       return errorResponse('Failed to create campaign.', 500, headers);
     }
 
-    // Create companion_states rows
-    for (const comp of campaignCompanions) {
+    // Create companion_states rows (only for actively recruited companions)
+    for (const comp of activeCompanions) {
       const { error: compError } = await adminClient.from('companion_states').insert({
         campaign_id: campaign.id,
         companion_name: comp.name,
@@ -248,12 +272,15 @@ Deno.serve(async (req) => {
     }
 
     // Build prompt and call Claude for opening narration
-    const systemPrompt = buildSystemPrompt(campaign, character, campaignCompanions);
+    const systemPrompt = buildSystemPrompt(campaign, character, activeCompanions);
+    const isDiscover = recruitmentMode === 'discover';
     const userMessage = mode === 'tutorial'
       ? TUTORIAL_OPENING_PROMPT
       : mode === 'custom' && customPrompt
-        ? buildCampaignInitCustomPrompt(customPrompt)
-        : CAMPAIGN_INIT_GENERATED_PROMPT;
+        ? buildCampaignInitCustomPrompt(customPrompt, isDiscover)
+        : isDiscover
+          ? CAMPAIGN_INIT_DISCOVER_PROMPT
+          : CAMPAIGN_INIT_GENERATED_PROMPT;
 
     const anthropic = new Anthropic({
       apiKey: Deno.env.get('ANTHROPIC_API_KEY'),
@@ -313,7 +340,9 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({
       campaignId: campaign.id,
       aiResponse,
-      companions: campaignCompanions,
+      companions: activeCompanions,
+      companionPool,
+      recruitmentMode,
     }), {
       headers: { ...headers, 'Content-Type': 'application/json' },
     });

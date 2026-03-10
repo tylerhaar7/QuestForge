@@ -294,6 +294,34 @@ export function normalizeResponse(raw: any): any {
 
   if (raw.tutorial_complete || raw.tutorialComplete) result.tutorialComplete = true;
 
+  // Companion encounter (discover mode recruitment)
+  const encounter = raw.companion_encounter || raw.companionEncounter;
+  if (encounter && encounter.companionName || encounter?.companion_name) {
+    result.companionEncounter = {
+      companionName: encounter.companionName || encounter.companion_name,
+      hook: encounter.hook || '',
+      miniQuestHint: encounter.mini_quest_hint || encounter.miniQuestHint || '',
+    };
+  }
+
+  // Journal entries (auto-journaling)
+  const journal = raw.journal_entries || raw.journalEntries;
+  if (Array.isArray(journal) && journal.length > 0) {
+    result.journalEntries = journal.map((e: any) => ({
+      entryType: e.entry_type || e.entryType || 'decision_made',
+      title: e.title || '',
+      description: e.description || '',
+      relatedNpcs: e.related_npcs || e.relatedNpcs || [],
+      relatedLocations: e.related_locations || e.relatedLocations || [],
+    }));
+  }
+
+  // Adventure map
+  const map = raw.adventure_map || raw.adventureMap;
+  if (map && map.nodes) {
+    result.adventureMap = map;
+  }
+
   return result;
 }
 

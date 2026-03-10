@@ -10,6 +10,7 @@ export interface InitCampaignParams {
   customPrompt?: string;
   campaignName?: string;
   companions?: any[];  // CompanionTemplate objects from companion selection
+  recruitmentMode?: 'choose' | 'discover';
 }
 
 export interface InitCampaignResult {
@@ -35,7 +36,7 @@ export async function submitAction(campaignId: string, action: string): Promise<
 }
 
 async function invokeEdgeFunction<T>(
-  fnName: 'campaign-init' | 'game-turn',
+  fnName: 'campaign-init' | 'game-turn' | 'session-recap',
   body: Record<string, any>,
   failurePrefix: string
 ): Promise<T> {
@@ -92,6 +93,8 @@ interface CampaignRow {
   current_mood: string;
   current_mode: string;
   companions: any;
+  companion_pool: any;
+  recruitment_mode: string;
   combat_state: any;
   quest_log: any;
   story_summary: string;
@@ -102,6 +105,7 @@ interface CampaignRow {
   adventure_map: any;
   turn_count: number;
   turn_history: any;
+  last_session_at: string;
   created_at: string;
   updated_at: string;
 }
@@ -134,6 +138,9 @@ function campaignFromRow(row: CampaignRow): Campaign {
     },
     adventureMap: row.adventure_map || undefined,
     turnCount: row.turn_count || 0,
+    companionPool: row.companion_pool || [],
+    recruitmentMode: (row.recruitment_mode || 'choose') as 'choose' | 'discover',
+    lastSessionAt: row.last_session_at || undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -161,4 +168,41 @@ export async function getCampaign(campaignId: string): Promise<Campaign> {
 
   if (error || !data) throw new Error(`Campaign not found: ${error?.message}`);
   return campaignFromRow(data);
+}
+
+// ─── Session Recap ────────────────────────────────
+
+export async function getSessionRecap(campaignId: string): Promise<string> {
+  const result = await invokeEdgeFunction<{ recap: string }>('session-recap', { campaignId }, 'Recap failed');
+  return result.recap;
+}
+
+// ─── Journal ──────────────────────────────────────
+
+export interface JournalRow {
+  id: string;
+  campaign_id: string;
+  turn_number: number;
+  entry_type: string;
+  title: string;
+  description: string;
+  tags: string[];
+  related_npcs: string[];
+  related_locations: string[];
+  is_pinned: boolean;
+  created_at: string;
+}
+
+export async function getJournalEntries(campaignId: string, filter?: string): Promise<JournalRow[]> {
+  let query = supabase
+    .from('journal_entries')
+    .select('*')
+    .eq('campaign_id', campaignId)
+    .order('created_at', { ascending: false });
+  if (filter && filter !== 'all') {
+    query = query.eq('entry_type', filter);
+  }
+  const { data, error } = await query;
+  if (error) throw new Error(`Journal fetch failed: ${error.message}`);
+  return data || [];
 }

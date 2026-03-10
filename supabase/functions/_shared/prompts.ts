@@ -72,6 +72,10 @@ CRITICAL OUTPUT RULES:
 6. If the player's action has an uncertain outcome, return "dice_requests" — do NOT narrate success or failure yourself
 7. If [GAME ENGINE RESULTS] appear in the message, narrate those results and include new "choices"
 
+JOURNAL ENTRIES:
+When something notable happens (NPC met, quest accepted/completed, location discovered, lore learned, major decision, combat outcome, companion event), include a "journal_entries" array with 1-2 entries. Only log meaningful moments, not every turn.
+Entry format: {"entry_type": "npc_met|quest_accepted|quest_completed|location_discovered|item_found|lore_learned|decision_made|companion_event|combat_victory|combat_defeat", "title": "Short title", "description": "2-3 sentences", "related_npcs": ["Name"], "related_locations": ["Place"]}
+
 JSON SCHEMA:
 {
   "mode": "exploration|combat|social|rest|camp|threshold",
@@ -83,6 +87,8 @@ JSON SCHEMA:
   "state_changes": [{"type": "hp|condition|item|xp|spell_slot|quest|location", "target": "Name", "value": "..."}],
   "approval_changes": [{"companion": "Name", "delta": -5, "reason": "disapproves of deception"}],
   "enemy_intentions": [{"enemy": "Goblin", "target": "Player", "action": "Slash", "predicted_damage": "1d6+2", "description": "raises its blade"}],
+  "companion_encounter": {"companionName": "Name from pool", "hook": "Brief encounter situation", "miniQuestHint": "What player must do to recruit"},
+  "journal_entries": [{"entry_type": "npc_met", "title": "Met the Blacksmith", "description": "...", "related_npcs": ["Gareth"], "related_locations": ["Copperwall"]}],
   "mood": "dungeon|combat|tavern|forest|town|camp|threshold|boss",
   "ambient_hint": "dungeon_drip"
 }`;
@@ -169,6 +175,19 @@ export function buildSystemPrompt(
     layers.push(`PARTY COMPANIONS:\n${companionLines.join('\n')}`);
   }
 
+  // Companion recruitment (Discover mode)
+  if (campaign.recruitment_mode === 'discover' && Array.isArray(campaign.companion_pool)) {
+    const unrecruited = campaign.companion_pool.filter((c: any) => !c.recruited && !c.introduced);
+    if (unrecruited.length > 0) {
+      const lines = unrecruited.map((c: any) =>
+        `- ${c.name} (${c.className}): Introduce around turn ${c.introductionTurn || '?'}. Voice: ${c.personality?.voice || 'Unknown'}`
+      );
+      layers.push(`COMPANION RECRUITMENT:
+The following companions have not yet been introduced. Introduce them naturally at the suggested turn milestones. When introducing a companion, include a "companion_encounter" field in your response with companionName, hook, and miniQuestHint.
+${lines.join('\n')}`);
+    }
+  }
+
   // Combat enemies
   if (campaign.current_mode === 'combat' && campaign.combat_state?.isActive) {
     const enemies = (campaign.combat_state.enemies || [])
@@ -193,20 +212,35 @@ export function selectModel(mode: GameMode, mood?: string): string {
 export const CAMPAIGN_INIT_GENERATED_PROMPT = `Create an opening adventure for this character. Design:
 1. A compelling starting location with atmosphere
 2. An immediate situation that draws the player in
-3. Introduction of the three companions (Korrin, Sera, Thaelen) naturally in the scene
+3. Introduction of the party companions naturally in the scene
 4. 3-4 initial choices for the player
 
 NAMING: Avoid overused fantasy words like "ash", "shadow", "raven", "thorn", "veil" — use them sparingly if at all. Draw from varied sources: geology, trade, weather, local history. Be creative and surprising.
 
 Set the mood and location. Make it feel like the first page of an epic novel.`;
 
-export function buildCampaignInitCustomPrompt(customPrompt: string): string {
+export const CAMPAIGN_INIT_DISCOVER_PROMPT = `Create an opening adventure for this character who is ALONE — no companions yet.
+The character will meet companions throughout their journey. Design:
+1. A compelling starting location with atmosphere
+2. An immediate situation or mystery that draws the player in
+3. Hint that allies might be found along the way
+4. 3-4 initial choices for the player
+
+NAMING: Avoid overused fantasy words like "ash", "shadow", "raven", "thorn", "veil" — use them sparingly if at all. Draw from varied sources: geology, trade, weather, local history. Be creative and surprising.
+
+Set the mood and location. Make it feel like the first page of a solo epic.`;
+
+export function buildCampaignInitCustomPrompt(customPrompt: string, isDiscover = false): string {
+  const companionNote = isDiscover
+    ? '3. The character starts alone — hint that allies might be found along the way'
+    : '3. Introduction of the party companions naturally in the scene';
+
   return `The player wants this kind of adventure: "${customPrompt}"
 
 Create an opening scene based on their request. Design:
 1. A compelling starting location that fits their vision
 2. An immediate situation that draws the player in
-3. Introduction of the three companions (Korrin, Sera, Thaelen) naturally in the scene
+${companionNote}
 4. 3-4 initial choices for the player
 
 Set the mood and location. Make it feel like the first page of an epic novel.`;

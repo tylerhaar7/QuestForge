@@ -203,6 +203,14 @@ Deno.serve(async (req) => {
     let preRolledStructured: any[] = [];
     let cleanAction = action;
 
+    // Long rest interception: restore HP before calling Claude
+    if (action === '[LONG REST]') {
+      await adminClient.from('characters').update({ hp: character.max_hp }).eq('id', character.id);
+      character.hp = character.max_hp;
+      cleanAction = 'The party takes a long rest.';
+      preRolledResults = ['MECHANICAL RESULT: Long rest complete. All HP restored.'];
+    }
+
     const tagMatch = action.match(/\[SKILL CHECK REQUIRED:\s*(\w+)\s+DC\s*(\d+)\]/i);
 
     if (tagMatch) {
@@ -360,6 +368,7 @@ Deno.serve(async (req) => {
       turn_count: campaign.turn_count + 1,
       companions: updatedCompanions,
       turn_history: newHistory,
+      last_session_at: new Date().toISOString(),
     };
 
     if (normalized.location) campaignUpdates.current_location = normalized.location;
@@ -381,7 +390,8 @@ Deno.serve(async (req) => {
       return errorResponse('Failed to save game state.', 500, headers);
     }
 
-    // Apply HP changes to character if needed
+    // Apply HP changes to character if needed + death detection
+    let deathMeta: any = null;
     if (normalized.stateChanges) {
       for (const change of normalized.stateChanges) {
         if (change.type === 'hp' && change.target === character.name) {
@@ -390,7 +400,73 @@ Deno.serve(async (req) => {
           if (hpUpdateErr) {
             console.error('character HP update failed', { characterId: character.id, error: hpUpdateErr.message });
           }
+
+          // Death detection
+          if (newHp <= 0) {
+            const deathRecord = {
+              turn: campaign.turn_count + 1,
+              cause: action.substring(0, 200),
+              location: campaign.current_location,
+              companionsPresent: (campaign.companions || []).map((c: any) => c.name),
+            };
+            const newDeathCount = (campaign.death_count || 0) + 1;
+            const deathHistory = [...(campaign.death_history || []), deathRecord];
+
+            const DEATH_UNLOCK_THRESHOLDS = [
+              { death: 1, unlock: 'threshold_access' },
+              { death: 2, unlock: 'keeper_lore_1' },
+              { death: 3, unlock: 'spectral_gift' },
+              { death: 5, unlock: 'death_defiance' },
+              { death: 7, unlock: 'keeper_quest' },
+              { death: 10, unlock: 'threshold_companion' },
+            ];
+            const existingUnlocks = campaign.threshold_unlocks || [];
+            const newUnlocks = DEATH_UNLOCK_THRESHOLDS
+              .filter(t => newDeathCount >= t.death && !existingUnlocks.includes(t.unlock))
+              .map(t => t.unlock);
+            const allUnlocks = [...existingUnlocks, ...newUnlocks];
+
+            // Update campaign with death data
+            await adminClient.from('campaigns').update({
+              death_count: newDeathCount,
+              death_history: deathHistory,
+              threshold_unlocks: allUnlocks,
+              current_mode: 'threshold',
+            }).eq('id', campaignId);
+
+            normalized.mode = 'threshold';
+            deathMeta = { deathCount: newDeathCount, newUnlocks, deathRecord };
+          }
         }
+      }
+    }
+
+    // Companion encounter handling (Discover mode)
+    if (normalized.companionEncounter && campaign.recruitment_mode === 'discover') {
+      const pool = campaign.companion_pool || [];
+      const found = pool.find((c: any) =>
+        c.name.toLowerCase() === normalized.companionEncounter.companionName.toLowerCase()
+      );
+      if (found && !found.introduced) {
+        found.introduced = true;
+        await adminClient.from('campaigns').update({ companion_pool: pool }).eq('id', campaignId);
+      }
+    }
+
+    // Journal entries: write to Supabase
+    if (normalized.journalEntries && normalized.journalEntries.length > 0) {
+      for (const entry of normalized.journalEntries) {
+        const entryType = entry.entryType || entry.entry_type || 'decision_made';
+        await adminClient.from('journal_entries').insert({
+          campaign_id: campaignId,
+          turn_number: campaign.turn_count + 1,
+          entry_type: entryType,
+          title: entry.title || '',
+          description: entry.description || '',
+          tags: [entryType],
+          related_npcs: entry.relatedNpcs || entry.related_npcs || [],
+          related_locations: entry.relatedLocations || entry.related_locations || [],
+        });
       }
     }
 
@@ -401,6 +477,7 @@ Deno.serve(async (req) => {
       diceRollResults: structuredResults || [],
       companions: updatedCompanions,
       turnCount: campaign.turn_count + 1,
+      ...(deathMeta ? { deathMeta } : {}),
     }), {
       headers: { ...headers, 'Content-Type': 'application/json' },
     });
