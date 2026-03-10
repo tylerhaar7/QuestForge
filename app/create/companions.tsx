@@ -27,8 +27,7 @@ import type { ClassName } from '@/types/game';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const MAX_COMPANIONS = 3;
-
+type RecruitmentMode = 'choose' | 'discover' | null;
 type Tab = 'roster' | 'create';
 
 const ALL_CLASSES: ClassName[] = [
@@ -53,10 +52,14 @@ export default function CompanionSelectionScreen() {
   const router = useRouter();
   const { characterId } = useLocalSearchParams<{ characterId: string }>();
 
+  // ── Recruitment mode ──
+  const [recruitmentMode, setRecruitmentMode] = useState<RecruitmentMode>(null);
+  const maxCompanions = recruitmentMode === 'discover' ? 4 : 3;
+
   // ── Tab state ──
   const [activeTab, setActiveTab] = useState<Tab>('roster');
 
-  // ── Selected companions (up to 3) ──
+  // ── Selected companions ──
   const [selectedCompanions, setSelectedCompanions] = useState<CompanionTemplate[]>([]);
 
   // ── Custom companion roster additions ──
@@ -83,17 +86,20 @@ export default function CompanionSelectionScreen() {
 
   const handleToggleCompanion = (companion: CompanionTemplate) => {
     if (isSelected(companion)) {
-      // Deselect
       setSelectedCompanions((prev) =>
         prev.filter(
           (c) => !(c.name === companion.name && c.className === companion.className),
         ),
       );
-    } else if (selectedCompanions.length < MAX_COMPANIONS) {
-      // Select
+    } else if (selectedCompanions.length < maxCompanions) {
       setSelectedCompanions((prev) => [...prev, companion]);
     }
-    // At cap and not already selected: do nothing
+  };
+
+  const handleLetFateDecide = () => {
+    // Randomly pick 4 companions for discover mode
+    const shuffled = [...COMPANION_ROSTER].sort(() => Math.random() - 0.5);
+    setSelectedCompanions(shuffled.slice(0, 4));
   };
 
   const handleRemoveCompanion = (companion: CompanionTemplate) => {
@@ -167,7 +173,7 @@ export default function CompanionSelectionScreen() {
 
     // Add to custom roster and auto-select if under cap
     setCustomCompanions((prev) => [...prev, newCompanion]);
-    if (selectedCompanions.length < MAX_COMPANIONS) {
+    if (selectedCompanions.length < maxCompanions) {
       setSelectedCompanions((prev) => [...prev, newCompanion]);
     }
 
@@ -186,15 +192,18 @@ export default function CompanionSelectionScreen() {
 
   // ── Handler: Continue ─────────────────────────────────────────────────────
 
-  const canContinue = selectedCompanions.length === MAX_COMPANIONS;
+  const canContinue = recruitmentMode === 'discover'
+    ? selectedCompanions.length >= 3 && selectedCompanions.length <= 4
+    : selectedCompanions.length === 3;
 
   const handleContinue = () => {
-    if (!canContinue || !characterId) return;
+    if (!canContinue || !characterId || !recruitmentMode) return;
     router.push({
       pathname: '/create/campaign-start',
       params: {
         characterId,
         companions: JSON.stringify(selectedCompanions),
+        recruitmentMode,
       },
     });
   };
@@ -211,11 +220,40 @@ export default function CompanionSelectionScreen() {
         <View style={styles.header}>
           <Text style={styles.stepLabel}>STEP 6 OF 6</Text>
           <Text style={styles.title}>Choose Your Party</Text>
-          <Text style={styles.subtitle}>Select 3 companions to join your adventure</Text>
+          <Text style={styles.subtitle}>
+            {!recruitmentMode
+              ? 'How do you want to meet your companions?'
+              : recruitmentMode === 'choose'
+                ? 'Select 3 companions to join your adventure'
+                : 'Choose 3-4 companions fate will bring to you'}
+          </Text>
         </View>
 
-        {/* Tab pills */}
-        <View style={styles.tabRow}>
+        {/* Recruitment Mode Selection */}
+        {!recruitmentMode ? (
+          <View style={styles.recruitmentModeContainer}>
+            <Pressable
+              style={styles.recruitmentCard}
+              onPress={() => setRecruitmentMode('choose')}
+            >
+              <Text style={styles.recruitmentIcon}>⚔️</Text>
+              <Text style={styles.recruitmentTitle}>CHOOSE MY PARTY</Text>
+              <Text style={styles.recruitmentDesc}>Pick 3 companions who join you from the start</Text>
+            </Pressable>
+
+            <Pressable
+              style={styles.recruitmentCard}
+              onPress={() => setRecruitmentMode('discover')}
+            >
+              <Text style={styles.recruitmentIcon}>🌟</Text>
+              <Text style={styles.recruitmentTitle}>DISCOVER ALONG THE WAY</Text>
+              <Text style={styles.recruitmentDesc}>Meet companions throughout your journey. Pick who fate will bring.</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
+        {/* Tab pills — only show after recruitment mode is chosen */}
+        {recruitmentMode && <View style={styles.tabRow}>
           <Pressable
             style={[styles.tabPill, activeTab === 'roster' && styles.tabPillActive]}
             onPress={() => setActiveTab('roster')}
@@ -242,10 +280,19 @@ export default function CompanionSelectionScreen() {
               CREATE CUSTOM
             </Text>
           </Pressable>
-        </View>
+        </View>}
 
-        {/* Main content */}
-        <ScrollView
+        {/* "Let Fate Decide" button for Discover mode */}
+        {recruitmentMode === 'discover' && (
+          <View style={styles.fateButtonContainer}>
+            <Pressable style={styles.fateButton} onPress={handleLetFateDecide}>
+              <Text style={styles.fateButtonText}>LET FATE DECIDE</Text>
+            </Pressable>
+          </View>
+        )}
+
+        {/* Main content — only show after recruitment mode chosen */}
+        {recruitmentMode && <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
@@ -450,7 +497,7 @@ export default function CompanionSelectionScreen() {
           )}
 
           <View style={styles.scrollBottom} />
-        </ScrollView>
+        </ScrollView>}
 
         {/* Footer */}
         <View style={styles.footer}>
@@ -472,7 +519,7 @@ export default function CompanionSelectionScreen() {
 
           {/* Selection count */}
           <Text style={styles.selectionCount}>
-            {selectedCompanions.length} / {MAX_COMPANIONS} selected
+            {selectedCompanions.length} / {maxCompanions} selected
           </Text>
 
           {/* Continue button */}
@@ -849,5 +896,58 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: fonts.heading,
     letterSpacing: 2,
+  },
+
+  // Recruitment mode selection
+  recruitmentModeContainer: {
+    paddingHorizontal: spacing.xl,
+    gap: spacing.md,
+    flex: 1,
+    justifyContent: 'center',
+  },
+  recruitmentCard: {
+    borderWidth: 1.5,
+    borderColor: colors.gold.border,
+    borderRadius: 12,
+    padding: spacing.lg,
+    backgroundColor: colors.bg.tertiary,
+    alignItems: 'center',
+  },
+  recruitmentIcon: {
+    fontSize: 32,
+    marginBottom: spacing.sm,
+  },
+  recruitmentTitle: {
+    fontFamily: fonts.heading,
+    fontSize: 13,
+    color: colors.gold.primary,
+    letterSpacing: 2,
+    marginBottom: spacing.xs,
+  },
+  recruitmentDesc: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    color: colors.text.secondary,
+    lineHeight: 19,
+    textAlign: 'center',
+  },
+  fateButtonContainer: {
+    paddingHorizontal: spacing.xl,
+    marginBottom: spacing.sm,
+  },
+  fateButton: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.gold.primary,
+    backgroundColor: colors.gold.glow,
+    alignSelf: 'center',
+  },
+  fateButtonText: {
+    fontFamily: fonts.heading,
+    fontSize: 11,
+    letterSpacing: 1.5,
+    color: colors.gold.primary,
   },
 });

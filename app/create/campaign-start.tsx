@@ -24,7 +24,8 @@ type CampaignMode = 'generated' | 'custom';
 
 export default function CampaignStartScreen() {
   const router = useRouter();
-  const { characterId, companions: companionsJson } = useLocalSearchParams<{ characterId: string; companions?: string }>();
+  const { characterId, companions: companionsJson, recruitmentMode: recruitmentModeParam } = useLocalSearchParams<{ characterId: string; companions?: string; recruitmentMode?: string }>();
+  const recruitmentMode = (recruitmentModeParam === 'discover' ? 'discover' : 'choose') as 'choose' | 'discover';
   const [mode, setMode] = useState<CampaignMode | null>(null);
   const [customPrompt, setCustomPrompt] = useState('');
   const [loading, setLoading] = useState(false);
@@ -53,6 +54,7 @@ export default function CampaignStartScreen() {
         mode: mode!,
         customPrompt: mode === 'custom' ? customPrompt.trim() : undefined,
         companions: parsedCompanions,
+        recruitmentMode,
       });
 
       // Load character and hydrate game store
@@ -87,6 +89,9 @@ export default function CampaignStartScreen() {
           preference: 'balanced' as const,
         },
         turnCount: 1,
+        companionPool: (result as any).companionPool || [],
+        recruitmentMode,
+        lastSessionAt: new Date().toISOString(),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
