@@ -25,6 +25,7 @@ import { getModifier, getSkillModifier, getSaveModifier, SKILL_ABILITIES } from 
 import { CLASSES } from '@/data/classes';
 import { RACES } from '@/data/races';
 import type { Character, AbilityScore, Skill, EquipmentItem, InventoryItem, Spell } from '@/types/game';
+import { PortraitFrame, InventorySlot, SystemButton } from '@/components/ui';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -189,6 +190,9 @@ function CharacterHeader({ character }: { character: Character }) {
 
   return (
     <View style={styles.header}>
+      <PortraitFrame size="md" variant="simple">
+        <Text style={styles.portraitInitial}>{character.name.charAt(0).toUpperCase()}</Text>
+      </PortraitFrame>
       <Text style={styles.headerName}>{character.name}</Text>
       <Text style={styles.headerSubtitle}>
         Level {character.level} · {raceName} · {className}
@@ -310,25 +314,15 @@ function EquipmentSection({ equipment }: { equipment: EquipmentItem[] }) {
   }
 
   return (
-    <View>
-      {equipped.map((item, index) => {
+    <View style={styles.equipmentGrid}>
+      {equipped.map((item) => {
         const icon = EQUIPMENT_ICONS[item.type] || '\u2726';
-        const summary = getEquipmentSummary(item);
         return (
-          <View
+          <InventorySlot
             key={item.id}
-            style={[
-              styles.equipmentRow,
-              index < equipped.length - 1 && styles.equipmentRowBorder,
-            ]}
-          >
-            <Text style={styles.equipmentName}>
-              {icon} {item.name}
-            </Text>
-            {!!summary && (
-              <Text style={styles.equipmentSummary}>{summary}</Text>
-            )}
-          </View>
+            icon={icon}
+            label={item.name}
+          />
         );
       })}
     </View>
@@ -533,9 +527,7 @@ export default function CharacterScreen() {
         <View style={styles.emptyStateContainer}>
           <Text style={styles.emptyStateText}>No character loaded</Text>
         </View>
-        <Pressable style={styles.closeButton} onPress={handleClose}>
-          <Text style={styles.closeButtonText}>{'\u2715'}</Text>
-        </Pressable>
+        <SystemButton variant="close" onPress={handleClose} style={styles.closeButton} />
       </SafeAreaView>
     );
   }
@@ -592,9 +584,7 @@ export default function CharacterScreen() {
       </Animated.View>
 
       {/* Close button */}
-      <Pressable style={styles.closeButton} onPress={handleClose}>
-        <Text style={styles.closeButtonText}>{'\u2715'}</Text>
-      </Pressable>
+      <SystemButton variant="close" onPress={handleClose} style={styles.closeButton} />
     </SafeAreaView>
   );
 }
@@ -617,19 +607,6 @@ const styles = StyleSheet.create({
     top: 52,
     right: 20,
     zIndex: 20,
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(90, 64, 32, 0.7)',
-    borderRadius: 22,
-    borderWidth: 1.5,
-    borderColor: '#b48c3c',
-  },
-  closeButtonText: {
-    fontSize: 18,
-    color: '#e8dcc8',
-    fontFamily: fonts.heading,
   },
 
   // ── Parchment curls ───────────────────────────────────────────────────────
@@ -695,6 +672,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingBottom: spacing.md,
     marginBottom: spacing.xs,
+  },
+  portraitInitial: {
+    fontFamily: fonts.heading,
+    fontSize: 24,
+    color: '#e8dcc8',
   },
   headerName: {
     fontFamily: fonts.heading,
@@ -873,6 +855,11 @@ const styles = StyleSheet.create({
   },
 
   // ── Equipment & Inventory ─────────────────────────────────────────────────
+  equipmentGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
   equipmentRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
