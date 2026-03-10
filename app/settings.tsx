@@ -12,10 +12,11 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { colors } from '@/theme/colors';
+import { colors, PARCHMENT_TEXT } from '@/theme/colors';
 import { fonts, spacing, textStyles } from '@/theme/typography';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import type { TextSize, TextSpeed, ColorblindMode } from '@/types/settings';
+import { FantasyPanel, FantasyButton } from '@/components/ui';
 
 // --- Segmented Button Row ---
 
@@ -64,21 +65,24 @@ const segStyles = StyleSheet.create({
   button: {
     flex: 1,
     paddingVertical: spacing.sm,
-    backgroundColor: colors.bg.tertiary,
+    backgroundColor: 'rgba(58,40,16,0.08)',
     borderRadius: 6,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(58,40,16,0.2)',
   },
   buttonActive: {
-    backgroundColor: colors.gold.primary,
+    backgroundColor: PARCHMENT_TEXT.accent,
+    borderColor: PARCHMENT_TEXT.accent,
   },
   label: {
     fontFamily: fonts.headingRegular,
     fontSize: 12,
-    color: colors.text.secondary,
+    color: PARCHMENT_TEXT.secondary,
     letterSpacing: 0.5,
   },
   labelActive: {
-    color: colors.bg.primary,
+    color: '#f5ebe0',
   },
 });
 
@@ -128,12 +132,12 @@ const toggleStyles = StyleSheet.create({
   label: {
     fontFamily: fonts.body,
     fontSize: 15,
-    color: colors.text.primary,
+    color: PARCHMENT_TEXT.primary,
   },
   description: {
     fontFamily: fonts.body,
     fontSize: 12,
-    color: colors.text.tertiary,
+    color: PARCHMENT_TEXT.secondary,
     marginTop: 2,
   },
 });
@@ -177,40 +181,41 @@ const radioStyles = StyleSheet.create({
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     borderWidth: 1,
-    borderColor: colors.gold.border,
+    borderColor: 'rgba(58,40,16,0.25)',
     borderRadius: 8,
-    backgroundColor: colors.bg.tertiary,
+    backgroundColor: 'rgba(58,40,16,0.08)',
     marginBottom: spacing.sm,
   },
   optionActive: {
-    borderColor: colors.gold.primary,
+    borderColor: PARCHMENT_TEXT.accent,
+    backgroundColor: 'rgba(139,69,19,0.12)',
   },
   circle: {
     width: 18,
     height: 18,
     borderRadius: 9,
     borderWidth: 2,
-    borderColor: colors.text.tertiary,
+    borderColor: PARCHMENT_TEXT.secondary,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,
   },
   circleActive: {
-    borderColor: colors.gold.primary,
+    borderColor: PARCHMENT_TEXT.accent,
   },
   dot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: colors.gold.primary,
+    backgroundColor: PARCHMENT_TEXT.accent,
   },
   label: {
     fontFamily: fonts.body,
     fontSize: 15,
-    color: colors.text.secondary,
+    color: PARCHMENT_TEXT.secondary,
   },
   labelActive: {
-    color: colors.text.primary,
+    color: PARCHMENT_TEXT.primary,
   },
 });
 
@@ -277,7 +282,7 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>DISPLAY</Text>
 
-          <View style={styles.settingCard}>
+          <FantasyPanel variant="card" style={styles.settingCard}>
             <Text style={styles.settingLabel}>Text Size</Text>
             <View style={styles.settingControl}>
               <SegmentedButtons
@@ -286,45 +291,45 @@ export default function SettingsScreen() {
                 onSelect={setTextSize}
               />
             </View>
-          </View>
+          </FantasyPanel>
 
-          <View style={styles.settingCard}>
+          <FantasyPanel variant="card" style={styles.settingCard}>
             <ToggleRow
               label="High Contrast"
               value={accessibility.highContrast}
               onToggle={setHighContrast}
             />
-          </View>
+          </FantasyPanel>
 
-          <View style={styles.settingCard}>
+          <FantasyPanel variant="card" style={styles.settingCard}>
             <ToggleRow
               label="Dyslexia Font"
               description="Uses OpenDyslexic font"
               value={accessibility.dyslexiaFont}
               onToggle={setDyslexiaFont}
             />
-          </View>
+          </FantasyPanel>
         </View>
 
         {/* MOTION Section */}
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>MOTION</Text>
 
-          <View style={styles.settingCard}>
+          <FantasyPanel variant="card" style={styles.settingCard}>
             <ToggleRow
               label="Reduce Motion"
               description="Skips animations"
               value={accessibility.reduceMotion}
               onToggle={setReduceMotion}
             />
-          </View>
+          </FantasyPanel>
         </View>
 
         {/* COLOR Section */}
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>COLOR</Text>
 
-          <View style={styles.settingCard}>
+          <FantasyPanel variant="card" style={styles.settingCard}>
             <Text style={styles.settingLabel}>Colorblind Mode</Text>
             <View style={styles.radioGroup}>
               {COLORBLIND_OPTIONS.map((opt) => (
@@ -337,14 +342,14 @@ export default function SettingsScreen() {
                 />
               ))}
             </View>
-          </View>
+          </FantasyPanel>
         </View>
 
         {/* INPUT Section */}
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>INPUT</Text>
 
-          <View style={styles.settingCard}>
+          <FantasyPanel variant="card" style={styles.settingCard}>
             <Text style={styles.settingLabel}>Text Speed</Text>
             <View style={styles.settingControl}>
               <SegmentedButtons
@@ -353,45 +358,43 @@ export default function SettingsScreen() {
                 onSelect={setTextSpeed}
               />
             </View>
-          </View>
+          </FantasyPanel>
         </View>
 
         {/* AUDIO Section */}
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>AUDIO</Text>
 
-          <View style={styles.settingCard}>
+          <FantasyPanel variant="card" style={styles.settingCard}>
             <ToggleRow
               label="Haptic Feedback"
               value={accessibility.hapticFeedback}
               onToggle={setHapticFeedback}
             />
-          </View>
+          </FantasyPanel>
         </View>
 
         {/* ACCESSIBILITY Section */}
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>ACCESSIBILITY</Text>
 
-          <View style={styles.settingCard}>
+          <FantasyPanel variant="card" style={styles.settingCard}>
             <ToggleRow
               label="Screen Reader"
               description="Adds accessibility labels"
               value={accessibility.screenReaderOptimized}
               onToggle={setScreenReaderOptimized}
             />
-          </View>
+          </FantasyPanel>
         </View>
 
         {/* Reset Button */}
-        <Pressable
-          style={styles.resetButton}
+        <FantasyButton
+          variant="danger"
+          label="RESET TO DEFAULTS"
           onPress={resetAccessibility}
-          accessibilityRole="button"
-          accessibilityLabel="Reset to defaults"
-        >
-          <Text style={styles.resetButtonText}>RESET TO DEFAULTS</Text>
-        </Pressable>
+          style={styles.resetButton}
+        />
       </ScrollView>
     </SafeAreaView>
   );
@@ -446,17 +449,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   settingCard: {
-    backgroundColor: colors.bg.secondary,
-    borderWidth: 1,
-    borderColor: colors.gold.border,
-    borderRadius: 8,
-    padding: spacing.md,
     marginBottom: spacing.sm,
   },
   settingLabel: {
     fontFamily: fonts.body,
     fontSize: 15,
-    color: colors.text.primary,
+    color: PARCHMENT_TEXT.label,
     marginBottom: spacing.sm,
   },
   settingControl: {
@@ -466,17 +464,6 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   resetButton: {
-    borderWidth: 1,
-    borderColor: colors.gold.primary,
-    borderRadius: 8,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
     marginTop: spacing.lg,
-  },
-  resetButtonText: {
-    fontFamily: fonts.heading,
-    fontSize: 13,
-    color: colors.gold.primary,
-    letterSpacing: 2,
   },
 });

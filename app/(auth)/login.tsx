@@ -1,12 +1,13 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View, Text, TextInput, Pressable, StyleSheet,
+  View, Text, TextInput, StyleSheet,
   ActivityIndicator, KeyboardAvoidingView, Platform, SafeAreaView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/services/supabase';
 import { colors } from '@/theme/colors';
 import { fonts, spacing, textStyles } from '@/theme/typography';
+import { FantasyButton } from '@/components/ui';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -80,28 +81,26 @@ export default function LoginScreen() {
 
           {error && <Text style={styles.error}>{error}</Text>}
 
-          <Pressable
-            style={[styles.button, loading && styles.buttonDisabled]}
-            onPress={handleSubmit}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator size="small" color={colors.bg.primary} />
-            ) : (
-              <Text style={styles.buttonText}>
-                {isRegister ? 'CREATE ACCOUNT' : 'SIGN IN'}
-              </Text>
-            )}
-          </Pressable>
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color={colors.gold.primary} />
+            </View>
+          ) : (
+            <FantasyButton
+              variant="primary"
+              label={isRegister ? 'CREATE ACCOUNT' : 'SIGN IN'}
+              onPress={handleSubmit}
+              disabled={loading}
+              style={styles.submitButton}
+            />
+          )}
 
-          <Pressable
-            style={styles.toggle}
+          <FantasyButton
+            variant="secondary"
+            label={isRegister ? 'ALREADY HAVE AN ACCOUNT' : 'NEW ADVENTURER'}
             onPress={() => { setIsRegister(!isRegister); setError(null); }}
-          >
-            <Text style={styles.toggleText}>
-              {isRegister ? 'Already have an account? Sign in' : "New adventurer? Create account"}
-            </Text>
-          </Pressable>
+            style={styles.toggleButton}
+          />
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -158,29 +157,15 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     textAlign: 'center',
   },
-  button: {
-    backgroundColor: colors.gold.primary,
-    paddingVertical: spacing.md + 2,
-    borderRadius: 8,
+  loadingContainer: {
     alignItems: 'center',
+    paddingVertical: spacing.md + 2,
     marginTop: spacing.xl,
   },
-  buttonDisabled: {
-    opacity: 0.6,
+  submitButton: {
+    marginTop: spacing.xl,
   },
-  buttonText: {
-    ...textStyles.buttonLabel,
-    color: colors.bg.primary,
-    fontSize: 14,
-    fontFamily: fonts.heading,
-  },
-  toggle: {
-    marginTop: spacing.lg,
-    alignItems: 'center',
-  },
-  toggleText: {
-    fontFamily: fonts.body,
-    fontSize: 14,
-    color: colors.gold.muted,
+  toggleButton: {
+    marginTop: spacing.md,
   },
 });
