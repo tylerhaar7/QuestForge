@@ -31,7 +31,7 @@ export type Skill =
 export type ClassName =
   | 'barbarian' | 'bard' | 'cleric' | 'druid' | 'fighter'
   | 'monk' | 'paladin' | 'ranger' | 'rogue' | 'sorcerer'
-  | 'warlock' | 'wizard';
+  | 'warlock' | 'wizard' | 'artificer';
 
 export type RaceName =
   | 'human' | 'elf' | 'dwarf' | 'halfling' | 'gnome'
@@ -194,6 +194,9 @@ export interface Campaign {
   difficultyProfile: DifficultyProfile;
   adventureMap?: AdventureMap;
   turnCount: number;
+  companionPool?: CompanionPoolEntry[];
+  recruitmentMode: 'choose' | 'discover';
+  lastSessionAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -233,7 +236,7 @@ export interface DifficultyProfile {
 // ─── Adventure Map (Slay the Spire) ────────────────
 export type MapNodeType =
   | 'combat' | 'elite' | 'boss' | 'rest'
-  | 'merchant' | 'mystery' | 'social' | 'treasure';
+  | 'merchant' | 'mystery' | 'social' | 'treasure' | 'companion';
 
 export interface MapNode {
   id: string;
@@ -266,6 +269,8 @@ export interface AIResponse {
   mood?: MoodType;
   ambientHint?: string;
   tutorialComplete?: boolean;
+  companionEncounter?: CompanionEncounter;
+  journalEntries?: JournalEntry[];
 }
 
 export interface CompanionAction {
@@ -327,4 +332,33 @@ export interface ThreadUpdate {
   threadId: string;
   action: 'advance' | 'resolve' | 'introduce';
   detail: string;
+}
+
+// ─── Companion Pool ────────────────────────────────
+export interface CompanionPoolEntry extends Companion {
+  recruited: boolean;
+  introduced: boolean;
+  aiGenerated: boolean;
+  introductionTurn?: number;
+}
+
+export interface CompanionEncounter {
+  companionName: string;
+  hook: string;
+  miniQuestHint: string;
+}
+
+// ─── Journal ───────────────────────────────────────
+export type JournalEntryType =
+  | 'npc_met' | 'quest_accepted' | 'quest_completed'
+  | 'location_discovered' | 'item_found' | 'lore_learned'
+  | 'decision_made' | 'companion_event'
+  | 'combat_victory' | 'combat_defeat';
+
+export interface JournalEntry {
+  entryType: JournalEntryType;
+  title: string;
+  description: string;
+  relatedNpcs?: string[];
+  relatedLocations?: string[];
 }

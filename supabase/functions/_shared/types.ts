@@ -12,7 +12,7 @@ export type Skill =
 export type ClassName =
   | 'barbarian' | 'bard' | 'cleric' | 'druid' | 'fighter'
   | 'monk' | 'paladin' | 'ranger' | 'rogue' | 'sorcerer'
-  | 'warlock' | 'wizard';
+  | 'warlock' | 'wizard' | 'artificer';
 
 export type GameMode = 'exploration' | 'combat' | 'social' | 'rest' | 'camp' | 'threshold';
 export type MoodType = 'dungeon' | 'combat' | 'tavern' | 'forest' | 'town' | 'camp' | 'threshold' | 'boss';
@@ -71,6 +71,11 @@ export interface CampaignRow {
   difficulty_profile: any;
   turn_count: number;
   turn_history: any[];
+  companion_pool: any;
+  recruitment_mode: string;
+  last_session_at: string;
+  death_history: any;
+  threshold_unlocks: any;
 }
 
 export interface CompanionData {
@@ -97,4 +102,31 @@ export interface CompanionData {
     icon: string;
   }[];
   conditions: string[];
+}
+
+export interface CompanionPoolEntry extends CompanionData {
+  recruited: boolean;
+  introduced: boolean;
+  aiGenerated: boolean;
+  introductionTurn?: number;
+}
+
+export interface CompanionEncounter {
+  companionName: string;
+  hook: string;
+  miniQuestHint: string;
+}
+
+export type JournalEntryType =
+  | 'npc_met' | 'quest_accepted' | 'quest_completed'
+  | 'location_discovered' | 'item_found' | 'lore_learned'
+  | 'decision_made' | 'companion_event'
+  | 'combat_victory' | 'combat_defeat';
+
+export interface JournalEntry {
+  entryType: JournalEntryType;
+  title: string;
+  description: string;
+  relatedNpcs?: string[];
+  relatedLocations?: string[];
 }
