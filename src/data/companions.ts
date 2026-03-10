@@ -1,5 +1,5 @@
-// Companion roster — 8 pre-built companions spanning diverse classes
-// Plus recommended personality/stats/abilities maps for all 12 classes
+// Companion roster — 13 pre-built companions, one per D&D 5e class
+// Plus recommended personality/stats/abilities maps for all 13 classes
 
 import type { Companion, ClassName, CompanionAbility } from '@/types/game';
 
@@ -25,7 +25,7 @@ export interface CompanionTemplate {
   }[];
 }
 
-// ─── Pre-built Companion Roster (8 companions) ─────────────────
+// ─── Pre-built Companion Roster (13 companions, one per class) ──
 
 export const COMPANION_ROSTER: CompanionTemplate[] = [
   // 1. Korrin — Fighter
@@ -188,6 +188,106 @@ export const COMPANION_ROSTER: CompanionTemplate[] = [
       { name: 'Lay on Hands', type: 'heal', description: 'Heal 5 HP by touch', icon: '🤲' },
     ],
   },
+  // 9. Kael — Barbarian
+  {
+    name: 'Kael',
+    className: 'barbarian',
+    level: 1,
+    maxHp: 13,
+    ac: 14,
+    portrait: '',
+    color: '#ef4444',
+    personality: {
+      approves: ['strength', 'direct_action', 'loyalty', 'courage', 'honesty'],
+      disapproves: ['cowardice', 'manipulation', 'over_thinking', 'weakness', 'deception'],
+      voice: 'Blunt and fierce. Speaks with raw emotion and acts on instinct. Respects strength but values loyalty above all.',
+      backstory: 'An exile from a northern tribe, driven out after refusing to participate in a dishonorable raid against a defenseless village.',
+    },
+    abilities: [
+      { name: 'Reckless Attack', type: 'attack', description: 'Gain advantage on attack, enemies gain advantage on you', icon: '⚔️' },
+      { name: 'Rage', type: 'bonus', description: 'Resistance to physical damage, +2 melee damage for 1 minute', icon: '🔥' },
+    ],
+  },
+  // 10. Shen — Monk
+  {
+    name: 'Shen',
+    className: 'monk',
+    level: 1,
+    maxHp: 9,
+    ac: 14,
+    portrait: '',
+    color: '#06b6d4',
+    personality: {
+      approves: ['discipline', 'self_improvement', 'meditation', 'restraint', 'inner_peace'],
+      disapproves: ['excess', 'chaos', 'materialism', 'impatience', 'wanton_destruction'],
+      voice: 'Serene and contemplative. Chooses words carefully. Finds meaning in silence and action alike. Occasionally unsettling in his calm.',
+      backstory: 'A wandering ascetic who left the monastery to test his teachings against the trials of the world after a vision showed him the monastery burning.',
+    },
+    abilities: [
+      { name: 'Flurry of Blows', type: 'attack', description: 'Two unarmed strikes as bonus action for 1 ki', icon: '👊' },
+      { name: 'Patient Defense', type: 'bonus', description: 'Dodge as bonus action for 1 ki', icon: '🧘' },
+    ],
+  },
+  // 11. Vex — Sorcerer
+  {
+    name: 'Vex',
+    className: 'sorcerer',
+    level: 1,
+    maxHp: 7,
+    ac: 12,
+    portrait: '',
+    color: '#a855f7',
+    personality: {
+      approves: ['magic_use', 'self_expression', 'freedom', 'boldness', 'embracing_power'],
+      disapproves: ['magic_suppression', 'conformity', 'rigid_rules', 'fear_of_change', 'denial'],
+      voice: 'Intense and unpredictable. Power crackles beneath the surface. Oscillates between giddy confidence and genuine fear of losing control.',
+      backstory: 'Born with wild magic in their blood, cast out by a fearful village. Now learning to master the storm within before it consumes everything.',
+    },
+    abilities: [
+      { name: 'Chaos Bolt', type: 'attack', description: '2d8+1d6 random element, can bounce on doubles', icon: '🌀' },
+      { name: 'Shield', type: 'reaction', description: '+5 AC until next turn', icon: '🛡️' },
+    ],
+  },
+  // 12. Mordecai — Warlock
+  {
+    name: 'Mordecai',
+    className: 'warlock',
+    level: 1,
+    maxHp: 9,
+    ac: 13,
+    portrait: '',
+    color: '#6366f1',
+    personality: {
+      approves: ['ambition', 'cunning', 'knowledge_seeking', 'pragmatic_deals', 'self_reliance'],
+      disapproves: ['blind_trust', 'servitude', 'wasted_potential', 'piety', 'naivety'],
+      voice: 'Cryptic and sardonic. Speaks in half-truths. Haunted by a bargain he refuses to discuss, yet wields its power without hesitation.',
+      backstory: 'Bound to a mysterious patron by a desperate pact made to save someone he loved. Now walks the razor edge between power and damnation.',
+    },
+    abilities: [
+      { name: 'Eldritch Blast', type: 'attack', description: '1d10 force ranged attack', icon: '💀' },
+      { name: 'Hex', type: 'bonus', description: 'Extra 1d6 necrotic on hit + disadvantage on one ability check', icon: '🔮' },
+    ],
+  },
+  // 13. Pip — Artificer
+  {
+    name: 'Pip',
+    className: 'artificer',
+    level: 1,
+    maxHp: 9,
+    ac: 14,
+    portrait: '',
+    color: '#f97316',
+    personality: {
+      approves: ['invention', 'problem_solving', 'curiosity', 'practicality', 'tinkering'],
+      disapproves: ['luddism', 'wastefulness', 'anti_intellectualism', 'destroying_creations', 'rigid_tradition'],
+      voice: 'Excitable and inventive. Talks fast when inspired. Sees every problem as a puzzle waiting for the right gadget. Pockets always full of spare parts.',
+      backstory: 'A brilliant tinkerer expelled from the Artificers\' Guild for unauthorized experiments. Convinced their inventions can change the world — if they can keep them from exploding.',
+    },
+    abilities: [
+      { name: 'Flash of Genius', type: 'reaction', description: 'Add INT mod to ally\'s ability check or save', icon: '💡' },
+      { name: 'Infuse Item', type: 'bonus', description: 'Imbue an item with magical properties', icon: '🔧' },
+    ],
+  },
 ];
 
 // ─── Recommended Companion Personality (all 12 classes) ─────────
@@ -198,6 +298,12 @@ export const RECOMMENDED_COMPANION_PERSONALITY: Record<
   ClassName,
   { voice: string; approves: string[]; disapproves: string[]; backstory: string }
 > = {
+  artificer: {
+    voice: 'Excitable and inventive. Talks fast when inspired. Sees every problem as a puzzle waiting for the right gadget.',
+    approves: ['invention', 'problem_solving', 'curiosity', 'practicality', 'tinkering'],
+    disapproves: ['luddism', 'wastefulness', 'anti_intellectualism', 'destroying_creations', 'rigid_tradition'],
+    backstory: 'A restless inventor who left the workshop behind, convinced that true discovery happens in the field, not the laboratory.',
+  },
   barbarian: {
     voice: 'Blunt and fierce. Speaks with raw emotion and acts on instinct. Respects strength but values loyalty above all.',
     approves: ['strength', 'direct_action', 'loyalty', 'courage', 'honesty'],
@@ -275,6 +381,7 @@ export const RECOMMENDED_COMPANION_PERSONALITY: Record<
 // ─── Default Stats per Class (Level 1, 12 CON assumed) ──────────
 
 export const COMPANION_DEFAULT_STATS: Record<ClassName, { maxHp: number; ac: number }> = {
+  artificer: { maxHp: 9,  ac: 14 },   // d8+1, scale mail
   barbarian: { maxHp: 13, ac: 14 },   // d12+1, unarmored + shield
   bard:      { maxHp: 9,  ac: 13 },   // d8+1, leather + dex
   cleric:    { maxHp: 9,  ac: 16 },   // d8+1, chain mail + shield
@@ -292,6 +399,10 @@ export const COMPANION_DEFAULT_STATS: Record<ClassName, { maxHp: number; ac: num
 // ─── Default Abilities per Class (2 signature abilities) ────────
 
 export const COMPANION_DEFAULT_ABILITIES: Record<ClassName, CompanionAbility[]> = {
+  artificer: [
+    { name: 'Flash of Genius', type: 'reaction', description: 'Add INT mod to ally\'s ability check or save', icon: '💡' },
+    { name: 'Infuse Item', type: 'bonus', description: 'Imbue an item with magical properties', icon: '🔧' },
+  ],
   barbarian: [
     { name: 'Reckless Attack', type: 'attack', description: 'Gain advantage on attack, enemies gain advantage on you', icon: '⚔️' },
     { name: 'Rage', type: 'bonus', description: 'Resistance to physical damage, +2 melee damage for 1 minute', icon: '🔥' },
@@ -363,4 +474,15 @@ export function buildCompanion(starter: CompanionTemplate): Companion {
     abilities: starter.abilities,
     conditions: [],
   };
+}
+
+/** Look up a roster companion by class */
+export function getCompanionByClass(className: ClassName): CompanionTemplate | undefined {
+  return COMPANION_ROSTER.find(c => c.className === className);
+}
+
+/** Look up roster companions by names */
+export function getCompanionsByNames(names: string[]): CompanionTemplate[] {
+  const nameSet = new Set(names.map(n => n.toLowerCase()));
+  return COMPANION_ROSTER.filter(c => nameSet.has(c.name.toLowerCase()));
 }

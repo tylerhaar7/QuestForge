@@ -49,6 +49,7 @@ export const colors = {
 
   // Class colors (for party UI)
   class: {
+    artificer: '#e07020',
     barbarian: '#e25822',
     bard:      '#ab6dac',
     cleric:    '#91a1b2',

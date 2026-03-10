@@ -32,7 +32,7 @@ const MAX_COMPANIONS = 3;
 type Tab = 'roster' | 'create';
 
 const ALL_CLASSES: ClassName[] = [
-  'barbarian', 'bard', 'cleric', 'druid', 'fighter', 'monk',
+  'artificer', 'barbarian', 'bard', 'cleric', 'druid', 'fighter', 'monk',
   'paladin', 'ranger', 'rogue', 'sorcerer', 'warlock', 'wizard',
 ];
 
