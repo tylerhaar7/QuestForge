@@ -4,8 +4,9 @@
 import React, { useCallback, useState } from 'react';
 import { View, StyleSheet, FlatList, ActivityIndicator, Text, SafeAreaView, TextInput, Pressable, Keyboard, ScrollView, KeyboardAvoidingView, Platform, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
-import { colors } from '@/theme/colors';
+import { colors, PARCHMENT_TEXT } from '@/theme/colors';
 import { fonts, spacing, textStyles } from '@/theme/typography';
+import { FantasyPanel, FantasyButton } from '@/components/ui';
 import { useGameStore } from '@/stores/useGameStore';
 import { NarrativeText } from '@/components/game/NarrativeText';
 import { ChoiceButton } from '@/components/game/ChoiceButton';
@@ -298,7 +299,7 @@ export default function GameSessionScreen() {
           keyboardShouldPersistTaps="handled"
         >
           {/* Narrative Area */}
-          <View style={styles.narrativeArea}>
+          <FantasyPanel variant="pinned" style={styles.narrativeArea}>
             {isLoading ? (
               <View style={styles.loading}>
                 <ActivityIndicator size="small" color={colors.gold.primary} />
@@ -310,7 +311,7 @@ export default function GameSessionScreen() {
                 onComplete={handleNarrationComplete}
               />
             )}
-          </View>
+          </FantasyPanel>
 
           {/* Party Strip */}
           <View style={styles.partyStrip}>
@@ -412,7 +413,7 @@ export default function GameSessionScreen() {
         onRequestClose={() => setMenuVisible(false)}
       >
         <Pressable style={styles.modalOverlay} onPress={() => setMenuVisible(false)}>
-          <View style={styles.modalCard}>
+          <FantasyPanel variant="modal" style={styles.modalCard}>
             <Text style={styles.modalTitle}>MENU</Text>
 
             <Pressable style={styles.modalOption} onPress={() => { setMenuVisible(false); router.push('/game/camp'); }}>
@@ -442,10 +443,13 @@ export default function GameSessionScreen() {
               <Text style={styles.modalOptionDesc}>Start over with a new character</Text>
             </Pressable>
 
-            <Pressable style={styles.modalCancel} onPress={() => setMenuVisible(false)}>
-              <Text style={styles.modalCancelText}>Cancel</Text>
-            </Pressable>
-          </View>
+            <FantasyButton
+              variant="secondary"
+              label="Cancel"
+              onPress={() => setMenuVisible(false)}
+              style={styles.modalCancelBtn}
+            />
+          </FantasyPanel>
         </Pressable>
       </Modal>
 
@@ -456,22 +460,24 @@ export default function GameSessionScreen() {
         animationType="fade"
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
+          <FantasyPanel variant="modal" style={styles.modalCard}>
             <Text style={styles.tutorialCompleteTitle}>YOUR ADVENTURE{'\n'}BEGINS</Text>
             <Text style={styles.tutorialCompleteDesc}>
               You've learned the basics of combat, skill checks, and companion dynamics. The rest of your story is yours to write.
             </Text>
 
-            <Pressable style={styles.tutorialCreateBtn} onPress={handleTutorialCreate}>
-              <Text style={styles.tutorialCreateBtnText}>CREATE MY CHARACTER</Text>
-              <Text style={styles.tutorialCreateBtnDesc}>Build a unique hero from scratch</Text>
-            </Pressable>
+            <FantasyButton
+              variant="primary"
+              label="CREATE MY CHARACTER"
+              onPress={handleTutorialCreate}
+              style={styles.tutorialCreateBtn}
+            />
 
             <Pressable style={styles.modalOption} onPress={handleTutorialContinue}>
               <Text style={styles.modalOptionText}>Continue Playing</Text>
               <Text style={styles.modalOptionDesc}>Keep this character and keep adventuring</Text>
             </Pressable>
-          </View>
+          </FantasyPanel>
         </View>
       </Modal>
     </SafeAreaView>
@@ -633,57 +639,44 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
   },
   modalCard: {
-    backgroundColor: colors.bg.secondary,
-    borderWidth: 1,
-    borderColor: colors.gold.border,
-    borderRadius: 12,
-    padding: spacing.lg,
     width: '100%',
     maxWidth: 320,
   },
   modalTitle: {
     fontFamily: fonts.heading,
     fontSize: 13,
-    color: colors.gold.primary,
+    color: PARCHMENT_TEXT.accent,
     letterSpacing: 2,
     textAlign: 'center',
     marginBottom: spacing.lg,
   },
   modalOption: {
     borderWidth: 1,
-    borderColor: colors.gold.border,
+    borderColor: 'rgba(90,58,24,0.35)',
     borderRadius: 8,
     padding: spacing.md,
     marginBottom: spacing.sm,
-    backgroundColor: colors.bg.tertiary,
+    backgroundColor: 'rgba(90,58,24,0.08)',
   },
   modalOptionText: {
     fontFamily: fonts.heading,
     fontSize: 14,
-    color: colors.text.primary,
+    color: PARCHMENT_TEXT.primary,
     letterSpacing: 0.5,
   },
   modalOptionDesc: {
     fontFamily: fonts.body,
     fontSize: 12,
-    color: colors.text.tertiary,
+    color: PARCHMENT_TEXT.secondary,
     marginTop: 2,
   },
-  modalCancel: {
-    paddingVertical: spacing.md,
-    alignItems: 'center',
+  modalCancelBtn: {
     marginTop: spacing.xs,
-  },
-  modalCancelText: {
-    fontFamily: fonts.headingRegular,
-    fontSize: 13,
-    color: colors.text.tertiary,
-    letterSpacing: 1,
   },
   tutorialCompleteTitle: {
     fontFamily: fonts.heading,
     fontSize: 20,
-    color: colors.gold.primary,
+    color: PARCHMENT_TEXT.accent,
     letterSpacing: 2,
     textAlign: 'center',
     marginBottom: spacing.md,
@@ -692,31 +685,12 @@ const styles = StyleSheet.create({
   tutorialCompleteDesc: {
     fontFamily: fonts.narrative,
     fontSize: 15,
-    color: colors.text.secondary,
+    color: PARCHMENT_TEXT.secondary,
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: spacing.xl,
   },
   tutorialCreateBtn: {
-    borderWidth: 1,
-    borderColor: colors.gold.primary,
-    borderRadius: 8,
-    padding: spacing.md,
     marginBottom: spacing.sm,
-    backgroundColor: colors.gold.primary,
-  },
-  tutorialCreateBtnText: {
-    fontFamily: fonts.heading,
-    fontSize: 14,
-    color: colors.bg.primary,
-    letterSpacing: 0.5,
-    textAlign: 'center',
-  },
-  tutorialCreateBtnDesc: {
-    fontFamily: fonts.body,
-    fontSize: 12,
-    color: colors.bg.secondary,
-    marginTop: 2,
-    textAlign: 'center',
   },
 });
