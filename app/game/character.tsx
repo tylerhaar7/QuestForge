@@ -1,0 +1,1094 @@
+// Character Screen — Parchment scroll character sheet
+// Full-screen overlay styled as a classic D&D parchment with unroll animation
+
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  StyleSheet,
+  SafeAreaView,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
+
+import { colors } from '@/theme/colors';
+import { fonts, spacing } from '@/theme/typography';
+import { useGameStore } from '@/stores/useGameStore';
+import { getModifier, getSkillModifier, getSaveModifier, SKILL_ABILITIES } from '@/engine/character';
+import { CLASSES } from '@/data/classes';
+import { RACES } from '@/data/races';
+import type { Character, AbilityScore, Skill, EquipmentItem, InventoryItem, Spell } from '@/types/game';
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const PARCHMENT = {
+  body: '#e8d8b4',
+  edgeDark: 'rgba(160, 128, 80, 0.2)',
+  ink: '#2a1a08',
+  inkSecondary: '#6b5730',
+  gold: '#8b6914',
+  divider: '#b8a070',
+  agedSpot: 'rgba(160, 130, 80, 0.15)',
+};
+
+const ABILITY_LABELS: Record<AbilityScore, string> = {
+  strength: 'STR',
+  dexterity: 'DEX',
+  constitution: 'CON',
+  intelligence: 'INT',
+  wisdom: 'WIS',
+  charisma: 'CHA',
+};
+
+const ABILITY_ORDER: AbilityScore[] = [
+  'strength', 'dexterity', 'constitution',
+  'intelligence', 'wisdom', 'charisma',
+];
+
+const ALL_SKILLS: Skill[] = [
+  'acrobatics', 'animal_handling', 'arcana', 'athletics',
+  'deception', 'history', 'insight', 'intimidation',
+  'investigation', 'medicine', 'nature', 'perception',
+  'performance', 'persuasion', 'religion', 'sleight_of_hand',
+  'stealth', 'survival',
+];
+
+const SKILL_DISPLAY_NAMES: Record<Skill, string> = {
+  acrobatics: 'Acrobatics',
+  animal_handling: 'Animal Handling',
+  arcana: 'Arcana',
+  athletics: 'Athletics',
+  deception: 'Deception',
+  history: 'History',
+  insight: 'Insight',
+  intimidation: 'Intimidation',
+  investigation: 'Investigation',
+  medicine: 'Medicine',
+  nature: 'Nature',
+  perception: 'Perception',
+  performance: 'Performance',
+  persuasion: 'Persuasion',
+  religion: 'Religion',
+  sleight_of_hand: 'Sleight of Hand',
+  stealth: 'Stealth',
+  survival: 'Survival',
+};
+
+const EQUIPMENT_ICONS: Record<EquipmentItem['type'], string> = {
+  weapon: '\u2694',
+  armor: '\uD83D\uDEE1',
+  shield: '\uD83D\uDEE1',
+  accessory: '\u2726',
+};
+
+const INVENTORY_ICONS: Record<InventoryItem['type'], string> = {
+  consumable: '\uD83E\uDDEA',
+  quest: '\uD83D\uDCDC',
+  treasure: '\uD83D\uDCB0',
+  material: '\uD83D\uDD2E',
+  misc: '\uD83C\uDF92',
+};
+
+const SPELL_LEVEL_LABELS: Record<number, string> = {
+  0: 'CANTRIPS',
+  1: '1ST LEVEL',
+  2: '2ND LEVEL',
+  3: '3RD LEVEL',
+  4: '4TH LEVEL',
+  5: '5TH LEVEL',
+  6: '6TH LEVEL',
+  7: '7TH LEVEL',
+  8: '8TH LEVEL',
+  9: '9TH LEVEL',
+};
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function formatModifier(mod: number): string {
+  return mod >= 0 ? `+${mod}` : `${mod}`;
+}
+
+function getHpColor(hp: number, maxHp: number): string {
+  const ratio = maxHp > 0 ? hp / maxHp : 0;
+  if (ratio > 0.5) return '#2a6e1e';
+  if (ratio > 0.25) return '#8b7514';
+  return '#8b1a1a';
+}
+
+function getEquipmentSummary(item: EquipmentItem): string {
+  const props = item.properties;
+  if (item.type === 'weapon') {
+    const parts: string[] = [];
+    if (props.damage) parts.push(props.damage);
+    if (props.damageType) parts.push(props.damageType);
+    return parts.join(' ');
+  }
+  if (item.type === 'armor') {
+    return props.ac ? `AC ${props.ac}` : '';
+  }
+  if (item.type === 'shield') {
+    return props.acBonus ? `+${props.acBonus} AC` : '+2 AC';
+  }
+  return '';
+}
+
+function getRaceDisplayName(race: Character['race']): string {
+  return RACES[race]?.name ?? race;
+}
+
+function getClassDisplayName(className: Character['className']): string {
+  return CLASSES[className]?.name ?? className;
+}
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+function ParchmentCurlTop() {
+  return (
+    <View style={styles.curlContainer}>
+      <LinearGradient
+        colors={['#5a4020', '#7a5c32', '#c8a870', '#e8d4a8', '#c8a870']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={styles.curlGradient}
+      >
+        <LinearGradient
+          colors={['transparent', 'rgba(255,255,255,0.15)', 'transparent']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={styles.curlHighlight}
+        />
+      </LinearGradient>
+      <View style={styles.curlShadow} />
+    </View>
+  );
+}
+
+function ParchmentCurlBottom() {
+  return (
+    <View style={styles.curlContainer}>
+      <View style={styles.curlShadowBottom} />
+      <LinearGradient
+        colors={['#c8a870', '#e8d4a8', '#c8a870', '#7a5c32', '#5a4020']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={styles.curlGradient}
+      >
+        <LinearGradient
+          colors={['transparent', 'rgba(255,255,255,0.15)', 'transparent']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={styles.curlHighlight}
+        />
+      </LinearGradient>
+    </View>
+  );
+}
+
+function SectionDivider({ label }: { label: string }) {
+  return (
+    <View style={styles.sectionDivider}>
+      <View style={styles.sectionDividerLine} />
+      <Text style={styles.sectionDividerLabel}>{label}</Text>
+      <View style={styles.sectionDividerLine} />
+    </View>
+  );
+}
+
+function CharacterHeader({ character }: { character: Character }) {
+  const raceName = getRaceDisplayName(character.race);
+  const className = getClassDisplayName(character.className);
+
+  return (
+    <View style={styles.header}>
+      <Text style={styles.headerName}>{character.name}</Text>
+      <Text style={styles.headerSubtitle}>
+        Level {character.level} · {raceName} · {className}
+      </Text>
+      <View style={styles.headerBorder} />
+    </View>
+  );
+}
+
+function AbilityScoresSection({ character }: { character: Character }) {
+  return (
+    <View style={styles.abilitiesRow}>
+      {ABILITY_ORDER.map((ability) => {
+        const score = character.abilityScores[ability];
+        const mod = getModifier(score);
+        return (
+          <View key={ability} style={styles.abilityItem}>
+            <View style={styles.abilityDiamond}>
+              <Text style={styles.abilityScore}>{score}</Text>
+            </View>
+            <Text style={styles.abilityLabel}>{ABILITY_LABELS[ability]}</Text>
+            <Text style={styles.abilityModifier}>{formatModifier(mod)}</Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+function CombatStatsSection({ character }: { character: Character }) {
+  const hpColor = getHpColor(character.hp, character.maxHp);
+
+  return (
+    <View style={styles.combatRow}>
+      <View style={styles.combatCard}>
+        <Text style={styles.combatLabel}>AC</Text>
+        <Text style={styles.combatValue}>{character.ac}</Text>
+      </View>
+      <View style={styles.combatCard}>
+        <Text style={styles.combatLabel}>HP</Text>
+        <Text style={[styles.combatValue, { color: hpColor }]}>
+          {character.hp}/{character.maxHp}
+        </Text>
+      </View>
+      <View style={styles.combatCard}>
+        <Text style={styles.combatLabel}>SPEED</Text>
+        <Text style={styles.combatValue}>{character.speed}ft</Text>
+      </View>
+    </View>
+  );
+}
+
+function SavingThrowsSection({ character }: { character: Character }) {
+  return (
+    <View style={styles.savesRow}>
+      {ABILITY_ORDER.map((ability) => {
+        const mod = getSaveModifier(character, ability);
+        const isProficient = character.proficientSaves.includes(ability);
+        return (
+          <View
+            key={ability}
+            style={[
+              styles.savePill,
+              isProficient ? styles.savePillProficient : styles.savePillNormal,
+            ]}
+          >
+            <Text
+              style={[
+                styles.savePillText,
+                isProficient ? styles.savePillTextProficient : styles.savePillTextNormal,
+              ]}
+            >
+              {ABILITY_LABELS[ability]} {formatModifier(mod)}
+            </Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+function SkillsSection({ character }: { character: Character }) {
+  return (
+    <View style={styles.skillsList}>
+      {ALL_SKILLS.map((skill) => {
+        const mod = getSkillModifier(character, skill);
+        const isProficient = character.proficientSkills.includes(skill);
+        return (
+          <View key={skill} style={styles.skillRow}>
+            <Text
+              style={[
+                styles.skillName,
+                isProficient ? styles.skillProficient : styles.skillNormal,
+              ]}
+            >
+              {isProficient ? '\u25CF ' : '\u25CB '}
+              {SKILL_DISPLAY_NAMES[skill]}
+            </Text>
+            <Text
+              style={[
+                styles.skillModifier,
+                isProficient ? styles.skillProficient : styles.skillNormal,
+              ]}
+            >
+              {formatModifier(mod)}
+            </Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+function EquipmentSection({ equipment }: { equipment: EquipmentItem[] }) {
+  const equipped = equipment.filter((e) => e.equipped);
+
+  if (equipped.length === 0) {
+    return <Text style={styles.emptyText}>No equipment</Text>;
+  }
+
+  return (
+    <View>
+      {equipped.map((item, index) => {
+        const icon = EQUIPMENT_ICONS[item.type] || '\u2726';
+        const summary = getEquipmentSummary(item);
+        return (
+          <View
+            key={item.id}
+            style={[
+              styles.equipmentRow,
+              index < equipped.length - 1 && styles.equipmentRowBorder,
+            ]}
+          >
+            <Text style={styles.equipmentName}>
+              {icon} {item.name}
+            </Text>
+            {!!summary && (
+              <Text style={styles.equipmentSummary}>{summary}</Text>
+            )}
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+function InventorySection({ inventory }: { inventory: InventoryItem[] }) {
+  if (inventory.length === 0) {
+    return <Text style={styles.emptyText}>No items</Text>;
+  }
+
+  return (
+    <View>
+      {inventory.map((item, index) => {
+        const icon = INVENTORY_ICONS[item.type] || '\uD83C\uDF92';
+        return (
+          <View
+            key={item.id}
+            style={[
+              styles.equipmentRow,
+              index < inventory.length - 1 && styles.equipmentRowBorder,
+            ]}
+          >
+            <Text style={styles.equipmentName}>
+              {icon} {item.name}
+            </Text>
+            <Text style={styles.equipmentSummary}>x{item.quantity}</Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+function SpellsSection({ character }: { character: Character }) {
+  const [expandedSpells, setExpandedSpells] = useState<Set<string>>(new Set());
+  const spells = character.knownSpells;
+
+  if (!spells || spells.length === 0) {
+    return <Text style={styles.emptyTextItalic}>No spells known</Text>;
+  }
+
+  const toggleSpell = (name: string) => {
+    setExpandedSpells((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) {
+        next.delete(name);
+      } else {
+        next.add(name);
+      }
+      return next;
+    });
+  };
+
+  // Group spells by level
+  const grouped = new Map<number, Spell[]>();
+  for (const spell of spells) {
+    const list = grouped.get(spell.level) || [];
+    list.push(spell);
+    grouped.set(spell.level, list);
+  }
+  const sortedLevels = Array.from(grouped.keys()).sort((a, b) => a - b);
+
+  // Spell slot tracker
+  const hasSlots = character.maxSpellSlots.some((s) => s > 0);
+
+  return (
+    <View>
+      {/* Slot tracker */}
+      {hasSlots && (
+        <View style={styles.slotTrackerRow}>
+          {character.maxSpellSlots.map((maxSlot, idx) => {
+            if (idx === 0 || maxSlot === 0) return null;
+            const remaining = character.spellSlots[idx] || 0;
+            const dots: string[] = [];
+            for (let i = 0; i < maxSlot; i++) {
+              dots.push(i < remaining ? '\u25CF' : '\u25CB');
+            }
+            return (
+              <View key={idx} style={styles.slotGroup}>
+                <Text style={styles.slotLevel}>Lv{idx}</Text>
+                <Text style={styles.slotDots}>{dots.join(' ')}</Text>
+                <Text style={styles.slotCount}>
+                  {remaining}/{maxSlot}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
+      )}
+
+      {/* Spell groups */}
+      {sortedLevels.map((level) => {
+        const levelSpells = grouped.get(level) || [];
+        return (
+          <View key={level} style={styles.spellGroup}>
+            <Text style={styles.spellGroupLabel}>
+              {SPELL_LEVEL_LABELS[level] || `LEVEL ${level}`}
+            </Text>
+            <View style={styles.spellChipsRow}>
+              {levelSpells.map((spell) => {
+                const isExpanded = expandedSpells.has(spell.name);
+                return (
+                  <View key={spell.name} style={styles.spellChipWrapper}>
+                    <Pressable
+                      onPress={() => toggleSpell(spell.name)}
+                      style={[
+                        styles.spellChip,
+                        isExpanded && styles.spellChipExpanded,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.spellChipText,
+                          isExpanded && styles.spellChipTextExpanded,
+                        ]}
+                      >
+                        {spell.name}
+                      </Text>
+                    </Pressable>
+                    {isExpanded && (
+                      <View style={styles.spellDetails}>
+                        <Text style={styles.spellDetailRow}>
+                          <Text style={styles.spellDetailLabel}>Casting Time: </Text>
+                          {spell.castingTime}
+                        </Text>
+                        <Text style={styles.spellDetailRow}>
+                          <Text style={styles.spellDetailLabel}>Range: </Text>
+                          {spell.range}
+                        </Text>
+                        <Text style={styles.spellDetailRow}>
+                          <Text style={styles.spellDetailLabel}>Duration: </Text>
+                          {spell.duration}
+                        </Text>
+                        <Text style={styles.spellDetailRow}>
+                          <Text style={styles.spellDetailLabel}>Components: </Text>
+                          {spell.components}
+                        </Text>
+                        <Text style={styles.spellDescription}>
+                          {spell.description}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+function ClassFeaturesSection({ character }: { character: Character }) {
+  const classData = CLASSES[character.className];
+  const features = classData?.features || [];
+
+  if (features.length === 0) {
+    return <Text style={styles.emptyText}>No features</Text>;
+  }
+
+  return (
+    <View>
+      {features.map((feature, index) => (
+        <View key={index} style={styles.featureItem}>
+          <Text style={styles.featureName}>{feature.name}</Text>
+          <Text style={styles.featureDescription}>{feature.description}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+// ─── Screen ───────────────────────────────────────────────────────────────────
+
+export default function CharacterScreen() {
+  const router = useRouter();
+  const character = useGameStore((s) => s.character);
+
+  // Unroll animation
+  const progress = useSharedValue(0);
+
+  useEffect(() => {
+    progress.value = withSpring(1, { damping: 15, stiffness: 120 });
+  }, []);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: progress.value,
+    transform: [{ scale: 0.95 + 0.05 * progress.value }],
+  }));
+
+  const handleClose = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.back();
+  };
+
+  // ── Empty state ──────────────────────────────────────────────────────────
+  if (!character) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.emptyStateContainer}>
+          <Text style={styles.emptyStateText}>No character loaded</Text>
+        </View>
+        <Pressable style={styles.closeButton} onPress={handleClose}>
+          <Text style={styles.closeButtonText}>{'\u2715'}</Text>
+        </Pressable>
+      </SafeAreaView>
+    );
+  }
+
+  // ── Main layout ──────────────────────────────────────────────────────────
+  return (
+    <SafeAreaView style={styles.container}>
+      <Animated.View style={[styles.scrollContainer, animatedStyle]}>
+        {/* Top curl */}
+        <ParchmentCurlTop />
+
+        {/* Parchment body */}
+        <ScrollView
+          style={styles.parchmentBody}
+          contentContainerStyle={styles.parchmentContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Aged spots (decorative) */}
+          <View style={styles.agedSpot1} />
+          <View style={styles.agedSpot2} />
+          <View style={styles.agedSpot3} />
+
+          {/* Edge darkening overlays */}
+          <View style={styles.edgeLeft} />
+          <View style={styles.edgeRight} />
+
+          <CharacterHeader character={character} />
+
+          <SectionDivider label="ABILITY SCORES" />
+          <AbilityScoresSection character={character} />
+
+          <SectionDivider label="COMBAT" />
+          <CombatStatsSection character={character} />
+
+          <SectionDivider label="SAVING THROWS" />
+          <SavingThrowsSection character={character} />
+
+          <SectionDivider label="SKILLS" />
+          <SkillsSection character={character} />
+
+          <SectionDivider label="EQUIPMENT" />
+          <EquipmentSection equipment={character.equipment} />
+
+          <SectionDivider label="INVENTORY" />
+          <InventorySection inventory={character.inventory} />
+
+          <SectionDivider label="KNOWN SPELLS" />
+          <SpellsSection character={character} />
+
+          <SectionDivider label="CLASS FEATURES" />
+          <ClassFeaturesSection character={character} />
+
+          {/* Bottom padding */}
+          <View style={{ height: spacing.lg }} />
+        </ScrollView>
+
+        {/* Bottom curl */}
+        <ParchmentCurlBottom />
+      </Animated.View>
+
+      {/* Close button */}
+      <Pressable style={styles.closeButton} onPress={handleClose}>
+        <Text style={styles.closeButtonText}>{'\u2715'}</Text>
+      </Pressable>
+    </SafeAreaView>
+  );
+}
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.bg.primary,
+  },
+  scrollContainer: {
+    flex: 1,
+    marginHorizontal: spacing.sm,
+  },
+
+  // ── Close button ──────────────────────────────────────────────────────────
+  closeButton: {
+    position: 'absolute',
+    top: 12,
+    right: 16,
+    zIndex: 20,
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeButtonText: {
+    fontSize: 22,
+    color: '#ffffff',
+    fontFamily: fonts.heading,
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
+  },
+
+  // ── Parchment curls ───────────────────────────────────────────────────────
+  curlContainer: {
+    height: 48,
+    overflow: 'hidden',
+  },
+  curlGradient: {
+    flex: 1,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  curlHighlight: {
+    position: 'absolute',
+    top: '25%',
+    left: 0,
+    right: 0,
+    height: '50%',
+  },
+  curlShadow: {
+    height: 6,
+    backgroundColor: 'rgba(0,0,0,0.15)',
+    marginTop: -2,
+  },
+  curlShadowBottom: {
+    height: 6,
+    backgroundColor: 'rgba(0,0,0,0.15)',
+    marginBottom: -2,
+  },
+
+  // ── Parchment body ────────────────────────────────────────────────────────
+  parchmentBody: {
+    flex: 1,
+    backgroundColor: PARCHMENT.body,
+  },
+  parchmentContent: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
+  },
+
+  // ── Aged spots (decorative) ───────────────────────────────────────────────
+  agedSpot1: {
+    position: 'absolute',
+    top: 80,
+    right: 30,
+    width: 60,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: PARCHMENT.agedSpot,
+  },
+  agedSpot2: {
+    position: 'absolute',
+    top: 320,
+    left: 20,
+    width: 45,
+    height: 35,
+    borderRadius: 18,
+    backgroundColor: PARCHMENT.agedSpot,
+  },
+  agedSpot3: {
+    position: 'absolute',
+    top: 600,
+    right: 50,
+    width: 55,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: PARCHMENT.agedSpot,
+  },
+
+  // ── Edge darkening ────────────────────────────────────────────────────────
+  edgeLeft: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    width: 12,
+    backgroundColor: PARCHMENT.edgeDark,
+  },
+  edgeRight: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    width: 12,
+    backgroundColor: PARCHMENT.edgeDark,
+  },
+
+  // ── Header ────────────────────────────────────────────────────────────────
+  header: {
+    alignItems: 'center',
+    paddingBottom: spacing.md,
+    marginBottom: spacing.xs,
+  },
+  headerName: {
+    fontFamily: fonts.heading,
+    fontSize: 22,
+    color: PARCHMENT.ink,
+    letterSpacing: 1,
+    textAlign: 'center',
+  },
+  headerSubtitle: {
+    fontFamily: fonts.bodyItalic,
+    fontSize: 12,
+    color: PARCHMENT.inkSecondary,
+    marginTop: spacing.xs,
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  headerBorder: {
+    width: '80%',
+    height: 1.5,
+    backgroundColor: PARCHMENT.divider,
+    marginTop: spacing.md,
+  },
+
+  // ── Section divider ───────────────────────────────────────────────────────
+  sectionDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  sectionDividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: PARCHMENT.divider,
+  },
+  sectionDividerLabel: {
+    fontFamily: fonts.heading,
+    fontSize: 9,
+    letterSpacing: 3,
+    color: PARCHMENT.gold,
+    marginHorizontal: spacing.sm,
+    textTransform: 'uppercase',
+  },
+
+  // ── Ability scores ────────────────────────────────────────────────────────
+  abilitiesRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingHorizontal: spacing.xs,
+  },
+  abilityItem: {
+    alignItems: 'center',
+    width: 48,
+  },
+  abilityDiamond: {
+    width: 38,
+    height: 38,
+    borderWidth: 1.5,
+    borderColor: PARCHMENT.gold,
+    borderRadius: 4,
+    transform: [{ rotate: '45deg' }],
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(232, 216, 180, 0.6)',
+  },
+  abilityScore: {
+    fontFamily: fonts.heading,
+    fontSize: 14,
+    color: PARCHMENT.ink,
+    transform: [{ rotate: '-45deg' }],
+  },
+  abilityLabel: {
+    fontFamily: fonts.heading,
+    fontSize: 8,
+    letterSpacing: 2,
+    color: PARCHMENT.gold,
+    marginTop: 10,
+    textTransform: 'uppercase',
+  },
+  abilityModifier: {
+    fontFamily: fonts.body,
+    fontSize: 11,
+    color: PARCHMENT.inkSecondary,
+    marginTop: 2,
+  },
+
+  // ── Combat stats ──────────────────────────────────────────────────────────
+  combatRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    gap: spacing.sm,
+  },
+  combatCard: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+    borderWidth: 1,
+    borderColor: PARCHMENT.gold,
+    borderRadius: 8,
+    backgroundColor: 'rgba(139, 105, 20, 0.06)',
+  },
+  combatLabel: {
+    fontFamily: fonts.heading,
+    fontSize: 8,
+    letterSpacing: 2,
+    color: PARCHMENT.gold,
+    textTransform: 'uppercase',
+    marginBottom: 2,
+  },
+  combatValue: {
+    fontFamily: fonts.heading,
+    fontSize: 18,
+    color: PARCHMENT.ink,
+  },
+
+  // ── Saving throws ─────────────────────────────────────────────────────────
+  savesRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: spacing.sm,
+  },
+  savePill: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 1,
+    borderRadius: 16,
+  },
+  savePillProficient: {
+    backgroundColor: PARCHMENT.gold,
+  },
+  savePillNormal: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: PARCHMENT.divider,
+  },
+  savePillText: {
+    fontFamily: fonts.headingRegular,
+    fontSize: 10,
+    letterSpacing: 1,
+  },
+  savePillTextProficient: {
+    color: '#f0e6d0',
+  },
+  savePillTextNormal: {
+    color: PARCHMENT.inkSecondary,
+  },
+
+  // ── Skills ────────────────────────────────────────────────────────────────
+  skillsList: {
+    gap: 1,
+  },
+  skillRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 3,
+    paddingHorizontal: spacing.xs,
+  },
+  skillName: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    flex: 1,
+  },
+  skillModifier: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 13,
+    textAlign: 'right',
+    minWidth: 30,
+  },
+  skillProficient: {
+    color: PARCHMENT.gold,
+    fontFamily: fonts.bodyBold,
+  },
+  skillNormal: {
+    color: PARCHMENT.inkSecondary,
+  },
+
+  // ── Equipment & Inventory ─────────────────────────────────────────────────
+  equipmentRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+  },
+  equipmentRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: PARCHMENT.divider,
+    borderStyle: 'dotted',
+  },
+  equipmentName: {
+    fontFamily: fonts.body,
+    fontSize: 14,
+    color: PARCHMENT.ink,
+    flex: 1,
+  },
+  equipmentSummary: {
+    fontFamily: fonts.bodyItalic,
+    fontSize: 12,
+    color: PARCHMENT.inkSecondary,
+    fontStyle: 'italic',
+    marginLeft: spacing.sm,
+  },
+
+  // ── Spells ────────────────────────────────────────────────────────────────
+  slotTrackerRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.md,
+    marginBottom: spacing.md,
+    justifyContent: 'center',
+  },
+  slotGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  slotLevel: {
+    fontFamily: fonts.heading,
+    fontSize: 9,
+    color: PARCHMENT.gold,
+    letterSpacing: 1,
+  },
+  slotDots: {
+    fontFamily: fonts.body,
+    fontSize: 10,
+    color: PARCHMENT.gold,
+    letterSpacing: 2,
+  },
+  slotCount: {
+    fontFamily: fonts.body,
+    fontSize: 9,
+    color: PARCHMENT.inkSecondary,
+  },
+  spellGroup: {
+    marginBottom: spacing.md,
+  },
+  spellGroupLabel: {
+    fontFamily: fonts.heading,
+    fontSize: 9,
+    letterSpacing: 2,
+    color: PARCHMENT.gold,
+    marginBottom: spacing.xs,
+    textTransform: 'uppercase',
+  },
+  spellChipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+  },
+  spellChipWrapper: {
+    marginBottom: spacing.xs,
+  },
+  spellChip: {
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.xs,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: PARCHMENT.divider,
+    backgroundColor: 'rgba(139, 105, 20, 0.08)',
+  },
+  spellChipExpanded: {
+    backgroundColor: 'rgba(139, 105, 20, 0.15)',
+    borderColor: PARCHMENT.gold,
+  },
+  spellChipText: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    color: PARCHMENT.ink,
+  },
+  spellChipTextExpanded: {
+    fontFamily: fonts.bodyBold,
+    color: PARCHMENT.gold,
+  },
+  spellDetails: {
+    marginTop: spacing.xs,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xs,
+    backgroundColor: 'rgba(139, 105, 20, 0.06)',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: PARCHMENT.divider,
+  },
+  spellDetailRow: {
+    fontFamily: fonts.body,
+    fontSize: 11,
+    color: PARCHMENT.inkSecondary,
+    lineHeight: 18,
+  },
+  spellDetailLabel: {
+    fontFamily: fonts.bodyBold,
+    color: PARCHMENT.ink,
+  },
+  spellDescription: {
+    fontFamily: fonts.bodyItalic,
+    fontSize: 11,
+    color: PARCHMENT.ink,
+    lineHeight: 18,
+    marginTop: spacing.xs,
+    fontStyle: 'italic',
+  },
+
+  // ── Class Features ────────────────────────────────────────────────────────
+  featureItem: {
+    marginBottom: spacing.md,
+  },
+  featureName: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 14,
+    color: PARCHMENT.ink,
+    marginBottom: 2,
+  },
+  featureDescription: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    color: PARCHMENT.inkSecondary,
+    lineHeight: 20,
+  },
+
+  // ── Empty states ──────────────────────────────────────────────────────────
+  emptyText: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    color: PARCHMENT.inkSecondary,
+    textAlign: 'center',
+    paddingVertical: spacing.sm,
+  },
+  emptyTextItalic: {
+    fontFamily: fonts.bodyItalic,
+    fontSize: 13,
+    color: PARCHMENT.inkSecondary,
+    textAlign: 'center',
+    paddingVertical: spacing.sm,
+    fontStyle: 'italic',
+  },
+  emptyStateContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyStateText: {
+    fontFamily: fonts.narrativeItalic,
+    fontSize: 16,
+    color: colors.text.tertiary,
+    fontStyle: 'italic',
+  },
+});
