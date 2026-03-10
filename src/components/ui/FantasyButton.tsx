@@ -46,12 +46,14 @@ export function FantasyButton({
   }));
 
   const handlePressIn = useCallback(() => {
+    if (disabled) return;
     scale.value = withSpring(0.96, { damping: 20, stiffness: 300 });
-  }, [scale]);
+  }, [scale, disabled]);
 
   const handlePressOut = useCallback(() => {
+    if (disabled) return;
     scale.value = withSpring(1, { damping: 20, stiffness: 300 });
-  }, [scale]);
+  }, [scale, disabled]);
 
   const handlePress = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
