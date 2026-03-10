@@ -3,8 +3,9 @@ import {
   View, Text, Pressable, ScrollView, StyleSheet, SafeAreaView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { colors } from '@/theme/colors';
+import { colors, PARCHMENT_TEXT } from '@/theme/colors';
 import { fonts, spacing, textStyles } from '@/theme/typography';
+import { FantasyPanel, FantasyButton } from '@/components/ui';
 import {
   useCharacterCreationStore,
   STANDARD_ARRAY,
@@ -333,38 +334,32 @@ export default function AbilityScoreScreen() {
                 return (
                   <Pressable
                     key={skill}
-                    style={[
-                      styles.skillCard,
-                      isSelected && styles.skillCardSelected,
-                      isDisabled && styles.skillCardDisabled,
-                    ]}
+                    style={{ opacity: isDisabled ? 0.3 : 1 }}
                     onPress={() => handleSkillToggle(skill)}
                     disabled={isDisabled}
                   >
-                    <View style={styles.skillCardHeader}>
-                      <Text style={[
-                        styles.skillCardName,
-                        isSelected && styles.skillCardNameSelected,
-                        isDisabled && styles.skillCardNameDisabled,
-                      ]}>
-                        {skillData.name}
+                    <FantasyPanel variant="card">
+                      <View style={styles.skillCardHeader}>
+                        <Text style={[
+                          styles.skillCardName,
+                          isSelected && styles.skillCardNameSelected,
+                        ]}>
+                          {skillData.name}
+                        </Text>
+                        <Text style={[
+                          styles.skillCardAbility,
+                          isSelected && styles.skillCardAbilitySelected,
+                        ]}>
+                          {abilityAbbr}
+                        </Text>
+                      </View>
+                      <Text
+                        style={styles.skillCardDesc}
+                        numberOfLines={2}
+                      >
+                        {skillData.description}
                       </Text>
-                      <Text style={[
-                        styles.skillCardAbility,
-                        isSelected && styles.skillCardAbilitySelected,
-                      ]}>
-                        {abilityAbbr}
-                      </Text>
-                    </View>
-                    <Text
-                      style={[
-                        styles.skillCardDesc,
-                        isDisabled && styles.skillCardDescDisabled,
-                      ]}
-                      numberOfLines={2}
-                    >
-                      {skillData.description}
-                    </Text>
+                    </FantasyPanel>
                   </Pressable>
                 );
               })}
@@ -377,13 +372,7 @@ export default function AbilityScoreScreen() {
 
       {/* ── Footer ── */}
       <View style={styles.footer}>
-        <Pressable
-          style={[styles.continueButton, !canProceed && styles.continueButtonDisabled]}
-          onPress={handleContinue}
-          disabled={!canProceed}
-        >
-          <Text style={styles.continueButtonText}>CONTINUE</Text>
-        </Pressable>
+        <FantasyButton variant="primary" label="CONTINUE" onPress={handleContinue} disabled={!canProceed} />
       </View>
     </SafeAreaView>
   );
@@ -601,20 +590,6 @@ const styles = StyleSheet.create({
   skillsGrid: {
     gap: spacing.sm,
   },
-  skillCard: {
-    padding: spacing.md,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.gold.border,
-    backgroundColor: colors.bg.secondary,
-  },
-  skillCardSelected: {
-    borderColor: colors.gold.primary,
-    backgroundColor: colors.gold.glow,
-  },
-  skillCardDisabled: {
-    opacity: 0.3,
-  },
   skillCardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -624,37 +599,31 @@ const styles = StyleSheet.create({
   skillCardName: {
     fontFamily: fonts.heading,
     fontSize: 14,
-    color: colors.text.primary,
+    color: PARCHMENT_TEXT.primary,
   },
   skillCardNameSelected: {
-    color: colors.gold.primary,
-  },
-  skillCardNameDisabled: {
-    color: colors.text.disabled,
+    color: PARCHMENT_TEXT.accent,
   },
   skillCardAbility: {
     fontFamily: fonts.headingRegular,
     fontSize: 10,
     letterSpacing: 1,
-    color: colors.text.tertiary,
+    color: PARCHMENT_TEXT.label,
     borderWidth: 1,
-    borderColor: colors.gold.border,
+    borderColor: '#b8a070',
     borderRadius: 4,
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
   skillCardAbilitySelected: {
-    borderColor: colors.gold.primary,
-    color: colors.gold.muted,
+    borderColor: '#8b4513',
+    color: PARCHMENT_TEXT.accent,
   },
   skillCardDesc: {
     fontFamily: fonts.body,
     fontSize: 12,
     lineHeight: 17,
-    color: colors.text.secondary,
-  },
-  skillCardDescDisabled: {
-    color: colors.text.disabled,
+    color: PARCHMENT_TEXT.secondary,
   },
 
   // Footer
@@ -662,20 +631,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     paddingBottom: spacing.lg,
     paddingTop: spacing.sm,
-  },
-  continueButton: {
-    backgroundColor: colors.gold.primary,
-    paddingVertical: spacing.md + 2,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  continueButtonDisabled: {
-    opacity: 0.3,
-  },
-  continueButtonText: {
-    ...textStyles.buttonLabel,
-    color: colors.bg.primary,
-    fontSize: 14,
-    fontFamily: fonts.heading,
   },
 });

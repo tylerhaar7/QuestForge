@@ -4,8 +4,9 @@ import {
   TextInput,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { colors } from '@/theme/colors';
+import { colors, PARCHMENT_TEXT } from '@/theme/colors';
 import { fonts, spacing, textStyles } from '@/theme/typography';
+import { FantasyPanel, FantasyButton } from '@/components/ui';
 import { useCharacterCreationStore } from '@/stores/useCharacterCreationStore';
 import { ORIGINS, type OriginData } from '@/data/origins';
 import type { Skill } from '@/types/game';
@@ -33,22 +34,21 @@ function OriginCard({
   onPress: () => void;
 }) {
   return (
-    <Pressable
-      style={[styles.card, selected && styles.cardSelected]}
-      onPress={onPress}
-    >
-      <Text style={[styles.cardName, selected && styles.cardNameSelected]}>
-        {origin.name}
-      </Text>
-      <Text style={styles.cardDesc}>{origin.description}</Text>
-      <Text style={styles.cardQuest}>"{origin.personalQuest}"</Text>
-      {origin.bonusSkills.length > 0 && (
-        <View style={styles.skills}>
-          {origin.bonusSkills.map((skill) => (
-            <SkillPill key={skill} skill={skill} />
-          ))}
-        </View>
-      )}
+    <Pressable onPress={onPress} style={{ opacity: selected ? 1 : 0.85 }}>
+      <FantasyPanel variant="card">
+        <Text style={[styles.cardName, selected && styles.cardNameSelected]}>
+          {origin.name}
+        </Text>
+        <Text style={styles.cardDesc}>{origin.description}</Text>
+        <Text style={styles.cardQuest}>"{origin.personalQuest}"</Text>
+        {origin.bonusSkills.length > 0 && (
+          <View style={styles.skills}>
+            {origin.bonusSkills.map((skill) => (
+              <SkillPill key={skill} skill={skill} />
+            ))}
+          </View>
+        )}
+      </FantasyPanel>
     </Pressable>
   );
 }
@@ -75,39 +75,38 @@ function CustomOriginCard({
   };
 
   return (
-    <Pressable
-      style={[styles.card, styles.customCard, selected && styles.cardSelected]}
-      onPress={handlePress}
-    >
-      <View style={styles.customHeader}>
-        <Text style={[styles.cardName, selected && styles.cardNameSelected]}>
-          Write Your Own
-        </Text>
-        <Text style={styles.customBadge}>CUSTOM</Text>
-      </View>
-      <Text style={styles.cardDesc}>
-        Craft a unique backstory that sets your character apart. The AI Dungeon Master will weave your origin into the narrative.
-      </Text>
-
-      {selected && (
-        <View style={styles.inputWrapper}>
-          <TextInput
-            ref={inputRef}
-            style={styles.customInput}
-            value={customText}
-            onChangeText={onChangeText}
-            placeholder="Describe your character's origin…"
-            placeholderTextColor={colors.text.disabled}
-            multiline
-            maxLength={MAX_CUSTOM_LENGTH}
-            textAlignVertical="top"
-            selectionColor={colors.gold.primary}
-          />
-          <Text style={styles.charCount}>
-            {customText.length}/{MAX_CUSTOM_LENGTH}
+    <Pressable onPress={handlePress} style={{ opacity: selected ? 1 : 0.85 }}>
+      <FantasyPanel variant="card">
+        <View style={styles.customHeader}>
+          <Text style={[styles.cardName, selected && styles.cardNameSelected]}>
+            Write Your Own
           </Text>
+          <Text style={styles.customBadge}>CUSTOM</Text>
         </View>
-      )}
+        <Text style={styles.cardDesc}>
+          Craft a unique backstory that sets your character apart. The AI Dungeon Master will weave your origin into the narrative.
+        </Text>
+
+        {selected && (
+          <View style={styles.inputWrapper}>
+            <TextInput
+              ref={inputRef}
+              style={styles.customInput}
+              value={customText}
+              onChangeText={onChangeText}
+              placeholder="Describe your character's origin…"
+              placeholderTextColor={colors.text.disabled}
+              multiline
+              maxLength={MAX_CUSTOM_LENGTH}
+              textAlignVertical="top"
+              selectionColor={colors.gold.primary}
+            />
+            <Text style={styles.charCount}>
+              {customText.length}/{MAX_CUSTOM_LENGTH}
+            </Text>
+          </View>
+        )}
+      </FantasyPanel>
     </Pressable>
   );
 }
@@ -175,13 +174,7 @@ export default function OriginSelectionScreen() {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Pressable
-          style={[styles.nextButton, !canContinue && styles.nextButtonDisabled]}
-          onPress={handleNext}
-          disabled={!canContinue}
-        >
-          <Text style={styles.nextButtonText}>CONTINUE</Text>
-        </Pressable>
+        <FantasyButton variant="primary" label="CONTINUE" onPress={handleNext} disabled={!canContinue} />
       </View>
     </SafeAreaView>
   );
@@ -215,31 +208,18 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
 
-  // Card base
-  card: {
-    borderWidth: 1,
-    borderColor: colors.gold.border,
-    borderRadius: 10,
-    padding: spacing.lg,
-    backgroundColor: colors.bg.secondary,
-  },
-  cardSelected: {
-    borderColor: colors.gold.primary,
-    backgroundColor: colors.bg.tertiary,
-  },
-
   cardName: {
     ...textStyles.characterName,
-    color: colors.text.primary,
+    color: PARCHMENT_TEXT.primary,
     fontSize: 16,
     marginBottom: spacing.xs,
   },
-  cardNameSelected: { color: colors.gold.primary },
+  cardNameSelected: { color: PARCHMENT_TEXT.accent },
 
   cardDesc: {
     fontFamily: fonts.body,
     fontSize: 13,
-    color: colors.text.secondary,
+    color: PARCHMENT_TEXT.secondary,
     lineHeight: 20,
     marginBottom: spacing.sm,
   },
@@ -247,7 +227,7 @@ const styles = StyleSheet.create({
   cardQuest: {
     fontFamily: fonts.bodyItalic,
     fontSize: 13,
-    color: colors.text.tertiary,
+    color: PARCHMENT_TEXT.label,
     lineHeight: 19,
     marginBottom: spacing.sm,
   },
@@ -261,9 +241,9 @@ const styles = StyleSheet.create({
   skillPill: {
     fontFamily: fonts.headingRegular,
     fontSize: 10,
-    color: colors.text.tertiary,
+    color: PARCHMENT_TEXT.label,
     borderWidth: 1,
-    borderColor: colors.gold.border,
+    borderColor: '#b8a070',
     borderRadius: 4,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
@@ -272,9 +252,6 @@ const styles = StyleSheet.create({
   },
 
   // Custom card additions
-  customCard: {
-    borderStyle: 'dashed',
-  },
   customHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -285,9 +262,9 @@ const styles = StyleSheet.create({
     fontFamily: fonts.heading,
     fontSize: 9,
     letterSpacing: 1.5,
-    color: colors.gold.muted,
+    color: PARCHMENT_TEXT.label,
     borderWidth: 1,
-    borderColor: colors.gold.dim,
+    borderColor: '#b8a070',
     borderRadius: 3,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
@@ -322,18 +299,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     paddingBottom: spacing.lg,
     paddingTop: spacing.sm,
-  },
-  nextButton: {
-    backgroundColor: colors.gold.primary,
-    paddingVertical: spacing.md + 2,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  nextButtonDisabled: { opacity: 0.3 },
-  nextButtonText: {
-    ...textStyles.buttonLabel,
-    color: colors.bg.primary,
-    fontSize: 14,
-    fontFamily: fonts.heading,
   },
 });

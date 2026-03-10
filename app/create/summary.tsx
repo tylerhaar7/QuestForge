@@ -10,8 +10,9 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { colors } from '@/theme/colors';
+import { colors, PARCHMENT_TEXT } from '@/theme/colors';
 import { fonts, spacing, textStyles } from '@/theme/typography';
+import { FantasyPanel, FantasyButton } from '@/components/ui';
 import { useCharacterCreationStore } from '@/stores/useCharacterCreationStore';
 import { RACES } from '@/data/races';
 import { CLASSES } from '@/data/classes';
@@ -44,7 +45,7 @@ function formatMod(mod: number): string {
   return mod >= 0 ? `+${mod}` : `${mod}`;
 }
 
-// Section wrapper
+// Section wrapper — uses FantasyPanel pinned variant for the whole review
 function SummarySection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <View style={styles.section}>
@@ -235,87 +236,90 @@ export default function CharacterSummaryScreen() {
           />
         </View>
 
-        {/* Race & Class */}
-        <SummarySection title="Race & Class">
-          <View style={styles.raceClassRow}>
-            <Text style={styles.raceClassLabel}>{raceClassLabel}</Text>
-            <View style={styles.hitDieBadge}>
-              <Text style={styles.hitDieText}>d{classData.hitDie}</Text>
-            </View>
-          </View>
-          <Text style={styles.bodyText}>{raceData.description}</Text>
-        </SummarySection>
-
-        {/* Ability Scores */}
-        <SummarySection title="Ability Scores">
-          <View style={styles.abilitiesGrid}>
-            {(Object.entries(finalScores ?? {}) as [string, number][]).map(([ability, score]) => {
-              const mod = getModifier(score);
-              return (
-                <View key={ability} style={styles.abilityItem}>
-                  <Text style={styles.abilityLabel}>{ABILITY_LABELS[ability]}</Text>
-                  <Text style={styles.abilityScore}>{score}</Text>
-                  <Text style={styles.abilityMod}>{formatMod(mod)}</Text>
-                </View>
-              );
-            })}
-          </View>
-        </SummarySection>
-
-        {/* Skills */}
-        <SummarySection title="Skill Proficiencies">
-          {allProficientSkills.length === 0 ? (
-            <Text style={styles.emptyText}>None selected</Text>
-          ) : (
-            <View style={styles.skillChips}>
-              {allProficientSkills.map(skill => (
-                <View key={skill} style={styles.skillChip}>
-                  <Text style={styles.skillChipText}>{formatSkill(skill)}</Text>
-                </View>
-              ))}
-            </View>
-          )}
-        </SummarySection>
-
-        {/* Origin */}
-        <SummarySection title="Origin">
-          <Text style={styles.originName}>{originName}</Text>
-          <Text style={styles.originQuest}>{originQuest}</Text>
-        </SummarySection>
-
-        {/* Starting Equipment */}
-        <SummarySection title="Starting Equipment">
-          {classData.startingEquipment.map(item => (
-            <View key={item.id} style={styles.equipmentRow}>
-              <View style={styles.equipmentTypeBadge}>
-                <Text style={styles.equipmentTypeText}>{item.type.toUpperCase()}</Text>
+        {/* Character Review Panel — pinned variant for larger content area */}
+        <FantasyPanel variant="pinned">
+          {/* Race & Class */}
+          <SummarySection title="Race & Class">
+            <View style={styles.raceClassRow}>
+              <Text style={styles.raceClassLabel}>{raceClassLabel}</Text>
+              <View style={styles.hitDieBadge}>
+                <Text style={styles.hitDieText}>d{classData.hitDie}</Text>
               </View>
-              <Text style={styles.equipmentName}>{item.name}</Text>
             </View>
-          ))}
-        </SummarySection>
+            <Text style={styles.bodyText}>{raceData.description}</Text>
+          </SummarySection>
 
-        {/* Computed Stats */}
-        <SummarySection title="Starting Stats">
-          <View style={styles.statsRow}>
-            <View style={styles.statBox}>
-              <Text style={styles.statBoxValue}>{maxHP}</Text>
-              <Text style={styles.statBoxLabel}>MAX HP</Text>
+          {/* Ability Scores */}
+          <SummarySection title="Ability Scores">
+            <View style={styles.abilitiesGrid}>
+              {(Object.entries(finalScores ?? {}) as [string, number][]).map(([ability, score]) => {
+                const mod = getModifier(score);
+                return (
+                  <View key={ability} style={styles.abilityItem}>
+                    <Text style={styles.abilityLabel}>{ABILITY_LABELS[ability]}</Text>
+                    <Text style={styles.abilityScore}>{score}</Text>
+                    <Text style={styles.abilityMod}>{formatMod(mod)}</Text>
+                  </View>
+                );
+              })}
             </View>
-            <View style={styles.statBox}>
-              <Text style={styles.statBoxValue}>{ac}</Text>
-              <Text style={styles.statBoxLabel}>AC</Text>
+          </SummarySection>
+
+          {/* Skills */}
+          <SummarySection title="Skill Proficiencies">
+            {allProficientSkills.length === 0 ? (
+              <Text style={styles.emptyText}>None selected</Text>
+            ) : (
+              <View style={styles.skillChips}>
+                {allProficientSkills.map(skill => (
+                  <View key={skill} style={styles.skillChip}>
+                    <Text style={styles.skillChipText}>{formatSkill(skill)}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+          </SummarySection>
+
+          {/* Origin */}
+          <SummarySection title="Origin">
+            <Text style={styles.originName}>{originName}</Text>
+            <Text style={styles.originQuest}>{originQuest}</Text>
+          </SummarySection>
+
+          {/* Starting Equipment */}
+          <SummarySection title="Starting Equipment">
+            {classData.startingEquipment.map(item => (
+              <View key={item.id} style={styles.equipmentRow}>
+                <View style={styles.equipmentTypeBadge}>
+                  <Text style={styles.equipmentTypeText}>{item.type.toUpperCase()}</Text>
+                </View>
+                <Text style={styles.equipmentName}>{item.name}</Text>
+              </View>
+            ))}
+          </SummarySection>
+
+          {/* Computed Stats */}
+          <SummarySection title="Starting Stats">
+            <View style={styles.statsRow}>
+              <View style={styles.statBox}>
+                <Text style={styles.statBoxValue}>{maxHP}</Text>
+                <Text style={styles.statBoxLabel}>MAX HP</Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={styles.statBoxValue}>{ac}</Text>
+                <Text style={styles.statBoxLabel}>AC</Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={styles.statBoxValue}>{`+${profBonus}`}</Text>
+                <Text style={styles.statBoxLabel}>PROF</Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={styles.statBoxValue}>{raceData.speed}</Text>
+                <Text style={styles.statBoxLabel}>SPEED</Text>
+              </View>
             </View>
-            <View style={styles.statBox}>
-              <Text style={styles.statBoxValue}>{`+${profBonus}`}</Text>
-              <Text style={styles.statBoxLabel}>PROF</Text>
-            </View>
-            <View style={styles.statBox}>
-              <Text style={styles.statBoxValue}>{raceData.speed}</Text>
-              <Text style={styles.statBoxLabel}>SPEED</Text>
-            </View>
-          </View>
-        </SummarySection>
+          </SummarySection>
+        </FantasyPanel>
 
         {/* Error */}
         {error ? (
@@ -325,20 +329,19 @@ export default function CharacterSummaryScreen() {
 
       {/* Footer */}
       <View style={styles.footer}>
-        <Pressable
-          style={[
-            styles.beginButton,
-            (!name.trim() || saving) && styles.beginButtonDisabled,
-          ]}
+        <FantasyButton
+          variant="primary"
+          label={saving ? 'SAVING...' : 'BEGIN ADVENTURE'}
           onPress={handleBeginAdventure}
           disabled={!name.trim() || saving}
-        >
-          {saving ? (
-            <ActivityIndicator size="small" color={colors.bg.primary} />
-          ) : (
-            <Text style={styles.beginButtonText}>BEGIN ADVENTURE</Text>
-          )}
-        </Pressable>
+        />
+        {saving && (
+          <ActivityIndicator
+            size="small"
+            color={colors.gold.primary}
+            style={styles.savingIndicator}
+          />
+        )}
       </View>
     </SafeAreaView>
   );
@@ -404,37 +407,31 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
 
-  // Section
+  // Section (inside FantasyPanel pinned)
   section: {
-    borderWidth: 1,
-    borderColor: colors.gold.border,
-    borderRadius: 10,
-    overflow: 'hidden',
+    marginBottom: spacing.md,
   },
   sectionTitle: {
     ...textStyles.sectionLabel,
-    color: colors.gold.muted,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    backgroundColor: colors.bg.secondary,
+    color: PARCHMENT_TEXT.label,
+    marginBottom: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: colors.gold.border,
+    borderBottomColor: '#c8a870',
+    paddingBottom: spacing.xs,
   },
   sectionBody: {
-    padding: spacing.lg,
-    backgroundColor: colors.bg.tertiary,
     gap: spacing.sm,
   },
   emptyText: {
     fontFamily: fonts.body,
     fontSize: 13,
-    color: colors.text.tertiary,
+    color: PARCHMENT_TEXT.secondary,
     fontStyle: 'italic',
   },
   bodyText: {
     fontFamily: fonts.body,
     fontSize: 13,
-    color: colors.text.secondary,
+    color: PARCHMENT_TEXT.secondary,
     lineHeight: 19,
   },
 
@@ -447,12 +444,12 @@ const styles = StyleSheet.create({
   raceClassLabel: {
     fontFamily: fonts.heading,
     fontSize: 17,
-    color: colors.text.primary,
+    color: PARCHMENT_TEXT.primary,
     letterSpacing: 0.5,
   },
   hitDieBadge: {
     borderWidth: 1,
-    borderColor: colors.gold.border,
+    borderColor: '#b8a070',
     borderRadius: 4,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
@@ -460,7 +457,7 @@ const styles = StyleSheet.create({
   hitDieText: {
     fontFamily: fonts.heading,
     fontSize: 11,
-    color: colors.gold.muted,
+    color: PARCHMENT_TEXT.label,
     letterSpacing: 1,
   },
 
@@ -473,30 +470,30 @@ const styles = StyleSheet.create({
   abilityItem: {
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: colors.gold.border,
+    borderColor: '#c8a870',
     borderRadius: 8,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
-    backgroundColor: colors.bg.secondary,
+    backgroundColor: 'rgba(255,255,255,0.15)',
     minWidth: 62,
   },
   abilityLabel: {
     fontFamily: fonts.heading,
     fontSize: 9,
-    color: colors.gold.muted,
+    color: PARCHMENT_TEXT.label,
     letterSpacing: 2,
     marginBottom: 2,
   },
   abilityScore: {
     fontFamily: fonts.heading,
     fontSize: 20,
-    color: colors.text.primary,
+    color: PARCHMENT_TEXT.primary,
     lineHeight: 24,
   },
   abilityMod: {
     fontFamily: fonts.headingRegular,
     fontSize: 11,
-    color: colors.gold.primary,
+    color: PARCHMENT_TEXT.accent,
     marginTop: 1,
   },
 
@@ -508,16 +505,16 @@ const styles = StyleSheet.create({
   },
   skillChip: {
     borderWidth: 1,
-    borderColor: colors.gold.border,
+    borderColor: '#b8a070',
     borderRadius: 4,
     paddingHorizontal: spacing.sm,
     paddingVertical: 3,
-    backgroundColor: colors.bg.secondary,
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
   skillChipText: {
     fontFamily: fonts.headingRegular,
     fontSize: 10,
-    color: colors.text.secondary,
+    color: PARCHMENT_TEXT.secondary,
     letterSpacing: 0.5,
   },
 
@@ -525,14 +522,14 @@ const styles = StyleSheet.create({
   originName: {
     fontFamily: fonts.heading,
     fontSize: 14,
-    color: colors.gold.primary,
+    color: PARCHMENT_TEXT.accent,
     letterSpacing: 0.5,
     marginBottom: spacing.xs,
   },
   originQuest: {
     fontFamily: fonts.bodyItalic,
     fontSize: 13,
-    color: colors.text.secondary,
+    color: PARCHMENT_TEXT.secondary,
     lineHeight: 19,
   },
 
@@ -544,7 +541,7 @@ const styles = StyleSheet.create({
   },
   equipmentTypeBadge: {
     borderWidth: 1,
-    borderColor: colors.gold.border,
+    borderColor: '#b8a070',
     borderRadius: 3,
     paddingHorizontal: 5,
     paddingVertical: 1,
@@ -554,13 +551,13 @@ const styles = StyleSheet.create({
   equipmentTypeText: {
     fontFamily: fonts.heading,
     fontSize: 8,
-    color: colors.text.tertiary,
+    color: PARCHMENT_TEXT.label,
     letterSpacing: 1,
   },
   equipmentName: {
     fontFamily: fonts.body,
     fontSize: 13,
-    color: colors.text.primary,
+    color: PARCHMENT_TEXT.primary,
   },
 
   // Stats row
@@ -572,21 +569,21 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: colors.gold.border,
+    borderColor: '#c8a870',
     borderRadius: 8,
     paddingVertical: spacing.md,
-    backgroundColor: colors.bg.secondary,
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
   statBoxValue: {
     fontFamily: fonts.heading,
     fontSize: 20,
-    color: colors.gold.primary,
+    color: PARCHMENT_TEXT.accent,
     lineHeight: 24,
   },
   statBoxLabel: {
     fontFamily: fonts.heading,
     fontSize: 8,
-    color: colors.text.tertiary,
+    color: PARCHMENT_TEXT.label,
     letterSpacing: 1.5,
     marginTop: 2,
   },
@@ -607,23 +604,9 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
     borderTopWidth: 1,
     borderTopColor: colors.gold.border,
+    gap: spacing.sm,
   },
-  beginButton: {
-    backgroundColor: colors.gold.primary,
-    paddingVertical: spacing.lg,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 52,
-  },
-  beginButtonDisabled: {
-    opacity: 0.4,
-  },
-  beginButtonText: {
-    ...textStyles.buttonLabel,
-    color: colors.bg.primary,
-    fontSize: 15,
-    fontFamily: fonts.heading,
-    letterSpacing: 2,
+  savingIndicator: {
+    alignSelf: 'center',
   },
 });

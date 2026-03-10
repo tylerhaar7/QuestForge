@@ -14,8 +14,9 @@ import {
   Platform,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { colors } from '@/theme/colors';
+import { colors, PARCHMENT_TEXT } from '@/theme/colors';
 import { fonts, spacing, textStyles } from '@/theme/typography';
+import { FantasyPanel, FantasyButton, PortraitFrame } from '@/components/ui';
 import {
   COMPANION_ROSTER,
   RECOMMENDED_COMPANION_PERSONALITY,
@@ -232,22 +233,20 @@ export default function CompanionSelectionScreen() {
         {/* Recruitment Mode Selection */}
         {!recruitmentMode ? (
           <View style={styles.recruitmentModeContainer}>
-            <Pressable
-              style={styles.recruitmentCard}
-              onPress={() => setRecruitmentMode('choose')}
-            >
-              <Text style={styles.recruitmentIcon}>⚔️</Text>
-              <Text style={styles.recruitmentTitle}>CHOOSE MY PARTY</Text>
-              <Text style={styles.recruitmentDesc}>Pick 3 companions who join you from the start</Text>
+            <Pressable onPress={() => setRecruitmentMode('choose')}>
+              <FantasyPanel variant="card">
+                <Text style={styles.recruitmentIcon}>⚔️</Text>
+                <Text style={styles.recruitmentTitle}>CHOOSE MY PARTY</Text>
+                <Text style={styles.recruitmentDesc}>Pick 3 companions who join you from the start</Text>
+              </FantasyPanel>
             </Pressable>
 
-            <Pressable
-              style={styles.recruitmentCard}
-              onPress={() => setRecruitmentMode('discover')}
-            >
-              <Text style={styles.recruitmentIcon}>🌟</Text>
-              <Text style={styles.recruitmentTitle}>DISCOVER ALONG THE WAY</Text>
-              <Text style={styles.recruitmentDesc}>Meet companions throughout your journey. Pick who fate will bring.</Text>
+            <Pressable onPress={() => setRecruitmentMode('discover')}>
+              <FantasyPanel variant="card">
+                <Text style={styles.recruitmentIcon}>🌟</Text>
+                <Text style={styles.recruitmentTitle}>DISCOVER ALONG THE WAY</Text>
+                <Text style={styles.recruitmentDesc}>Meet companions throughout your journey. Pick who fate will bring.</Text>
+              </FantasyPanel>
             </Pressable>
           </View>
         ) : null}
@@ -305,57 +304,61 @@ export default function CompanionSelectionScreen() {
                 return (
                   <Pressable
                     key={`${companion.name}-${companion.className}-${index}`}
-                    style={[styles.companionCard, selected && styles.companionCardSelected]}
                     onPress={() => handleToggleCompanion(companion)}
+                    style={{ opacity: selected ? 1 : 0.85 }}
                   >
-                    {/* Name + class */}
-                    <View style={styles.cardHeader}>
-                      <View style={styles.cardNameRow}>
-                        <View
-                          style={[
-                            styles.classColorDot,
-                            { backgroundColor: companion.color },
-                          ]}
-                        />
-                        <Text style={styles.cardName}>{companion.name}</Text>
-                      </View>
-                      <Text style={styles.cardClass}>
-                        {capitalize(companion.className)}
-                      </Text>
-                    </View>
-
-                    {/* Stats row */}
-                    <View style={styles.cardStatsRow}>
-                      <View style={styles.cardStat}>
-                        <Text style={styles.cardStatLabel}>HP</Text>
-                        <Text style={styles.cardStatValue}>{companion.maxHp}</Text>
-                      </View>
-                      <View style={styles.cardStat}>
-                        <Text style={styles.cardStatLabel}>AC</Text>
-                        <Text style={styles.cardStatValue}>{companion.ac}</Text>
-                      </View>
-                    </View>
-
-                    {/* Voice snippet */}
-                    <Text style={styles.cardVoice} numberOfLines={2}>
-                      {truncate(companion.personality.voice, 100)}
-                    </Text>
-
-                    {/* Abilities */}
-                    <View style={styles.cardAbilitiesRow}>
-                      {companion.abilities.slice(0, 2).map((ability) => (
-                        <View key={ability.name} style={styles.abilityTag}>
-                          <Text style={styles.abilityTagText}>{ability.name}</Text>
+                    <FantasyPanel variant="card">
+                      {/* Name + class */}
+                      <View style={styles.cardHeader}>
+                        <View style={styles.cardNameRow}>
+                          <PortraitFrame size="sm" variant="simple">
+                            <View
+                              style={[
+                                styles.portraitInner,
+                                { backgroundColor: companion.color },
+                              ]}
+                            />
+                          </PortraitFrame>
+                          <Text style={styles.cardName}>{companion.name}</Text>
                         </View>
-                      ))}
-                    </View>
-
-                    {/* Selected badge */}
-                    {selected && (
-                      <View style={styles.selectedBadge}>
-                        <Text style={styles.selectedBadgeText}>SELECTED</Text>
+                        <View style={styles.cardHeaderRight}>
+                          {selected && (
+                            <View style={styles.selectedBadge}>
+                              <Text style={styles.selectedBadgeText}>SELECTED</Text>
+                            </View>
+                          )}
+                          <Text style={styles.cardClass}>
+                            {capitalize(companion.className)}
+                          </Text>
+                        </View>
                       </View>
-                    )}
+
+                      {/* Stats row */}
+                      <View style={styles.cardStatsRow}>
+                        <View style={styles.cardStat}>
+                          <Text style={styles.cardStatLabel}>HP</Text>
+                          <Text style={styles.cardStatValue}>{companion.maxHp}</Text>
+                        </View>
+                        <View style={styles.cardStat}>
+                          <Text style={styles.cardStatLabel}>AC</Text>
+                          <Text style={styles.cardStatValue}>{companion.ac}</Text>
+                        </View>
+                      </View>
+
+                      {/* Voice snippet */}
+                      <Text style={styles.cardVoice} numberOfLines={2}>
+                        {truncate(companion.personality.voice, 100)}
+                      </Text>
+
+                      {/* Abilities */}
+                      <View style={styles.cardAbilitiesRow}>
+                        {companion.abilities.slice(0, 2).map((ability) => (
+                          <View key={ability.name} style={styles.abilityTag}>
+                            <Text style={styles.abilityTagText}>{ability.name}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    </FantasyPanel>
                   </Pressable>
                 );
               })}
@@ -490,9 +493,13 @@ export default function CompanionSelectionScreen() {
               {formError && <Text style={styles.formError}>{formError}</Text>}
 
               {/* Add to party button */}
-              <Pressable style={styles.addButton} onPress={handleAddToParty}>
-                <Text style={styles.addButtonText}>ADD TO PARTY</Text>
-              </Pressable>
+              <View style={styles.addButtonWrapper}>
+                <FantasyButton
+                  variant="secondary"
+                  label="ADD TO PARTY"
+                  onPress={handleAddToParty}
+                />
+              </View>
             </View>
           )}
 
@@ -523,13 +530,7 @@ export default function CompanionSelectionScreen() {
           </Text>
 
           {/* Continue button */}
-          <Pressable
-            style={[styles.continueButton, !canContinue && styles.continueButtonDisabled]}
-            onPress={handleContinue}
-            disabled={!canContinue}
-          >
-            <Text style={styles.continueButtonText}>CONTINUE</Text>
-          </Pressable>
+          <FantasyButton variant="primary" label="CONTINUE" onPress={handleContinue} disabled={!canContinue} />
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -617,17 +618,6 @@ const styles = StyleSheet.create({
   rosterContainer: {
     gap: spacing.md,
   },
-  companionCard: {
-    borderWidth: 1,
-    borderColor: colors.gold.border,
-    borderRadius: 12,
-    padding: spacing.lg,
-    backgroundColor: colors.bg.tertiary,
-  },
-  companionCardSelected: {
-    borderColor: colors.gold.primary,
-    backgroundColor: colors.bg.secondary,
-  },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -639,20 +629,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
   },
-  classColorDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+  portraitInner: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 99,
+  },
+  cardHeaderRight: {
+    alignItems: 'flex-end',
+    gap: spacing.xs,
   },
   cardName: {
     ...textStyles.characterName,
-    color: colors.text.primary,
+    color: PARCHMENT_TEXT.primary,
   },
   cardClass: {
     fontFamily: fonts.headingRegular,
     fontSize: 11,
     letterSpacing: 1,
-    color: colors.text.tertiary,
+    color: PARCHMENT_TEXT.label,
     textTransform: 'uppercase',
   },
   cardStatsRow: {
@@ -667,17 +661,17 @@ const styles = StyleSheet.create({
   },
   cardStatLabel: {
     ...textStyles.statLabel,
-    color: colors.text.tertiary,
+    color: PARCHMENT_TEXT.label,
   },
   cardStatValue: {
     fontFamily: fonts.heading,
     fontSize: 14,
-    color: colors.gold.primary,
+    color: PARCHMENT_TEXT.accent,
   },
   cardVoice: {
     fontFamily: fonts.bodyItalic,
     fontSize: 13,
-    color: colors.text.secondary,
+    color: PARCHMENT_TEXT.secondary,
     lineHeight: 19,
     marginBottom: spacing.sm,
   },
@@ -691,19 +685,15 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: colors.gold.border,
-    backgroundColor: colors.bg.secondary,
+    borderColor: '#b8a070',
   },
   abilityTagText: {
     fontFamily: fonts.headingRegular,
     fontSize: 10,
     letterSpacing: 0.5,
-    color: colors.text.secondary,
+    color: PARCHMENT_TEXT.label,
   },
   selectedBadge: {
-    position: 'absolute',
-    top: spacing.sm,
-    right: spacing.sm,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
     borderRadius: 4,
@@ -821,19 +811,8 @@ const styles = StyleSheet.create({
   },
 
   // Add to party button
-  addButton: {
+  addButtonWrapper: {
     marginTop: spacing.lg,
-    paddingVertical: spacing.md + 2,
-    borderRadius: 8,
-    backgroundColor: colors.gold.primary,
-    alignItems: 'center',
-  },
-  addButtonText: {
-    ...textStyles.buttonLabel,
-    color: colors.bg.primary,
-    fontSize: 14,
-    fontFamily: fonts.heading,
-    letterSpacing: 2,
   },
 
   // ── FOOTER ────────────────────────────────────────────────────────────────
@@ -881,22 +860,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: spacing.sm,
   },
-  continueButton: {
-    backgroundColor: colors.gold.primary,
-    paddingVertical: spacing.md + 2,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  continueButtonDisabled: {
-    opacity: 0.3,
-  },
-  continueButtonText: {
-    ...textStyles.buttonLabel,
-    color: colors.bg.primary,
-    fontSize: 14,
-    fontFamily: fonts.heading,
-    letterSpacing: 2,
-  },
 
   // Recruitment mode selection
   recruitmentModeContainer: {
@@ -905,29 +868,23 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
   },
-  recruitmentCard: {
-    borderWidth: 1.5,
-    borderColor: colors.gold.border,
-    borderRadius: 12,
-    padding: spacing.lg,
-    backgroundColor: colors.bg.tertiary,
-    alignItems: 'center',
-  },
   recruitmentIcon: {
     fontSize: 32,
     marginBottom: spacing.sm,
+    textAlign: 'center',
   },
   recruitmentTitle: {
     fontFamily: fonts.heading,
     fontSize: 13,
-    color: colors.gold.primary,
+    color: PARCHMENT_TEXT.accent,
     letterSpacing: 2,
     marginBottom: spacing.xs,
+    textAlign: 'center',
   },
   recruitmentDesc: {
     fontFamily: fonts.body,
     fontSize: 13,
-    color: colors.text.secondary,
+    color: PARCHMENT_TEXT.secondary,
     lineHeight: 19,
     textAlign: 'center',
   },

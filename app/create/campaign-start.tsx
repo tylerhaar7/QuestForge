@@ -14,8 +14,9 @@ import {
   Platform,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { colors } from '@/theme/colors';
+import { colors, PARCHMENT_TEXT } from '@/theme/colors';
 import { fonts, spacing, textStyles } from '@/theme/typography';
+import { FantasyPanel, FantasyButton } from '@/components/ui';
 import { initCampaign } from '@/services/campaign';
 import { useGameStore } from '@/stores/useGameStore';
 import { getCharacter } from '@/services/character';
@@ -138,26 +139,24 @@ export default function CampaignStartScreen() {
 
         {/* Options */}
         <View style={styles.options}>
-          <Pressable
-            style={[styles.optionCard, mode === 'generated' && styles.optionCardSelected]}
-            onPress={() => setMode('generated')}
-          >
-            <Text style={styles.optionIcon}>🎲</Text>
-            <Text style={styles.optionTitle}>GENERATE FOR ME</Text>
-            <Text style={styles.optionDesc}>
-              The DM creates a unique adventure based on your character's race, class, and origin.
-            </Text>
+          <Pressable onPress={() => setMode('generated')} style={{ opacity: mode === 'generated' ? 1 : 0.8 }}>
+            <FantasyPanel variant="card">
+              <Text style={styles.optionIcon}>🎲</Text>
+              <Text style={[styles.optionTitle, mode === 'generated' && styles.optionTitleSelected]}>GENERATE FOR ME</Text>
+              <Text style={styles.optionDesc}>
+                The DM creates a unique adventure based on your character's race, class, and origin.
+              </Text>
+            </FantasyPanel>
           </Pressable>
 
-          <Pressable
-            style={[styles.optionCard, mode === 'custom' && styles.optionCardSelected]}
-            onPress={() => setMode('custom')}
-          >
-            <Text style={styles.optionIcon}>✍️</Text>
-            <Text style={styles.optionTitle}>CUSTOM ADVENTURE</Text>
-            <Text style={styles.optionDesc}>
-              Describe the adventure you want and the DM will bring it to life.
-            </Text>
+          <Pressable onPress={() => setMode('custom')} style={{ opacity: mode === 'custom' ? 1 : 0.8 }}>
+            <FantasyPanel variant="card">
+              <Text style={styles.optionIcon}>✍️</Text>
+              <Text style={[styles.optionTitle, mode === 'custom' && styles.optionTitleSelected]}>CUSTOM ADVENTURE</Text>
+              <Text style={styles.optionDesc}>
+                Describe the adventure you want and the DM will bring it to life.
+              </Text>
+            </FantasyPanel>
           </Pressable>
         </View>
 
@@ -184,13 +183,12 @@ export default function CampaignStartScreen() {
 
         {/* Start button */}
         <View style={styles.footer}>
-          <Pressable
-            style={[styles.startButton, !mode && styles.startButtonDisabled]}
+          <FantasyButton
+            variant="primary"
+            label="BEGIN"
             onPress={handleStart}
             disabled={!mode}
-          >
-            <Text style={styles.startButtonText}>BEGIN</Text>
-          </Pressable>
+          />
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -246,17 +244,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     gap: spacing.md,
   },
-  optionCard: {
-    borderWidth: 1.5,
-    borderColor: colors.gold.border,
-    borderRadius: 12,
-    padding: spacing.lg,
-    backgroundColor: colors.bg.tertiary,
-  },
-  optionCardSelected: {
-    borderColor: colors.gold.primary,
-    backgroundColor: colors.bg.secondary,
-  },
   optionIcon: {
     fontSize: 28,
     marginBottom: spacing.sm,
@@ -264,14 +251,17 @@ const styles = StyleSheet.create({
   optionTitle: {
     fontFamily: fonts.heading,
     fontSize: 13,
-    color: colors.gold.primary,
+    color: PARCHMENT_TEXT.primary,
     letterSpacing: 2,
     marginBottom: spacing.xs,
+  },
+  optionTitleSelected: {
+    color: PARCHMENT_TEXT.accent,
   },
   optionDesc: {
     fontFamily: fonts.body,
     fontSize: 13,
-    color: colors.text.secondary,
+    color: PARCHMENT_TEXT.secondary,
     lineHeight: 19,
   },
   promptSection: {
@@ -315,21 +305,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     paddingBottom: spacing.lg,
     paddingTop: spacing.md,
-  },
-  startButton: {
-    backgroundColor: colors.gold.primary,
-    paddingVertical: spacing.lg,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  startButtonDisabled: {
-    opacity: 0.4,
-  },
-  startButtonText: {
-    ...textStyles.buttonLabel,
-    color: colors.bg.primary,
-    fontSize: 15,
-    fontFamily: fonts.heading,
-    letterSpacing: 2,
   },
 });

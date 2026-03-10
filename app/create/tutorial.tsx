@@ -15,8 +15,9 @@ import {
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { colors } from '@/theme/colors';
+import { colors, PARCHMENT_TEXT } from '@/theme/colors';
 import { fonts, spacing, textStyles } from '@/theme/typography';
+import { FantasyPanel, FantasyButton } from '@/components/ui';
 import { TUTORIAL_CLASSES, type TutorialClassOption } from '@/data/tutorial';
 import { createCharacter } from '@/services/character';
 import { initCampaign } from '@/services/campaign';
@@ -36,33 +37,32 @@ function ClassCard({
   const classColor = colors.class[cls.className];
 
   return (
-    <Pressable
-      style={[styles.card, selected && styles.cardSelected]}
-      onPress={onPress}
-    >
-      <View style={styles.cardTop}>
-        <Text style={[styles.cardIcon, { color: classColor }]}>{cls.icon}</Text>
-        <View style={styles.cardInfo}>
-          <Text style={[styles.cardName, selected && styles.cardNameSelected]}>
-            {cls.className.toUpperCase()}
-          </Text>
-          <Text style={styles.cardDesc}>{cls.description}</Text>
+    <Pressable onPress={onPress} style={{ opacity: selected ? 1 : 0.85 }}>
+      <FantasyPanel variant="card">
+        <View style={styles.cardTop}>
+          <Text style={[styles.cardIcon, { color: classColor }]}>{cls.icon}</Text>
+          <View style={styles.cardInfo}>
+            <Text style={[styles.cardName, selected && styles.cardNameSelected]}>
+              {cls.className.toUpperCase()}
+            </Text>
+            <Text style={styles.cardDesc}>{cls.description}</Text>
+          </View>
         </View>
-      </View>
-      <View style={styles.cardStats}>
-        <View style={styles.statBadge}>
-          <Text style={styles.statLabel}>HP</Text>
-          <Text style={styles.statValue}>{cls.hp}</Text>
+        <View style={styles.cardStats}>
+          <View style={styles.statBadge}>
+            <Text style={styles.statLabel}>HP</Text>
+            <Text style={styles.statValue}>{cls.hp}</Text>
+          </View>
+          <View style={styles.statBadge}>
+            <Text style={styles.statLabel}>AC</Text>
+            <Text style={styles.statValue}>{cls.ac}</Text>
+          </View>
+          <View style={styles.statBadge}>
+            <Text style={styles.statLabel}>SPD</Text>
+            <Text style={styles.statValue}>{cls.speed}</Text>
+          </View>
         </View>
-        <View style={styles.statBadge}>
-          <Text style={styles.statLabel}>AC</Text>
-          <Text style={styles.statValue}>{cls.ac}</Text>
-        </View>
-        <View style={styles.statBadge}>
-          <Text style={styles.statLabel}>SPD</Text>
-          <Text style={styles.statValue}>{cls.speed}</Text>
-        </View>
-      </View>
+      </FantasyPanel>
     </Pressable>
   );
 }
@@ -237,13 +237,12 @@ export default function TutorialScreen() {
 
         {/* Begin button */}
         <View style={styles.footer}>
-          <Pressable
-            style={[styles.beginButton, !selectedClass && styles.beginButtonDisabled]}
+          <FantasyButton
+            variant="primary"
+            label="BEGIN YOUR ADVENTURE"
             onPress={handleBegin}
             disabled={!selectedClass || saving}
-          >
-            <Text style={styles.beginButtonText}>BEGIN YOUR ADVENTURE</Text>
-          </Pressable>
+          />
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -302,17 +301,6 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.lg,
     gap: spacing.md,
   },
-  card: {
-    borderWidth: 1,
-    borderColor: colors.gold.border,
-    borderRadius: 10,
-    padding: spacing.lg,
-    backgroundColor: colors.bg.secondary,
-  },
-  cardSelected: {
-    borderColor: colors.gold.primary,
-    backgroundColor: colors.bg.tertiary,
-  },
   cardTop: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -328,17 +316,17 @@ const styles = StyleSheet.create({
   cardName: {
     fontFamily: fonts.heading,
     fontSize: 16,
-    color: colors.text.primary,
+    color: PARCHMENT_TEXT.primary,
     letterSpacing: 2,
     marginBottom: spacing.xs,
   },
   cardNameSelected: {
-    color: colors.gold.primary,
+    color: PARCHMENT_TEXT.accent,
   },
   cardDesc: {
     fontFamily: fonts.body,
     fontSize: 13,
-    color: colors.text.secondary,
+    color: PARCHMENT_TEXT.secondary,
     lineHeight: 19,
   },
   cardStats: {
@@ -354,13 +342,13 @@ const styles = StyleSheet.create({
   statLabel: {
     fontFamily: fonts.heading,
     fontSize: 10,
-    color: colors.gold.muted,
+    color: PARCHMENT_TEXT.label,
     letterSpacing: 1,
   },
   statValue: {
     fontFamily: fonts.heading,
     fontSize: 14,
-    color: colors.gold.primary,
+    color: PARCHMENT_TEXT.accent,
   },
   nameSection: {
     marginTop: spacing.sm,
@@ -392,20 +380,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     paddingBottom: spacing.lg,
     paddingTop: spacing.md,
-  },
-  beginButton: {
-    backgroundColor: colors.gold.primary,
-    paddingVertical: spacing.lg,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  beginButtonDisabled: {
-    opacity: 0.3,
-  },
-  beginButtonText: {
-    fontFamily: fonts.heading,
-    fontSize: 15,
-    color: colors.bg.primary,
-    letterSpacing: 2,
   },
 });

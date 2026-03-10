@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/theme/colors';
 import { fonts, spacing, textStyles } from '@/theme/typography';
+import { FantasyButton } from '@/components/ui';
 import { useCharacterCreationStore } from '@/stores/useCharacterCreationStore';
 
 export default function CreateWelcomeScreen() {
@@ -35,25 +36,16 @@ export default function CreateWelcomeScreen() {
         </Text>
 
         <View style={styles.buttons}>
-          <Pressable
-            style={styles.trackButton}
+          <FantasyButton
+            variant="primary"
+            label="I KNOW D&D"
             onPress={() => handleStart('veteran')}
-          >
-            <Text style={styles.trackTitle}>I KNOW D&D</Text>
-            <Text style={styles.trackDesc}>
-              Jump straight into character creation.
-            </Text>
-          </Pressable>
-
-          <Pressable
-            style={[styles.trackButton, styles.trackButtonAlt]}
+          />
+          <FantasyButton
+            variant="secondary"
+            label="I'M NEW"
             onPress={() => handleStart('new')}
-          >
-            <Text style={styles.trackTitle}>I'M NEW</Text>
-            <Text style={styles.trackDesc}>
-              A guided tutorial will teach you as you play.
-            </Text>
-          </Pressable>
+          />
         </View>
       </View>
     </SafeAreaView>
@@ -87,29 +79,6 @@ const styles = StyleSheet.create({
   },
   buttons: {
     gap: spacing.lg,
-  },
-  trackButton: {
-    borderWidth: 1,
-    borderColor: colors.gold.primary,
-    borderRadius: 12,
-    paddingVertical: spacing.xl,
-    paddingHorizontal: spacing.lg,
-    backgroundColor: colors.bg.secondary,
-  },
-  trackButtonAlt: {
-    borderColor: colors.gold.dim,
-  },
-  trackTitle: {
-    ...textStyles.buttonLabel,
-    color: colors.gold.primary,
-    fontSize: 14,
-    marginBottom: spacing.xs,
-  },
-  trackDesc: {
-    fontFamily: fonts.body,
-    fontSize: 14,
-    color: colors.text.secondary,
-    lineHeight: 20,
   },
   settingsGear: {
     position: 'absolute',
