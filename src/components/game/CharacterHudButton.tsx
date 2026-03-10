@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, View, Text, StyleSheet } from 'react-native';
+import { Pressable, View, Text, Image, StyleSheet } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { fonts } from '@/theme/typography';
 import { CLASS_ICONS } from '@/data/classIcons';
@@ -19,9 +19,9 @@ export function CharacterHudButton({ className, onPress }: CharacterHudButtonPro
   return (
     <Pressable style={styles.container} onPress={handlePress}>
       <View style={styles.iconFrame}>
-        <Text style={styles.iconText}>{CLASS_ICONS[className]}</Text>
+        <Image source={CLASS_ICONS[className]} style={styles.iconImage} />
       </View>
-      <Text style={styles.label}>CHR</Text>
+      <Text style={styles.label}>Character</Text>
     </Pressable>
   );
 }
@@ -48,8 +48,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  iconText: {
-    fontSize: 12,
+  iconImage: {
+    width: 16,
+    height: 16,
+    resizeMode: 'contain',
   },
   label: {
     fontFamily: fonts.heading,
