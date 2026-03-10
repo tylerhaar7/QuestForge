@@ -185,7 +185,7 @@ function CompanionPicker({ visible, companions, onSelect, onClose }: CompanionPi
       onRequestClose={onClose}
     >
       <Pressable style={styles.modalOverlay} onPress={onClose}>
-        <FantasyPanel variant="modal" style={styles.pickerCard}>
+        <FantasyPanel variant="pinned" style={styles.pickerCard}>
           <Text style={styles.pickerTitle}>TALK TO WHOM?</Text>
           {companions.length === 0 ? (
             <Text style={styles.pickerEmpty}>No companions at camp.</Text>

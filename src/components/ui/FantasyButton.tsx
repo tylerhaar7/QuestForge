@@ -90,13 +90,13 @@ export function FantasyButton({
 
 const styles = StyleSheet.create({
   background: {
-    paddingHorizontal: 24,
-    paddingVertical: 14,
+    paddingHorizontal: 40,
+    paddingVertical: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
   image: {
-    borderRadius: 4,
+    // No borderRadius — let the ornate frame corners render naturally
   },
   disabled: {
     opacity: 0.4,

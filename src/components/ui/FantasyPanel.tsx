@@ -19,14 +19,21 @@ const VARIANT_ASSETS: Record<PanelVariant, any> = {
   strip: UI_ASSETS.panel.strip,
 };
 
-// Padding insets per variant — how far content should be from the image edges
-// to sit inside the visible parchment area. Adjust after visual testing.
+// Padding insets per variant — derived from measuring each asset's actual
+// parchment safe-area. Sized for typical phone widths (340–375 px panels).
+//
+// Measured safe areas (from 512-px source images):
+//   modal  → 59 % w × 45 % h  ⇒  ~20 % L/R, ~29 % T, ~27 % B
+//   card   → 86 % w × 63 % h  ⇒  ~7 % L/R, ~18 % T/B
+//   pinned → 82 % w × 70 % h  ⇒  ~9 % L/R, ~15 % T/B
+//   button → ~80 % w × 70 % h ⇒  ~10 % L/R, ~15 % T/B
+//   strip  → ~60 % w × 50 % h ⇒  large dead space
 const VARIANT_PADDING: Record<PanelVariant, ViewStyle> = {
-  card: { paddingHorizontal: 24, paddingVertical: 20 },
-  pinned: { paddingHorizontal: 28, paddingVertical: 24 },
-  modal: { paddingHorizontal: 28, paddingVertical: 28 },
-  button: { paddingHorizontal: 20, paddingVertical: 12 },
-  strip: { paddingHorizontal: 16, paddingVertical: 10 },
+  card:   { paddingHorizontal: 32, paddingVertical: 36 },
+  pinned: { paddingHorizontal: 36, paddingVertical: 40 },
+  modal:  { paddingHorizontal: 64, paddingVertical: 72 },
+  button: { paddingHorizontal: 40, paddingVertical: 32 },
+  strip:  { paddingHorizontal: 32, paddingVertical: 24 },
 };
 
 export function FantasyPanel({ variant, children, style }: FantasyPanelProps) {
@@ -49,7 +56,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   image: {
-    borderRadius: 4,
+    // No borderRadius — let the ornate frame corners render naturally
   },
   content: {
     // Base styles — variant padding applied dynamically

@@ -413,35 +413,37 @@ export default function GameSessionScreen() {
         onRequestClose={() => setMenuVisible(false)}
       >
         <Pressable style={styles.modalOverlay} onPress={() => setMenuVisible(false)}>
-          <FantasyPanel variant="modal" style={styles.modalCard}>
+          <FantasyPanel variant="pinned" style={styles.modalCard}>
             <Text style={styles.modalTitle}>MENU</Text>
 
-            <Pressable style={styles.modalOption} onPress={() => { setMenuVisible(false); router.push('/game/camp'); }}>
-              <Text style={styles.modalOptionText}>Make Camp</Text>
-              <Text style={styles.modalOptionDesc}>Rest, talk to companions, explore</Text>
-            </Pressable>
-
-            <Pressable style={styles.modalOption} onPress={() => { setMenuVisible(false); router.push('/game/journal'); }}>
-              <Text style={styles.modalOptionText}>Journal</Text>
-              <Text style={styles.modalOptionDesc}>View your adventure log</Text>
-            </Pressable>
-
-            {campaign?.adventureMap && (
-              <Pressable style={styles.modalOption} onPress={() => { setMenuVisible(false); router.push('/game/map'); }}>
-                <Text style={styles.modalOptionText}>Adventure Map</Text>
-                <Text style={styles.modalOptionDesc}>View your path ahead</Text>
+            <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
+              <Pressable style={styles.modalOption} onPress={() => { setMenuVisible(false); router.push('/game/camp'); }}>
+                <Text style={styles.modalOptionText}>Make Camp</Text>
+                <Text style={styles.modalOptionDesc}>Rest, talk to companions, explore</Text>
               </Pressable>
-            )}
 
-            <Pressable style={styles.modalOption} onPress={handleNewCampaign}>
-              <Text style={styles.modalOptionText}>New Campaign</Text>
-              <Text style={styles.modalOptionDesc}>Keep your character, start a new adventure</Text>
-            </Pressable>
+              <Pressable style={styles.modalOption} onPress={() => { setMenuVisible(false); router.push('/game/journal'); }}>
+                <Text style={styles.modalOptionText}>Journal</Text>
+                <Text style={styles.modalOptionDesc}>View your adventure log</Text>
+              </Pressable>
 
-            <Pressable style={styles.modalOption} onPress={handleNewCharacter}>
-              <Text style={styles.modalOptionText}>New Character</Text>
-              <Text style={styles.modalOptionDesc}>Start over with a new character</Text>
-            </Pressable>
+              {campaign?.adventureMap && (
+                <Pressable style={styles.modalOption} onPress={() => { setMenuVisible(false); router.push('/game/map'); }}>
+                  <Text style={styles.modalOptionText}>Adventure Map</Text>
+                  <Text style={styles.modalOptionDesc}>View your path ahead</Text>
+                </Pressable>
+              )}
+
+              <Pressable style={styles.modalOption} onPress={handleNewCampaign}>
+                <Text style={styles.modalOptionText}>New Campaign</Text>
+                <Text style={styles.modalOptionDesc}>Keep your character, start a new adventure</Text>
+              </Pressable>
+
+              <Pressable style={styles.modalOption} onPress={handleNewCharacter}>
+                <Text style={styles.modalOptionText}>New Character</Text>
+                <Text style={styles.modalOptionDesc}>Start over with a new character</Text>
+              </Pressable>
+            </ScrollView>
 
             <FantasyButton
               variant="secondary"
@@ -460,7 +462,7 @@ export default function GameSessionScreen() {
         animationType="fade"
       >
         <View style={styles.modalOverlay}>
-          <FantasyPanel variant="modal" style={styles.modalCard}>
+          <FantasyPanel variant="pinned" style={styles.modalCard}>
             <Text style={styles.tutorialCompleteTitle}>YOUR ADVENTURE{'\n'}BEGINS</Text>
             <Text style={styles.tutorialCompleteDesc}>
               You've learned the basics of combat, skill checks, and companion dynamics. The rest of your story is yours to write.
@@ -640,7 +642,7 @@ const styles = StyleSheet.create({
   },
   modalCard: {
     width: '100%',
-    maxWidth: 320,
+    maxWidth: 340,
   },
   modalTitle: {
     fontFamily: fonts.heading,
@@ -648,27 +650,32 @@ const styles = StyleSheet.create({
     color: PARCHMENT_TEXT.accent,
     letterSpacing: 2,
     textAlign: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  modalScroll: {
+    maxHeight: 300,
   },
   modalOption: {
     borderWidth: 1,
     borderColor: 'rgba(90,58,24,0.35)',
     borderRadius: 8,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
+    padding: spacing.sm,
+    marginBottom: spacing.xs,
     backgroundColor: 'rgba(90,58,24,0.08)',
   },
   modalOptionText: {
     fontFamily: fonts.heading,
-    fontSize: 14,
+    fontSize: 13,
     color: PARCHMENT_TEXT.primary,
     letterSpacing: 0.5,
+    lineHeight: 18,
   },
   modalOptionDesc: {
     fontFamily: fonts.body,
-    fontSize: 12,
+    fontSize: 11,
     color: PARCHMENT_TEXT.secondary,
     marginTop: 2,
+    lineHeight: 16,
   },
   modalCancelBtn: {
     marginTop: spacing.xs,

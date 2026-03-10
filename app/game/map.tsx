@@ -384,7 +384,7 @@ export default function AdventureMapScreen() {
       >
         <Pressable style={styles.modalOverlay} onPress={isSubmitting ? undefined : handleCancel}>
           <Pressable onPress={e => e.stopPropagation()}>
-            <FantasyPanel variant="modal" style={styles.modalCard}>
+            <FantasyPanel variant="pinned" style={styles.modalCard}>
               {selectedNode && (
                 <>
                   <Text style={styles.modalIcon}>
