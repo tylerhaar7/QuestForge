@@ -8,6 +8,12 @@ import type {
   EnemyIntention, ApprovalChange, DiceRollResult,
 } from '@/types/game';
 
+interface DeathMeta {
+  deathCount: number;
+  newUnlocks: string[];
+  deathRecord: any;
+}
+
 interface GameState {
   // Core state
   campaign: Campaign | null;
@@ -28,6 +34,11 @@ interface GameState {
   activeDiceRoll: DiceRollResult | null;
   pendingApprovalChanges: ApprovalChange[];
   isTutorialComplete: boolean;
+
+  // Death / Threshold
+  deathMeta: DeathMeta | null;
+  setDeathMeta: (meta: DeathMeta) => void;
+  clearDeathMeta: () => void;
 
   // Actions
   setCampaign: (campaign: Campaign) => void;
@@ -73,10 +84,14 @@ const initialState = {
   activeDiceRoll: null,
   pendingApprovalChanges: [],
   isTutorialComplete: false,
+  deathMeta: null,
 };
 
 export const useGameStore = create<GameState>((set, get) => ({
   ...initialState,
+
+  setDeathMeta: (deathMeta) => set({ deathMeta }),
+  clearDeathMeta: () => set({ deathMeta: null }),
 
   setCampaign: (campaign) => set({ campaign }),
   setCharacter: (character) => set({ character }),

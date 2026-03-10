@@ -12,8 +12,9 @@ import { ChoiceButton } from '@/components/game/ChoiceButton';
 import { PartyCard } from '@/components/game/PartyCard';
 import { ApprovalStack } from '@/components/game/ApprovalIndicator';
 import { DiceOverlay2D } from '@/components/game/DiceOverlay2D';
-import { submitAction } from '@/services/campaign';
+import { submitAction, SubmitActionResult } from '@/services/campaign';
 import type { Choice, Companion } from '@/types/game';
+import { EnemyIntentions } from '@/components/game/EnemyIntentions';
 
 export default function GameSessionScreen() {
   const router = useRouter();
@@ -26,6 +27,7 @@ export default function GameSessionScreen() {
     currentChoices,
     currentMode,
     currentMood,
+    enemyIntentions,
     activeDiceRoll,
     pendingApprovalChanges,
     isNarrationComplete,
@@ -38,6 +40,22 @@ export default function GameSessionScreen() {
   const handleDiceComplete = useCallback(() => {
     shiftDiceRoll();
   }, [shiftDiceRoll]);
+
+  const handleDeathCheck = useCallback((result: SubmitActionResult) => {
+    if ((result as any).deathMeta) {
+      const store = useGameStore.getState();
+      store.setDeathMeta((result as any).deathMeta);
+      router.push({
+        pathname: '/game/threshold',
+        params: {
+          deathCount: String((result as any).deathMeta.deathCount),
+          newUnlocks: JSON.stringify((result as any).deathMeta.newUnlocks),
+        },
+      });
+      return true;
+    }
+    return false;
+  }, [router]);
 
   const handleChoicePress = useCallback(async (choice: Choice) => {
     if (!campaign) return;
@@ -64,6 +82,9 @@ export default function GameSessionScreen() {
         });
       }
 
+      // Check for death
+      if (handleDeathCheck(result)) return;
+
       // Queue dice roll animations before narration
       if (result.diceRollResults && result.diceRollResults.length > 0) {
         store.queueDiceRolls(result.diceRollResults);
@@ -77,7 +98,7 @@ export default function GameSessionScreen() {
     } finally {
       store.setLoading(false);
     }
-  }, [campaign]);
+  }, [campaign, handleDeathCheck]);
 
   const handleNarrationComplete = useCallback(() => {
     setNarrationComplete(true);
@@ -159,6 +180,9 @@ export default function GameSessionScreen() {
         });
       }
 
+      // Check for death
+      if (handleDeathCheck(result)) return;
+
       // Queue dice roll animations before narration
       if (result.diceRollResults && result.diceRollResults.length > 0) {
         store.queueDiceRolls(result.diceRollResults);
@@ -171,7 +195,7 @@ export default function GameSessionScreen() {
     } finally {
       store.setLoading(false);
     }
-  }, [campaign, freeformText]);
+  }, [campaign, freeformText, handleDeathCheck]);
 
   // Build party list: player character + companions
   const partyMembers = React.useMemo(() => {
@@ -313,6 +337,11 @@ export default function GameSessionScreen() {
             </View>
           )}
 
+          {/* Enemy Intentions (combat only) */}
+          {currentMode === 'combat' && enemyIntentions.length > 0 && (
+            <EnemyIntentions intentions={enemyIntentions} />
+          )}
+
           {/* Choice Area */}
           <View style={styles.choiceArea}>
             {isNarrationComplete && currentChoices.map((choice, index) => (
@@ -378,6 +407,23 @@ export default function GameSessionScreen() {
         <Pressable style={styles.modalOverlay} onPress={() => setMenuVisible(false)}>
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>MENU</Text>
+
+            <Pressable style={styles.modalOption} onPress={() => { setMenuVisible(false); router.push('/game/camp'); }}>
+              <Text style={styles.modalOptionText}>Make Camp</Text>
+              <Text style={styles.modalOptionDesc}>Rest, talk to companions, explore</Text>
+            </Pressable>
+
+            <Pressable style={styles.modalOption} onPress={() => { setMenuVisible(false); router.push('/game/journal'); }}>
+              <Text style={styles.modalOptionText}>Journal</Text>
+              <Text style={styles.modalOptionDesc}>View your adventure log</Text>
+            </Pressable>
+
+            {campaign?.adventureMap && (
+              <Pressable style={styles.modalOption} onPress={() => { setMenuVisible(false); router.push('/game/map'); }}>
+                <Text style={styles.modalOptionText}>Adventure Map</Text>
+                <Text style={styles.modalOptionDesc}>View your path ahead</Text>
+              </Pressable>
+            )}
 
             <Pressable style={styles.modalOption} onPress={handleNewCampaign}>
               <Text style={styles.modalOptionText}>New Campaign</Text>
