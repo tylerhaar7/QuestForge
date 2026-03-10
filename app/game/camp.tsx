@@ -21,11 +21,12 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { colors } from '@/theme/colors';
+import { colors, PARCHMENT_TEXT } from '@/theme/colors';
 import { fonts, spacing, textStyles } from '@/theme/typography';
 import { useGameStore } from '@/stores/useGameStore';
 import { submitAction } from '@/services/campaign';
 import { NarrativeText } from '@/components/game/NarrativeText';
+import { FantasyPanel, FantasyButton, PortraitFrame } from '@/components/ui';
 import type { Companion } from '@/types/game';
 
 // ─── Types ───────────────────────────────────────────
@@ -87,12 +88,15 @@ const CAMP_ACTIVITIES: ActivityDef[] = [
   },
 ];
 
-// ─── Companion Dot ────────────────────────────────────
+// ─── Companion Portrait ───────────────────────────────
 
 function CompanionPortrait({ companion }: { companion: Companion }) {
+  const initial = companion.name.charAt(0).toUpperCase();
   return (
     <View style={styles.companionCard}>
-      <View style={[styles.companionDot, { backgroundColor: companion.color || colors.gold.muted }]} />
+      <PortraitFrame size="sm" variant="ornate">
+        <Text style={styles.companionInitial}>{initial}</Text>
+      </PortraitFrame>
       <Text style={styles.companionName} numberOfLines={1}>
         {companion.name}
       </Text>
@@ -128,28 +132,36 @@ function ActivityButton({ activity, onPress, disabled }: ActivityButtonProps) {
 
   const isBreak = activity.action === 'break';
 
+  if (isBreak) {
+    return (
+      <Animated.View style={[animatedStyle, styles.breakButtonWrapper]}>
+        <FantasyButton
+          variant="primary"
+          label="BREAK CAMP"
+          onPress={() => onPress(activity)}
+          disabled={disabled}
+        />
+      </Animated.View>
+    );
+  }
+
   return (
-    <Animated.View style={animatedStyle}>
+    <Animated.View style={[animatedStyle, styles.activityWrapper, disabled && styles.activityButtonDisabled]}>
       <Pressable
-        style={[
-          styles.activityButton,
-          isBreak && styles.activityButtonBreak,
-          disabled && styles.activityButtonDisabled,
-        ]}
         onPress={() => onPress(activity)}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         disabled={disabled}
       >
-        <Text style={[styles.activityIcon, isBreak && styles.activityIconBreak]}>
-          {activity.icon}
-        </Text>
-        <View style={styles.activityText}>
-          <Text style={[styles.activityLabel, isBreak && styles.activityLabelBreak]}>
-            {activity.label}
-          </Text>
-          <Text style={styles.activityDesc}>{activity.description}</Text>
-        </View>
+        <FantasyPanel variant="card" style={styles.activityPanelOverride}>
+          <View style={styles.activityInner}>
+            <Text style={styles.activityIcon}>{activity.icon}</Text>
+            <View style={styles.activityText}>
+              <Text style={styles.activityLabel}>{activity.label}</Text>
+              <Text style={styles.activityDesc}>{activity.description}</Text>
+            </View>
+          </View>
+        </FantasyPanel>
       </Pressable>
     </Animated.View>
   );
@@ -173,7 +185,7 @@ function CompanionPicker({ visible, companions, onSelect, onClose }: CompanionPi
       onRequestClose={onClose}
     >
       <Pressable style={styles.modalOverlay} onPress={onClose}>
-        <View style={styles.pickerCard}>
+        <FantasyPanel variant="modal" style={styles.pickerCard}>
           <Text style={styles.pickerTitle}>TALK TO WHOM?</Text>
           {companions.length === 0 ? (
             <Text style={styles.pickerEmpty}>No companions at camp.</Text>
@@ -184,7 +196,9 @@ function CompanionPicker({ visible, companions, onSelect, onClose }: CompanionPi
                 style={styles.pickerOption}
                 onPress={() => onSelect(c)}
               >
-                <View style={[styles.pickerDot, { backgroundColor: c.color || colors.gold.muted }]} />
+                <PortraitFrame size="sm" variant="ornate" style={styles.pickerPortrait}>
+                  <Text style={styles.pickerPortraitInitial}>{c.name.charAt(0).toUpperCase()}</Text>
+                </PortraitFrame>
                 <View style={styles.pickerOptionText}>
                   <Text style={styles.pickerOptionName}>{c.name}</Text>
                   <Text style={styles.pickerOptionClass}>{c.className}</Text>
@@ -195,7 +209,7 @@ function CompanionPicker({ visible, companions, onSelect, onClose }: CompanionPi
           <Pressable style={styles.pickerCancel} onPress={onClose}>
             <Text style={styles.pickerCancelText}>Cancel</Text>
           </Pressable>
-        </View>
+        </FantasyPanel>
       </Pressable>
     </Modal>
   );
@@ -501,11 +515,10 @@ const styles = StyleSheet.create({
     minWidth: 72,
     marginRight: spacing.sm,
   },
-  companionDot: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    marginBottom: spacing.xs,
+  companionInitial: {
+    fontFamily: fonts.heading,
+    fontSize: 16,
+    color: '#e8dcc8',
   },
   companionName: {
     fontFamily: fonts.headingRegular,
@@ -540,20 +553,19 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     textAlign: 'center',
   },
-  activityButton: {
+  activityWrapper: {
+    marginBottom: spacing.sm,
+  },
+  activityPanelOverride: {
+    // FantasyPanel handles border/bg via parchment image
+  },
+  activityInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.gold.border,
-    borderRadius: 12,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-    backgroundColor: colors.bg.secondary,
   },
-  activityButtonBreak: {
-    borderColor: colors.gold.muted,
-    backgroundColor: colors.bg.tertiary,
+  breakButtonWrapper: {
     marginTop: spacing.sm,
+    marginBottom: spacing.sm,
   },
   activityButtonDisabled: {
     opacity: 0.5,
@@ -564,10 +576,6 @@ const styles = StyleSheet.create({
     width: 32,
     textAlign: 'center',
   },
-  activityIconBreak: {
-    fontSize: 20,
-    color: colors.gold.primary,
-  },
   activityText: {
     flex: 1,
   },
@@ -575,15 +583,12 @@ const styles = StyleSheet.create({
     fontFamily: fonts.headingRegular,
     fontSize: 14,
     letterSpacing: 0.5,
-    color: colors.text.primary,
-  },
-  activityLabelBreak: {
-    color: colors.gold.primary,
+    color: PARCHMENT_TEXT.primary,
   },
   activityDesc: {
     fontFamily: fonts.body,
     fontSize: 12,
-    color: colors.text.tertiary,
+    color: PARCHMENT_TEXT.secondary,
     marginTop: 2,
     lineHeight: 17,
   },
@@ -666,11 +671,6 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
   },
   pickerCard: {
-    backgroundColor: colors.bg.secondary,
-    borderWidth: 1,
-    borderColor: colors.gold.border,
-    borderRadius: 12,
-    padding: spacing.lg,
     width: '100%',
     maxWidth: 320,
   },
@@ -678,7 +678,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.heading,
     fontSize: 13,
     letterSpacing: 2,
-    color: colors.gold.primary,
+    color: PARCHMENT_TEXT.label,
     textAlign: 'center',
     marginBottom: spacing.lg,
   },
@@ -686,25 +686,23 @@ const styles = StyleSheet.create({
     fontFamily: fonts.narrative,
     fontSize: 14,
     fontStyle: 'italic',
-    color: colors.text.tertiary,
+    color: PARCHMENT_TEXT.secondary,
     textAlign: 'center',
     marginBottom: spacing.lg,
   },
   pickerOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.gold.border,
-    borderRadius: 8,
     padding: spacing.md,
     marginBottom: spacing.sm,
-    backgroundColor: colors.bg.tertiary,
   },
-  pickerDot: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+  pickerPortrait: {
     marginRight: spacing.md,
+  },
+  pickerPortraitInitial: {
+    fontFamily: fonts.heading,
+    fontSize: 14,
+    color: '#e8dcc8',
   },
   pickerOptionText: {
     flex: 1,
@@ -712,13 +710,13 @@ const styles = StyleSheet.create({
   pickerOptionName: {
     fontFamily: fonts.headingRegular,
     fontSize: 14,
-    color: colors.text.primary,
+    color: PARCHMENT_TEXT.primary,
     letterSpacing: 0.5,
   },
   pickerOptionClass: {
     fontFamily: fonts.body,
     fontSize: 12,
-    color: colors.text.tertiary,
+    color: PARCHMENT_TEXT.secondary,
     marginTop: 1,
   },
   pickerCancel: {
@@ -729,7 +727,7 @@ const styles = StyleSheet.create({
   pickerCancelText: {
     fontFamily: fonts.headingRegular,
     fontSize: 13,
-    color: colors.text.tertiary,
+    color: PARCHMENT_TEXT.secondary,
     letterSpacing: 1,
   },
 });
