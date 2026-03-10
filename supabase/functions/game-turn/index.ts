@@ -453,6 +453,28 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Spell changes: update character's known spells
+    if (normalized.spellChanges) {
+      const currentSpells: any[] = character.known_spells || [];
+      let updatedSpells = [...currentSpells];
+
+      if (normalized.spellChanges.learned?.length > 0) {
+        for (const spell of normalized.spellChanges.learned) {
+          if (!updatedSpells.some((s: any) => s.name === spell.name)) {
+            updatedSpells.push(spell);
+          }
+        }
+      }
+
+      if (normalized.spellChanges.removed?.length > 0) {
+        updatedSpells = updatedSpells.filter(
+          (s: any) => !normalized.spellChanges.removed.includes(s.name)
+        );
+      }
+
+      await adminClient.from('characters').update({ known_spells: updatedSpells }).eq('id', character.id);
+    }
+
     // Journal entries: write to Supabase
     if (normalized.journalEntries && normalized.journalEntries.length > 0) {
       for (const entry of normalized.journalEntries) {

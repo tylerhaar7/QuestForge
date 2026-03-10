@@ -322,6 +322,24 @@ export function normalizeResponse(raw: any): any {
     result.adventureMap = map;
   }
 
+  // Spell changes
+  const spellChanges = raw.spell_changes || raw.spellChanges;
+  if (spellChanges) {
+    result.spellChanges = {
+      learned: (spellChanges.learned || []).map((s: any) => ({
+        name: s.name || '',
+        level: Number(s.level) || 0,
+        school: s.school || '',
+        castingTime: s.casting_time || s.castingTime || '1 action',
+        range: s.range || '',
+        duration: s.duration || '',
+        description: s.description || '',
+        components: s.components || '',
+      })),
+      removed: spellChanges.removed || [],
+    };
+  }
+
   return result;
 }
 

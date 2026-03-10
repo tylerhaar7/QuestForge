@@ -76,6 +76,9 @@ JOURNAL ENTRIES:
 When something notable happens (NPC met, quest accepted/completed, location discovered, lore learned, major decision, combat outcome, companion event), include a "journal_entries" array with 1-2 entries. Only log meaningful moments, not every turn.
 Entry format: {"entry_type": "npc_met|quest_accepted|quest_completed|location_discovered|item_found|lore_learned|decision_made|companion_event|combat_victory|combat_defeat", "title": "Short title", "description": "2-3 sentences", "related_npcs": ["Name"], "related_locations": ["Place"]}
 
+SPELLS:
+For spellcasting classes, include a "spell_changes" object when the player learns new spells (level up, found spellbook, divine revelation, etc.). Format: {"learned": [{"name": "Shield", "level": 1, "school": "abjuration", "casting_time": "1 reaction", "range": "Self", "duration": "1 round", "description": "An invisible barrier of magical force appears and protects you. Until the start of your next turn, you have a +5 bonus to AC.", "components": "V, S"}], "removed": []}
+
 JSON SCHEMA:
 {
   "mode": "exploration|combat|social|rest|camp|threshold",
@@ -89,6 +92,7 @@ JSON SCHEMA:
   "enemy_intentions": [{"enemy": "Goblin", "target": "Player", "action": "Slash", "predicted_damage": "1d6+2", "description": "raises its blade"}],
   "companion_encounter": {"companionName": "Name from pool", "hook": "Brief encounter situation", "miniQuestHint": "What player must do to recruit"},
   "journal_entries": [{"entry_type": "npc_met", "title": "Met the Blacksmith", "description": "...", "related_npcs": ["Gareth"], "related_locations": ["Copperwall"]}],
+  "spell_changes": {"learned": [{"name": "Shield", "level": 1, "school": "abjuration", "casting_time": "1 reaction", "range": "Self", "duration": "1 round", "description": "...", "components": "V, S"}], "removed": ["spell name"]},
   "mood": "dungeon|combat|tavern|forest|town|camp|threshold|boss",
   "ambient_hint": "dungeon_drip"
 }`;
@@ -215,6 +219,8 @@ export const CAMPAIGN_INIT_GENERATED_PROMPT = `Create an opening adventure for t
 3. Introduction of the party companions naturally in the scene
 4. 3-4 initial choices for the player
 
+If the character's class is a spellcaster, include "starting_spells" in your response: an array of spell objects representing the character's known spells at level 1. Include 3-4 cantrips and 2-4 first-level spells appropriate to the class. Each spell needs: name, level, school, casting_time, range, duration, description, components.
+
 NAMING: Avoid overused fantasy words like "ash", "shadow", "raven", "thorn", "veil" — use them sparingly if at all. Draw from varied sources: geology, trade, weather, local history. Be creative and surprising.
 
 Set the mood and location. Make it feel like the first page of an epic novel.`;
@@ -225,6 +231,8 @@ The character will meet companions throughout their journey. Design:
 2. An immediate situation or mystery that draws the player in
 3. Hint that allies might be found along the way
 4. 3-4 initial choices for the player
+
+If the character's class is a spellcaster, include "starting_spells" in your response: an array of spell objects representing the character's known spells at level 1. Include 3-4 cantrips and 2-4 first-level spells appropriate to the class. Each spell needs: name, level, school, casting_time, range, duration, description, components.
 
 NAMING: Avoid overused fantasy words like "ash", "shadow", "raven", "thorn", "veil" — use them sparingly if at all. Draw from varied sources: geology, trade, weather, local history. Be creative and surprising.
 
