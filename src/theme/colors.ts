@@ -88,3 +88,10 @@ export const colors = {
 } as const;
 
 export type ColorTheme = typeof colors;
+
+export const PARCHMENT_TEXT = {
+  primary: '#3a2810',    // Dark ink — main text on parchment
+  secondary: '#5a4020',  // Faded ink — secondary text on parchment
+  accent: '#8b4513',     // Highlighted ink — selected/active text
+  label: '#5a3a18',      // Section labels on parchment
+};

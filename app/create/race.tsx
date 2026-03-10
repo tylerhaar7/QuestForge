@@ -3,8 +3,9 @@ import {
   View, Text, Pressable, ScrollView, StyleSheet, SafeAreaView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { colors } from '@/theme/colors';
+import { colors, PARCHMENT_TEXT } from '@/theme/colors';
 import { fonts, spacing, textStyles } from '@/theme/typography';
+import { FantasyPanel, FantasyButton } from '@/components/ui';
 import { useCharacterCreationStore } from '@/stores/useCharacterCreationStore';
 import { RACE_LIST, type RaceData } from '@/data/races';
 import type { RaceName } from '@/types/game';
@@ -15,21 +16,20 @@ function RaceCard({ race, selected, onPress }: { race: RaceData; selected: boole
     .join('  ');
 
   return (
-    <Pressable
-      style={[styles.card, selected && styles.cardSelected]}
-      onPress={onPress}
-    >
-      <View style={styles.cardHeader}>
-        <Text style={[styles.cardName, selected && styles.cardNameSelected]}>{race.name}</Text>
-        <Text style={styles.cardSpeed}>{race.speed}ft</Text>
-      </View>
-      <Text style={styles.cardDesc}>{race.description}</Text>
-      {bonusText ? <Text style={styles.cardBonuses}>{bonusText}</Text> : null}
-      <View style={styles.traits}>
-        {race.traits.map(t => (
-          <Text key={t.name} style={styles.traitName}>{t.name}</Text>
-        ))}
-      </View>
+    <Pressable onPress={onPress} style={{ opacity: selected ? 1 : 0.85 }}>
+      <FantasyPanel variant="card">
+        <View style={styles.cardHeader}>
+          <Text style={[styles.cardName, selected && styles.cardNameSelected]}>{race.name}</Text>
+          <Text style={styles.cardSpeed}>{race.speed}ft</Text>
+        </View>
+        <Text style={styles.cardDesc}>{race.description}</Text>
+        {bonusText ? <Text style={styles.cardBonuses}>{bonusText}</Text> : null}
+        <View style={styles.traits}>
+          {race.traits.map(t => (
+            <Text key={t.name} style={styles.traitName}>{t.name}</Text>
+          ))}
+        </View>
+      </FantasyPanel>
     </Pressable>
   );
 }
@@ -67,13 +67,7 @@ export default function RaceSelectionScreen() {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Pressable
-          style={[styles.nextButton, !race && styles.nextButtonDisabled]}
-          onPress={handleNext}
-          disabled={!race}
-        >
-          <Text style={styles.nextButtonText}>CONTINUE</Text>
-        </Pressable>
+        <FantasyButton variant="primary" label="CONTINUE" onPress={handleNext} disabled={!race} />
       </View>
     </SafeAreaView>
   );
@@ -86,42 +80,23 @@ const styles = StyleSheet.create({
   title: { ...textStyles.screenTitle, color: colors.gold.primary, fontSize: 22 },
   list: { flex: 1 },
   listContent: { paddingHorizontal: spacing.xl, paddingBottom: spacing.lg, gap: spacing.md },
-  card: {
-    borderWidth: 1,
-    borderColor: colors.gold.border,
-    borderRadius: 10,
-    padding: spacing.lg,
-    backgroundColor: colors.bg.secondary,
-  },
-  cardSelected: {
-    borderColor: colors.gold.primary,
-    backgroundColor: colors.bg.tertiary,
-  },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.xs },
-  cardName: { ...textStyles.characterName, color: colors.text.primary, fontSize: 16 },
-  cardNameSelected: { color: colors.gold.primary },
-  cardSpeed: { fontFamily: fonts.headingRegular, fontSize: 11, color: colors.text.tertiary, letterSpacing: 1 },
-  cardDesc: { fontFamily: fonts.body, fontSize: 13, color: colors.text.secondary, lineHeight: 19, marginBottom: spacing.sm },
-  cardBonuses: { fontFamily: fonts.heading, fontSize: 11, color: colors.gold.muted, letterSpacing: 1, marginBottom: spacing.sm },
+  cardName: { ...textStyles.characterName, color: PARCHMENT_TEXT.primary, fontSize: 16 },
+  cardNameSelected: { color: PARCHMENT_TEXT.accent },
+  cardSpeed: { fontFamily: fonts.headingRegular, fontSize: 11, color: PARCHMENT_TEXT.secondary, letterSpacing: 1 },
+  cardDesc: { fontFamily: fonts.body, fontSize: 13, color: PARCHMENT_TEXT.secondary, lineHeight: 19, marginBottom: spacing.sm },
+  cardBonuses: { fontFamily: fonts.heading, fontSize: 11, color: PARCHMENT_TEXT.accent, letterSpacing: 1, marginBottom: spacing.sm },
   traits: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
   traitName: {
     fontFamily: fonts.headingRegular,
     fontSize: 10,
-    color: colors.text.tertiary,
+    color: PARCHMENT_TEXT.label,
     borderWidth: 1,
-    borderColor: colors.gold.border,
+    borderColor: '#b8a070',
     borderRadius: 4,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
     letterSpacing: 0.5,
   },
   footer: { paddingHorizontal: spacing.xl, paddingBottom: spacing.lg, paddingTop: spacing.sm },
-  nextButton: {
-    backgroundColor: colors.gold.primary,
-    paddingVertical: spacing.md + 2,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  nextButtonDisabled: { opacity: 0.3 },
-  nextButtonText: { ...textStyles.buttonLabel, color: colors.bg.primary, fontSize: 14, fontFamily: fonts.heading },
 });
