@@ -268,16 +268,6 @@ export default function GameSessionScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Character HUD Button */}
-      {character && (
-        <View style={styles.hudButton}>
-          <CharacterHudButton
-            className={character.className}
-            onPress={() => router.push('/game/character')}
-          />
-        </View>
-      )}
-
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -287,6 +277,12 @@ export default function GameSessionScreen() {
           <Pressable onPress={() => setMenuVisible(true)} style={styles.menuButton}>
             <Text style={styles.menuIcon}>{'\u22EE'}</Text>
           </Pressable>
+          {character && (
+            <CharacterHudButton
+              className={character.className}
+              onPress={() => router.push('/game/character')}
+            />
+          )}
           <Text style={[styles.headerTitle, { flex: 1 }]}>{campaign.currentLocation}</Text>
           <View style={styles.headerRight}>
             <Text style={styles.turnLabel}>Turn {campaign.turnCount}</Text>
@@ -486,12 +482,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bg.primary,
-  },
-  hudButton: {
-    position: 'absolute',
-    top: 8,
-    left: 12,
-    zIndex: 10,
   },
   flex: {
     flex: 1,
