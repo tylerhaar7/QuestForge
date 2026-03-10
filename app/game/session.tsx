@@ -277,14 +277,14 @@ export default function GameSessionScreen() {
           <Pressable onPress={() => setMenuVisible(true)} style={styles.menuButton}>
             <Text style={styles.menuIcon}>{'\u22EE'}</Text>
           </Pressable>
-          {character && (
-            <CharacterHudButton
-              className={character.className}
-              onPress={() => router.push('/game/character')}
-            />
-          )}
           <Text style={[styles.headerTitle, { flex: 1 }]}>{campaign.currentLocation}</Text>
           <View style={styles.headerRight}>
+            {character && (
+              <CharacterHudButton
+                className={character.className}
+                onPress={() => router.push('/game/character')}
+              />
+            )}
             <Text style={styles.turnLabel}>Turn {campaign.turnCount}</Text>
             <Pressable onPress={() => router.push('/settings')} style={styles.settingsButton}>
               <Text style={styles.settingsIcon}>{'\u2699'}</Text>
