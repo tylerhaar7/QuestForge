@@ -11,7 +11,6 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -153,19 +152,10 @@ function getClassDisplayName(className: Character['className']): string {
 function ParchmentCurlTop() {
   return (
     <View style={styles.curlContainer}>
-      <LinearGradient
-        colors={['#5a4020', '#7a5c32', '#c8a870', '#e8d4a8', '#c8a870']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        style={styles.curlGradient}
-      >
-        <LinearGradient
-          colors={['transparent', 'rgba(255,255,255,0.15)', 'transparent']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-          style={styles.curlHighlight}
-        />
-      </LinearGradient>
+      <View style={styles.curlDark} />
+      <View style={styles.curlMid} />
+      <View style={styles.curlLight} />
+      <View style={styles.curlMid} />
       <View style={styles.curlShadow} />
     </View>
   );
@@ -175,19 +165,10 @@ function ParchmentCurlBottom() {
   return (
     <View style={styles.curlContainer}>
       <View style={styles.curlShadowBottom} />
-      <LinearGradient
-        colors={['#c8a870', '#e8d4a8', '#c8a870', '#7a5c32', '#5a4020']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        style={styles.curlGradient}
-      >
-        <LinearGradient
-          colors={['transparent', 'rgba(255,255,255,0.15)', 'transparent']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-          style={styles.curlHighlight}
-        />
-      </LinearGradient>
+      <View style={styles.curlMid} />
+      <View style={styles.curlLight} />
+      <View style={styles.curlMid} />
+      <View style={styles.curlDark} />
     </View>
   );
 }
@@ -572,11 +553,6 @@ export default function CharacterScreen() {
           contentContainerStyle={styles.parchmentContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Aged spots (decorative) */}
-          <View style={styles.agedSpot1} />
-          <View style={styles.agedSpot2} />
-          <View style={styles.agedSpot3} />
-
           {/* Edge darkening overlays */}
           <View style={styles.edgeLeft} />
           <View style={styles.edgeRight} />
@@ -638,21 +614,22 @@ const styles = StyleSheet.create({
   // ── Close button ──────────────────────────────────────────────────────────
   closeButton: {
     position: 'absolute',
-    top: 12,
-    right: 16,
+    top: 52,
+    right: 20,
     zIndex: 20,
-    width: 36,
-    height: 36,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(90, 64, 32, 0.7)',
+    borderRadius: 22,
+    borderWidth: 1.5,
+    borderColor: '#b48c3c',
   },
   closeButtonText: {
-    fontSize: 22,
-    color: '#ffffff',
+    fontSize: 18,
+    color: '#e8dcc8',
     fontFamily: fonts.heading,
-    textShadowColor: 'rgba(0,0,0,0.8)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 3,
   },
 
   // ── Parchment curls ───────────────────────────────────────────────────────
@@ -660,17 +637,18 @@ const styles = StyleSheet.create({
     height: 48,
     overflow: 'hidden',
   },
-  curlGradient: {
-    flex: 1,
-    borderRadius: 4,
-    overflow: 'hidden',
+  curlDark: {
+    flex: 2,
+    backgroundColor: '#7a5c32',
+    borderRadius: 2,
   },
-  curlHighlight: {
-    position: 'absolute',
-    top: '25%',
-    left: 0,
-    right: 0,
-    height: '50%',
+  curlMid: {
+    flex: 3,
+    backgroundColor: '#c8a870',
+  },
+  curlLight: {
+    flex: 4,
+    backgroundColor: '#e8d4a8',
   },
   curlShadow: {
     height: 6,
@@ -692,35 +670,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
     paddingBottom: spacing.lg,
-  },
-
-  // ── Aged spots (decorative) ───────────────────────────────────────────────
-  agedSpot1: {
-    position: 'absolute',
-    top: 80,
-    right: 30,
-    width: 60,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: PARCHMENT.agedSpot,
-  },
-  agedSpot2: {
-    position: 'absolute',
-    top: 320,
-    left: 20,
-    width: 45,
-    height: 35,
-    borderRadius: 18,
-    backgroundColor: PARCHMENT.agedSpot,
-  },
-  agedSpot3: {
-    position: 'absolute',
-    top: 600,
-    right: 50,
-    width: 55,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: PARCHMENT.agedSpot,
   },
 
   // ── Edge darkening ────────────────────────────────────────────────────────
