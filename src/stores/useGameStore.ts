@@ -176,6 +176,25 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (response.tutorialComplete) {
       set({ isTutorialComplete: true });
     }
+
+    // Update character spells if changed
+    if (response.spellChanges) {
+      const char = get().character;
+      if (char) {
+        let spells = [...(char.knownSpells || [])];
+        if (response.spellChanges.learned?.length) {
+          for (const spell of response.spellChanges.learned) {
+            if (!spells.some(s => s.name === spell.name)) {
+              spells.push(spell);
+            }
+          }
+        }
+        if (response.spellChanges.removed?.length) {
+          spells = spells.filter(s => !response.spellChanges!.removed.includes(s.name));
+        }
+        set({ character: { ...char, knownSpells: spells } });
+      }
+    }
   },
 
   setNarrationComplete: (complete) => set({ isNarrationComplete: complete }),
