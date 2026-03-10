@@ -15,10 +15,11 @@ import {
   ListRenderItemInfo,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { colors } from '@/theme/colors';
+import { colors, PARCHMENT_TEXT } from '@/theme/colors';
 import { fonts, spacing, textStyles } from '@/theme/typography';
 import { useGameStore } from '@/stores/useGameStore';
 import { getJournalEntries, JournalRow } from '@/services/campaign';
+import { FantasyPanel } from '@/components/ui';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -88,7 +89,7 @@ function JournalEntryCard({ entry }: JournalEntryCardProps) {
   ];
 
   return (
-    <View style={styles.card}>
+    <FantasyPanel variant="pinned" style={styles.card}>
       {/* Card header: icon + title + turn */}
       <View style={styles.cardHeader}>
         <Text style={styles.cardIcon}>{icon}</Text>
@@ -120,7 +121,7 @@ function JournalEntryCard({ entry }: JournalEntryCardProps) {
           ))}
         </View>
       )}
-    </View>
+    </FantasyPanel>
   );
 }
 
@@ -374,11 +375,6 @@ const styles = StyleSheet.create({
 
   // Entry card
   card: {
-    backgroundColor: colors.bg.tertiary,
-    borderWidth: 1,
-    borderColor: colors.gold.border,
-    borderRadius: 12,
-    padding: spacing.md,
     marginBottom: spacing.md,
   },
   cardHeader: {
@@ -398,14 +394,14 @@ const styles = StyleSheet.create({
     fontFamily: fonts.heading,
     fontSize: 13,
     letterSpacing: 0.5,
-    color: colors.text.primary,
+    color: PARCHMENT_TEXT.primary,
     marginBottom: 2,
   },
   cardTurn: {
     fontFamily: fonts.headingRegular,
     fontSize: 10,
     letterSpacing: 1,
-    color: colors.gold.primary,
+    color: PARCHMENT_TEXT.accent,
     textTransform: 'uppercase',
   },
   pinnedBadge: {
@@ -424,7 +420,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.body,
     fontSize: 14,
     lineHeight: 22,
-    color: colors.text.secondary,
+    color: PARCHMENT_TEXT.secondary,
     marginBottom: spacing.sm,
   },
 
@@ -447,7 +443,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.headingRegular,
     fontSize: 10,
     letterSpacing: 0.5,
-    color: colors.gold.muted,
+    color: PARCHMENT_TEXT.label,
   },
 
   // Empty state

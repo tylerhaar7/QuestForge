@@ -18,10 +18,11 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { colors } from '@/theme/colors';
-import { fonts, spacing, textStyles } from '@/theme/typography';
+import { fonts, spacing } from '@/theme/typography';
 import { useGameStore } from '@/stores/useGameStore';
 import { getSessionRecap } from '@/services/campaign';
 import { NarrativeText } from '@/components/game/NarrativeText';
+import { FantasyPanel, FantasyButton } from '@/components/ui';
 
 export default function RecapScreen() {
   const router = useRouter();
@@ -117,31 +118,31 @@ export default function RecapScreen() {
         ) : error ? (
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>{error}</Text>
-            <Pressable style={styles.continueButton} onPress={handleContinue}>
-              <Text style={styles.continueButtonText}>CONTINUE YOUR ADVENTURE</Text>
-            </Pressable>
+            <FantasyButton
+              label="Continue Your Adventure"
+              onPress={handleContinue}
+              style={styles.errorButton}
+            />
           </View>
         ) : (
-          <NarrativeText
-            text={recap}
-            onComplete={handleNarrationComplete}
-          />
+          <FantasyPanel variant="pinned" style={styles.recapPanel}>
+            <NarrativeText
+              text={recap}
+              onComplete={handleNarrationComplete}
+            />
+          </FantasyPanel>
         )}
       </View>
 
       {/* Continue button — shown after narration finishes */}
       {!isLoading && !error && (
         <Animated.View style={[styles.continueContainer, buttonAnimatedStyle]}>
-          <Pressable
-            style={[
-              styles.continueButton,
-              !narrationComplete && styles.continueButtonHidden,
-            ]}
+          <FantasyButton
+            label="Continue Your Adventure"
             onPress={handleContinue}
             disabled={!narrationComplete}
-          >
-            <Text style={styles.continueButtonText}>CONTINUE YOUR ADVENTURE</Text>
-          </Pressable>
+            style={!narrationComplete ? styles.continueButtonHidden : undefined}
+          />
         </Animated.View>
       )}
     </SafeAreaView>
@@ -227,27 +228,22 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: spacing.xl,
   },
+  errorButton: {
+    alignSelf: 'stretch',
+  },
+
+  // Recap narration panel
+  recapPanel: {
+    marginHorizontal: spacing.lg,
+    marginVertical: spacing.md,
+  },
 
   // Continue button
   continueContainer: {
     paddingHorizontal: spacing.xl,
     paddingBottom: spacing.xxl,
   },
-  continueButton: {
-    borderWidth: 1,
-    borderColor: colors.gold.primary,
-    borderRadius: 8,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xl,
-    alignItems: 'center',
-    backgroundColor: 'rgba(180,140,60,0.1)',
-  },
   continueButtonHidden: {
     opacity: 0,
-  },
-  continueButtonText: {
-    ...textStyles.buttonLabel,
-    color: colors.gold.primary,
-    letterSpacing: 2,
   },
 });

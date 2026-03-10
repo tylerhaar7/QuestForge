@@ -19,12 +19,13 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { colors } from '@/theme/colors';
+import { colors, PARCHMENT_TEXT } from '@/theme/colors';
 import { fonts, spacing } from '@/theme/typography';
 import { useGameStore } from '@/stores/useGameStore';
 import { submitAction } from '@/services/campaign';
 import { NarrativeText } from '@/components/game/NarrativeText';
 import { ChoiceButton } from '@/components/game/ChoiceButton';
+import { FantasyPanel } from '@/components/ui';
 import type { Choice } from '@/types/game';
 
 // ─── Unlock display map ──────────────────────────────────────────────────────
@@ -71,9 +72,13 @@ function UnlockCard({ unlockId, index }: UnlockCardProps) {
   const label = UNLOCK_LABELS[unlockId] ?? unlockId;
 
   return (
-    <Animated.View style={[styles.unlockCard, glowStyle]}>
-      <Text style={styles.unlockIcon}>✦</Text>
-      <Text style={styles.unlockLabel}>{label}</Text>
+    <Animated.View style={[styles.unlockCardWrapper, glowStyle]}>
+      <FantasyPanel variant="card" style={styles.unlockCard}>
+        <View style={styles.unlockCardInner}>
+          <Text style={styles.unlockIcon}>✦</Text>
+          <Text style={styles.unlockLabel}>{label}</Text>
+        </View>
+      </FantasyPanel>
     </Animated.View>
   );
 }
@@ -379,15 +384,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
     textAlign: 'center',
   },
-  unlockCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: THRESHOLD_CARD_BG,
-    borderWidth: 1,
-    borderColor: colors.gold.primary,
-    borderRadius: 8,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
+  unlockCardWrapper: {
     marginBottom: spacing.sm,
     // Glow shadow (animated opacity set in component)
     shadowColor: colors.gold.primary,
@@ -395,15 +392,22 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
+  unlockCard: {
+    width: '100%',
+  },
+  unlockCardInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   unlockIcon: {
     fontSize: 14,
-    color: colors.gold.primary,
+    color: PARCHMENT_TEXT.accent,
     marginRight: spacing.sm,
   },
   unlockLabel: {
     fontFamily: fonts.body,
     fontSize: 15,
-    color: colors.gold.bright,
+    color: PARCHMENT_TEXT.primary,
     flex: 1,
     lineHeight: 22,
   },

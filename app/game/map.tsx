@@ -21,10 +21,11 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
-import { colors } from '@/theme/colors';
+import { colors, PARCHMENT_TEXT } from '@/theme/colors';
 import { fonts, spacing, textStyles } from '@/theme/typography';
 import { useGameStore } from '@/stores/useGameStore';
 import { submitAction } from '@/services/campaign';
+import { FantasyPanel, FantasyButton } from '@/components/ui';
 import type { MapNode, MapNodeType } from '@/types/game';
 
 // ─── Constants ──────────────────────────────────────
@@ -259,9 +260,11 @@ export default function AdventureMapScreen() {
           <Text style={styles.emptyBody}>
             No map available yet. Continue your adventure to discover new paths.
           </Text>
-          <Pressable style={styles.emptyButton} onPress={() => router.back()}>
-            <Text style={styles.emptyButtonText}>Return to Adventure</Text>
-          </Pressable>
+          <FantasyButton
+            label="Return to Adventure"
+            onPress={() => router.back()}
+            style={styles.emptyButton}
+          />
         </View>
       </SafeAreaView>
     );
@@ -380,52 +383,56 @@ export default function AdventureMapScreen() {
         onRequestClose={handleCancel}
       >
         <Pressable style={styles.modalOverlay} onPress={isSubmitting ? undefined : handleCancel}>
-          <Pressable style={styles.modalCard} onPress={e => e.stopPropagation()}>
-            {selectedNode && (
-              <>
-                <Text style={styles.modalIcon}>
-                  {selectedNode.icon || NODE_ICON_FALLBACK[selectedNode.type]}
-                </Text>
-                <Text style={styles.modalQuestion}>
-                  Travel to...
-                </Text>
-                <Text style={styles.modalTeaser}>{selectedNode.teaser}</Text>
-
-                <View style={styles.modalMeta}>
-                  <Text style={styles.modalType}>
-                    {selectedNode.type.charAt(0).toUpperCase() + selectedNode.type.slice(1)}
+          <Pressable onPress={e => e.stopPropagation()}>
+            <FantasyPanel variant="modal" style={styles.modalCard}>
+              {selectedNode && (
+                <>
+                  <Text style={styles.modalIcon}>
+                    {selectedNode.icon || NODE_ICON_FALLBACK[selectedNode.type]}
                   </Text>
-                  <Text style={styles.modalDifficulty}>
-                    {DIFFICULTY_STARS(selectedNode.difficulty)}
+                  <Text style={styles.modalQuestion}>
+                    Travel to...
                   </Text>
-                </View>
+                  <Text style={styles.modalTeaser}>{selectedNode.teaser}</Text>
 
-                {submitError && (
-                  <Text style={styles.modalError}>{submitError}</Text>
-                )}
+                  <View style={styles.modalMeta}>
+                    <Text style={styles.modalType}>
+                      {selectedNode.type.charAt(0).toUpperCase() + selectedNode.type.slice(1)}
+                    </Text>
+                    <Text style={styles.modalDifficulty}>
+                      {DIFFICULTY_STARS(selectedNode.difficulty)}
+                    </Text>
+                  </View>
 
-                <View style={styles.modalButtons}>
-                  <Pressable
-                    style={styles.modalCancel}
-                    onPress={handleCancel}
-                    disabled={isSubmitting}
-                  >
-                    <Text style={styles.modalCancelText}>Cancel</Text>
-                  </Pressable>
-                  <Pressable
-                    style={[styles.modalConfirm, isSubmitting && styles.modalConfirmDisabled]}
-                    onPress={handleConfirm}
-                    disabled={isSubmitting}
-                  >
+                  {submitError && (
+                    <Text style={styles.modalError}>{submitError}</Text>
+                  )}
+
+                  <View style={styles.modalButtons}>
+                    <FantasyButton
+                      variant="secondary"
+                      label="Cancel"
+                      onPress={handleCancel}
+                      disabled={isSubmitting}
+                      style={styles.modalButtonFlex}
+                    />
                     {isSubmitting ? (
-                      <ActivityIndicator size="small" color={colors.bg.primary} />
+                      <View style={[styles.modalButtonFlex, styles.modalConfirmLoading]}>
+                        <ActivityIndicator size="small" color={colors.bg.primary} />
+                      </View>
                     ) : (
-                      <Text style={styles.modalConfirmText}>Confirm</Text>
+                      <FantasyButton
+                        variant="primary"
+                        label="Confirm"
+                        onPress={handleConfirm}
+                        disabled={isSubmitting}
+                        style={styles.modalButtonFlex}
+                      />
                     )}
-                  </Pressable>
-                </View>
-              </>
-            )}
+                  </View>
+                </>
+              )}
+            </FantasyPanel>
           </Pressable>
         </Pressable>
       </Modal>
@@ -671,18 +678,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xxl,
   },
   emptyButton: {
-    borderWidth: 1,
-    borderColor: colors.gold.primary,
-    borderRadius: 8,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xl,
-  },
-  emptyButtonText: {
-    fontFamily: fonts.headingRegular,
-    fontSize: 13,
-    color: colors.gold.primary,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
+    // FantasyButton handles its own internal styling
   },
 
   // Modal
@@ -694,11 +690,6 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
   },
   modalCard: {
-    backgroundColor: colors.bg.secondary,
-    borderWidth: 1,
-    borderColor: colors.gold.border,
-    borderRadius: 12,
-    padding: spacing.xl,
     width: '100%',
     maxWidth: 320,
     alignItems: 'center',
@@ -712,13 +703,13 @@ const styles = StyleSheet.create({
     fontSize: 11,
     letterSpacing: 2,
     textTransform: 'uppercase',
-    color: colors.text.tertiary,
+    color: PARCHMENT_TEXT.label,
     marginBottom: spacing.xs,
   },
   modalTeaser: {
     fontFamily: fonts.narrative,
     fontSize: 16,
-    color: colors.text.primary,
+    color: PARCHMENT_TEXT.primary,
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: spacing.md,
@@ -732,13 +723,13 @@ const styles = StyleSheet.create({
   modalType: {
     fontFamily: fonts.headingRegular,
     fontSize: 11,
-    color: colors.gold.muted,
+    color: PARCHMENT_TEXT.accent,
     letterSpacing: 1,
     textTransform: 'uppercase',
   },
   modalDifficulty: {
     fontSize: 13,
-    color: colors.gold.primary,
+    color: PARCHMENT_TEXT.accent,
   },
   modalError: {
     fontFamily: fonts.body,
@@ -752,35 +743,15 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     width: '100%',
   },
-  modalCancel: {
+  modalButtonFlex: {
     flex: 1,
-    paddingVertical: spacing.md,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.gold.border,
-    alignItems: 'center',
   },
-  modalCancelText: {
-    fontFamily: fonts.headingRegular,
-    fontSize: 13,
-    color: colors.text.secondary,
-    letterSpacing: 1,
-  },
-  modalConfirm: {
-    flex: 1,
+  modalConfirmLoading: {
     paddingVertical: spacing.md,
     borderRadius: 8,
     backgroundColor: colors.gold.primary,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  modalConfirmDisabled: {
     opacity: 0.6,
-  },
-  modalConfirmText: {
-    fontFamily: fonts.heading,
-    fontSize: 13,
-    color: colors.bg.primary,
-    letterSpacing: 1,
   },
 });
