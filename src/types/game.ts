@@ -68,6 +68,7 @@ export interface Character {
   maxSpellSlots: number[];
   equipment: EquipmentItem[];
   inventory: InventoryItem[];
+  knownSpells: Spell[];
   features: string[];          // Class/race feature IDs
   conditions: Condition[];
   originStory: string;         // Origin story ID
@@ -92,6 +93,17 @@ export interface InventoryItem {
   quantity: number;
   description: string;
   type: 'consumable' | 'quest' | 'treasure' | 'material' | 'misc';
+}
+
+export interface Spell {
+  name: string;
+  level: number;        // 0 = cantrip, 1-9
+  school: string;       // "evocation", "abjuration", etc.
+  castingTime: string;  // "1 action", "1 bonus action"
+  range: string;        // "120 feet", "Touch", "Self"
+  duration: string;     // "Instantaneous", "1 hour"
+  description: string;
+  components: string;   // "V, S, M (a bit of fleece)"
 }
 
 export type Condition =
@@ -271,6 +283,7 @@ export interface AIResponse {
   tutorialComplete?: boolean;
   companionEncounter?: CompanionEncounter;
   journalEntries?: JournalEntry[];
+  spellChanges?: { learned: Spell[]; removed: string[] };
 }
 
 export interface CompanionAction {

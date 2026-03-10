@@ -35,6 +35,17 @@ export interface DiceRequest {
   formula?: string;
 }
 
+export interface Spell {
+  name: string;
+  level: number;
+  school: string;
+  castingTime: string;
+  range: string;
+  duration: string;
+  description: string;
+  components: string;
+}
+
 export interface CharacterRow {
   id: string;
   name: string;
@@ -49,6 +60,9 @@ export interface CharacterRow {
   proficiency_bonus: number;
   proficient_skills: Skill[];
   proficient_saves: AbilityScore[];
+  spell_slots: number[];
+  max_spell_slots: number[];
+  known_spells: any[];
   equipment: any[];
   conditions: string[];
   origin_story: string;

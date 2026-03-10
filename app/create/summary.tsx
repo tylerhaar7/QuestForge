@@ -190,6 +190,7 @@ export default function CharacterSummaryScreen() {
         maxSpellSlots: [],
         equipment,
         inventory: [],
+        knownSpells: [],
         features,
         conditions: [],
         originStory: originId ?? '',
