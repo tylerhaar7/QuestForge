@@ -15,6 +15,7 @@ import { DiceOverlay2D } from '@/components/game/DiceOverlay2D';
 import { submitAction, SubmitActionResult } from '@/services/campaign';
 import type { Choice, Companion } from '@/types/game';
 import { EnemyIntentions } from '@/components/game/EnemyIntentions';
+import { CharacterHudButton } from '@/components/game/CharacterHudButton';
 
 export default function GameSessionScreen() {
   const router = useRouter();
@@ -267,6 +268,16 @@ export default function GameSessionScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Character HUD Button */}
+      {character && (
+        <View style={styles.hudButton}>
+          <CharacterHudButton
+            className={character.className}
+            onPress={() => router.push('/game/character')}
+          />
+        </View>
+      )}
+
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -475,6 +486,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bg.primary,
+  },
+  hudButton: {
+    position: 'absolute',
+    top: 8,
+    left: 12,
+    zIndex: 10,
   },
   flex: {
     flex: 1,
