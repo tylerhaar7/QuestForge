@@ -1,0 +1,213 @@
+<h2>Refined Scroll Design</h2>
+<p class="subtitle">Classic parchment scroll with curled roll edges — based on your reference</p>
+
+<div style="max-width:380px;margin:24px auto;position:relative;">
+  <!-- Drop shadow behind entire scroll -->
+  <div style="position:absolute;inset:10px 20px;background:rgba(0,0,0,0.5);filter:blur(20px);border-radius:20px;z-index:0;"></div>
+
+  <div style="position:relative;z-index:1;">
+    <!-- TOP CURL: Paper rolling over a dowel -->
+    <div style="position:relative;height:48px;margin:0 12px;">
+      <!-- The rolled paper cylinder -->
+      <div style="position:absolute;bottom:0;left:0;right:0;height:40px;background:linear-gradient(180deg, #c8a96e 0%, #d4b87a 15%, #e8d4a8 30%, #c8a870 50%, #a08050 70%, #8b6b3e 85%, #7a5c32 100%);border-radius:20px 20px 0 0;box-shadow:0 -2px 8px rgba(0,0,0,0.3);"></div>
+      <!-- Curl highlight (the paper folding over) -->
+      <div style="position:absolute;top:0;left:4px;right:4px;height:30px;background:linear-gradient(180deg, #b89858 0%, #d4bc88 40%, #e8d8b8 70%, #dcc898 100%);border-radius:50% 50% 0 0;box-shadow:0 2px 6px rgba(0,0,0,0.2);"></div>
+      <!-- Curl shadow line -->
+      <div style="position:absolute;bottom:6px;left:0;right:0;height:3px;background:linear-gradient(90deg, rgba(120,90,40,0.4), rgba(120,90,40,0.15), rgba(120,90,40,0.4));"></div>
+    </div>
+
+    <!-- PARCHMENT BODY -->
+    <div style="background:linear-gradient(180deg, #dcc898 0%, #e0cca0 3%, #e8d8b4 10%, #ecdcb8 50%, #e8d8b4 90%, #e0cca0 97%, #dcc898 100%);padding:24px 20px;position:relative;margin:0 4px;box-shadow:inset 4px 0 8px rgba(120,90,40,0.12), inset -4px 0 8px rgba(120,90,40,0.12);">
+      <!-- Subtle edge darkening (left & right) -->
+      <div style="position:absolute;top:0;left:0;bottom:0;width:16px;background:linear-gradient(90deg, rgba(160,128,80,0.2), transparent);pointer-events:none;"></div>
+      <div style="position:absolute;top:0;right:0;bottom:0;width:16px;background:linear-gradient(270deg, rgba(160,128,80,0.2), transparent);pointer-events:none;"></div>
+      <!-- Aged spots -->
+      <div style="position:absolute;top:30px;right:30px;width:60px;height:40px;background:radial-gradient(ellipse,rgba(160,130,80,0.15),transparent);border-radius:50%;pointer-events:none;"></div>
+      <div style="position:absolute;bottom:80px;left:20px;width:50px;height:35px;background:radial-gradient(ellipse,rgba(160,130,80,0.12),transparent);border-radius:50%;pointer-events:none;"></div>
+      <div style="position:absolute;top:50%;right:15px;width:35px;height:45px;background:radial-gradient(ellipse,rgba(140,110,60,0.1),transparent);border-radius:50%;pointer-events:none;"></div>
+
+      <!-- ═══ CHARACTER HEADER ═══ -->
+      <div style="text-align:center;margin-bottom:18px;padding-bottom:12px;border-bottom:1.5px solid #b8a070;position:relative;">
+        <div style="font-size:22px;font-weight:bold;color:#2a1a08;font-family:'Palatino Linotype',Palatino,serif;letter-spacing:1px;">Aldric Stormwind</div>
+        <div style="font-size:12px;color:#6b5730;font-family:'Palatino Linotype',Palatino,serif;margin-top:3px;font-style:italic;">Level 3 · Human · Fighter</div>
+      </div>
+
+      <!-- ═══ ABILITY SCORES ═══ -->
+      <div style="display:flex;justify-content:space-between;margin-bottom:16px;position:relative;">
+        <div style="text-align:center;flex:1;">
+          <div style="width:38px;height:38px;margin:0 auto 2px;border:1.5px solid #8b6914;border-radius:4px;display:flex;align-items:center;justify-content:center;background:rgba(180,140,60,0.06);transform:rotate(45deg);">
+            <div style="transform:rotate(-45deg);font-size:15px;font-weight:bold;color:#2a1a08;font-family:serif;">16</div>
+          </div>
+          <div style="font-size:9px;color:#8b6914;font-weight:bold;font-family:serif;margin-top:4px;">STR</div>
+          <div style="font-size:10px;color:#6b5730;font-family:serif;">+3</div>
+        </div>
+        <div style="text-align:center;flex:1;">
+          <div style="width:38px;height:38px;margin:0 auto 2px;border:1.5px solid #8b6914;border-radius:4px;display:flex;align-items:center;justify-content:center;background:rgba(180,140,60,0.06);transform:rotate(45deg);">
+            <div style="transform:rotate(-45deg);font-size:15px;font-weight:bold;color:#2a1a08;font-family:serif;">14</div>
+          </div>
+          <div style="font-size:9px;color:#8b6914;font-weight:bold;font-family:serif;margin-top:4px;">DEX</div>
+          <div style="font-size:10px;color:#6b5730;font-family:serif;">+2</div>
+        </div>
+        <div style="text-align:center;flex:1;">
+          <div style="width:38px;height:38px;margin:0 auto 2px;border:1.5px solid #8b6914;border-radius:4px;display:flex;align-items:center;justify-content:center;background:rgba(180,140,60,0.06);transform:rotate(45deg);">
+            <div style="transform:rotate(-45deg);font-size:15px;font-weight:bold;color:#2a1a08;font-family:serif;">12</div>
+          </div>
+          <div style="font-size:9px;color:#8b6914;font-weight:bold;font-family:serif;margin-top:4px;">CON</div>
+          <div style="font-size:10px;color:#6b5730;font-family:serif;">+1</div>
+        </div>
+        <div style="text-align:center;flex:1;">
+          <div style="width:38px;height:38px;margin:0 auto 2px;border:1.5px solid #8b6914;border-radius:4px;display:flex;align-items:center;justify-content:center;background:rgba(180,140,60,0.06);transform:rotate(45deg);">
+            <div style="transform:rotate(-45deg);font-size:15px;font-weight:bold;color:#2a1a08;font-family:serif;">10</div>
+          </div>
+          <div style="font-size:9px;color:#8b6914;font-weight:bold;font-family:serif;margin-top:4px;">INT</div>
+          <div style="font-size:10px;color:#6b5730;font-family:serif;">+0</div>
+        </div>
+        <div style="text-align:center;flex:1;">
+          <div style="width:38px;height:38px;margin:0 auto 2px;border:1.5px solid #8b6914;border-radius:4px;display:flex;align-items:center;justify-content:center;background:rgba(180,140,60,0.06);transform:rotate(45deg);">
+            <div style="transform:rotate(-45deg);font-size:15px;font-weight:bold;color:#2a1a08;font-family:serif;">8</div>
+          </div>
+          <div style="font-size:9px;color:#8b6914;font-weight:bold;font-family:serif;margin-top:4px;">WIS</div>
+          <div style="font-size:10px;color:#6b5730;font-family:serif;">-1</div>
+        </div>
+        <div style="text-align:center;flex:1;">
+          <div style="width:38px;height:38px;margin:0 auto 2px;border:1.5px solid #8b6914;border-radius:4px;display:flex;align-items:center;justify-content:center;background:rgba(180,140,60,0.06);transform:rotate(45deg);">
+            <div style="transform:rotate(-45deg);font-size:15px;font-weight:bold;color:#2a1a08;font-family:serif;">13</div>
+          </div>
+          <div style="font-size:9px;color:#8b6914;font-weight:bold;font-family:serif;margin-top:4px;">CHA</div>
+          <div style="font-size:10px;color:#6b5730;font-family:serif;">+1</div>
+        </div>
+      </div>
+
+      <!-- ═══ COMBAT STATS ═══ -->
+      <div style="display:flex;gap:10px;justify-content:center;margin-bottom:16px;position:relative;">
+        <div style="border:1.5px solid #8b6914;border-radius:8px;padding:6px 14px;text-align:center;background:rgba(180,140,60,0.06);">
+          <div style="font-size:18px;font-weight:bold;color:#2a1a08;font-family:serif;">15</div>
+          <div style="font-size:9px;color:#8b6914;font-weight:bold;letter-spacing:1px;">ARMOR</div>
+        </div>
+        <div style="border:1.5px solid #8b6914;border-radius:8px;padding:6px 14px;text-align:center;background:rgba(180,140,60,0.06);">
+          <div style="font-size:18px;font-weight:bold;color:#5a2d0c;font-family:serif;">24/24</div>
+          <div style="font-size:9px;color:#8b6914;font-weight:bold;letter-spacing:1px;">HEALTH</div>
+        </div>
+        <div style="border:1.5px solid #8b6914;border-radius:8px;padding:6px 14px;text-align:center;background:rgba(180,140,60,0.06);">
+          <div style="font-size:18px;font-weight:bold;color:#2a1a08;font-family:serif;">30ft</div>
+          <div style="font-size:9px;color:#8b6914;font-weight:bold;letter-spacing:1px;">SPEED</div>
+        </div>
+      </div>
+
+      <!-- ═══ SAVING THROWS ═══ -->
+      <div style="border-top:1px solid #b8a070;padding-top:10px;margin-bottom:14px;position:relative;">
+        <div style="font-size:10px;font-weight:bold;color:#8b6914;letter-spacing:2px;margin-bottom:8px;font-family:serif;">SAVING THROWS</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;">
+          <span style="background:#8b6914;color:#f0e6d0;font-size:9px;padding:2px 8px;border-radius:10px;font-family:serif;font-weight:bold;">STR +5</span>
+          <span style="background:#8b6914;color:#f0e6d0;font-size:9px;padding:2px 8px;border-radius:10px;font-family:serif;font-weight:bold;">CON +3</span>
+          <span style="background:rgba(180,140,60,0.1);color:#6b5730;font-size:9px;padding:2px 8px;border-radius:10px;font-family:serif;border:1px solid #b8a070;">DEX +2</span>
+          <span style="background:rgba(180,140,60,0.1);color:#6b5730;font-size:9px;padding:2px 8px;border-radius:10px;font-family:serif;border:1px solid #b8a070;">INT +0</span>
+          <span style="background:rgba(180,140,60,0.1);color:#6b5730;font-size:9px;padding:2px 8px;border-radius:10px;font-family:serif;border:1px solid #b8a070;">WIS -1</span>
+          <span style="background:rgba(180,140,60,0.1);color:#6b5730;font-size:9px;padding:2px 8px;border-radius:10px;font-family:serif;border:1px solid #b8a070;">CHA +1</span>
+        </div>
+      </div>
+
+      <!-- ═══ EQUIPMENT ═══ -->
+      <div style="border-top:1px solid #b8a070;padding-top:10px;margin-bottom:14px;position:relative;">
+        <div style="font-size:10px;font-weight:bold;color:#8b6914;letter-spacing:2px;margin-bottom:8px;font-family:serif;">EQUIPMENT</div>
+        <div style="font-family:'Palatino Linotype',Palatino,serif;font-size:12px;color:#2a1a08;line-height:1.8;">
+          <div style="display:flex;justify-content:space-between;border-bottom:1px dotted #c8b888;padding-bottom:3px;margin-bottom:3px;">
+            <span>⚔ Longsword</span>
+            <span style="color:#6b5730;font-size:10px;">1d8 slashing</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;border-bottom:1px dotted #c8b888;padding-bottom:3px;margin-bottom:3px;">
+            <span>🛡 Chain Mail</span>
+            <span style="color:#6b5730;font-size:10px;">AC 16</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;">
+            <span>🛡 Shield</span>
+            <span style="color:#6b5730;font-size:10px;">+2 AC</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ INVENTORY ═══ -->
+      <div style="border-top:1px solid #b8a070;padding-top:10px;margin-bottom:14px;position:relative;">
+        <div style="font-size:10px;font-weight:bold;color:#8b6914;letter-spacing:2px;margin-bottom:8px;font-family:serif;">INVENTORY</div>
+        <div style="font-family:'Palatino Linotype',Palatino,serif;font-size:12px;color:#2a1a08;line-height:1.8;">
+          <div style="display:flex;justify-content:space-between;border-bottom:1px dotted #c8b888;padding-bottom:3px;margin-bottom:3px;">
+            <span>🎒 Explorer's Pack</span>
+            <span style="color:#6b5730;font-size:10px;">x1</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;border-bottom:1px dotted #c8b888;padding-bottom:3px;margin-bottom:3px;">
+            <span>🧪 Healing Potion</span>
+            <span style="color:#6b5730;font-size:10px;">x2</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;">
+            <span>💰 Gold</span>
+            <span style="color:#6b5730;font-size:10px;">15 gp</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ SPELLS (for a caster) ═══ -->
+      <div style="border-top:1px solid #b8a070;padding-top:10px;margin-bottom:14px;position:relative;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div style="font-size:10px;font-weight:bold;color:#8b6914;letter-spacing:2px;font-family:serif;">KNOWN SPELLS</div>
+          <div style="font-size:10px;color:#6b5730;font-family:serif;">Slots: ●●●○ 3/4</div>
+        </div>
+        <div style="margin-bottom:8px;">
+          <div style="font-size:9px;color:#8b6914;font-weight:bold;margin-bottom:4px;font-family:serif;">CANTRIPS</div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;">
+            <span style="background:rgba(180,140,60,0.08);border:1px solid #c8b080;color:#2a1a08;font-size:10px;padding:3px 8px;border-radius:4px;font-family:serif;">Fire Bolt</span>
+            <span style="background:rgba(180,140,60,0.08);border:1px solid #c8b080;color:#2a1a08;font-size:10px;padding:3px 8px;border-radius:4px;font-family:serif;">Mage Hand</span>
+            <span style="background:rgba(180,140,60,0.08);border:1px solid #c8b080;color:#2a1a08;font-size:10px;padding:3px 8px;border-radius:4px;font-family:serif;">Prestidigitation</span>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:9px;color:#8b6914;font-weight:bold;margin-bottom:4px;font-family:serif;">1ST LEVEL</div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;">
+            <span style="background:rgba(180,140,60,0.08);border:1px solid #c8b080;color:#2a1a08;font-size:10px;padding:3px 8px;border-radius:4px;font-family:serif;">Shield</span>
+            <span style="background:rgba(180,140,60,0.08);border:1px solid #c8b080;color:#2a1a08;font-size:10px;padding:3px 8px;border-radius:4px;font-family:serif;">Magic Missile</span>
+            <span style="background:rgba(180,140,60,0.08);border:1px solid #c8b080;color:#2a1a08;font-size:10px;padding:3px 8px;border-radius:4px;font-family:serif;">Detect Magic</span>
+            <span style="background:rgba(180,140,60,0.08);border:1px solid #c8b080;color:#2a1a08;font-size:10px;padding:3px 8px;border-radius:4px;font-family:serif;">Mage Armor</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ FEATURES ═══ -->
+      <div style="border-top:1px solid #b8a070;padding-top:10px;position:relative;">
+        <div style="font-size:10px;font-weight:bold;color:#8b6914;letter-spacing:2px;margin-bottom:8px;font-family:serif;">CLASS FEATURES</div>
+        <div style="font-family:'Palatino Linotype',Palatino,serif;font-size:11px;color:#2a1a08;line-height:1.7;">
+          <div style="margin-bottom:6px;">
+            <span style="font-weight:bold;">Second Wind</span>
+            <span style="color:#6b5730;"> — Bonus action, regain 1d10+3 HP. Once per rest.</span>
+          </div>
+          <div>
+            <span style="font-weight:bold;">Action Surge</span>
+            <span style="color:#6b5730;"> — Take one additional action. Once per rest.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTTOM CURL -->
+    <div style="position:relative;height:48px;margin:0 12px;">
+      <!-- Curl shadow line -->
+      <div style="position:absolute;top:6px;left:0;right:0;height:3px;background:linear-gradient(90deg, rgba(120,90,40,0.4), rgba(120,90,40,0.15), rgba(120,90,40,0.4));"></div>
+      <!-- The rolled paper cylinder -->
+      <div style="position:absolute;top:0;left:0;right:0;height:40px;background:linear-gradient(0deg, #c8a96e 0%, #d4b87a 15%, #e8d4a8 30%, #c8a870 50%, #a08050 70%, #8b6b3e 85%, #7a5c32 100%);border-radius:0 0 20px 20px;box-shadow:0 2px 8px rgba(0,0,0,0.3);"></div>
+      <!-- Curl highlight -->
+      <div style="position:absolute;bottom:0;left:4px;right:4px;height:30px;background:linear-gradient(0deg, #b89858 0%, #d4bc88 40%, #e8d8b8 70%, #dcc898 100%);border-radius:0 0 50% 50%;box-shadow:0 -2px 6px rgba(0,0,0,0.2);"></div>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top:20px;padding:16px;background:rgba(180,140,60,0.08);border:1px solid rgba(180,140,60,0.2);border-radius:8px;">
+  <h3 style="margin-top:0;">Scroll Details</h3>
+  <ul style="margin:8px 0;padding-left:20px;line-height:1.8;">
+    <li>Warm parchment with curled roll edges top &amp; bottom (matching your reference)</li>
+    <li>Dark ink on light parchment — high contrast, readable</li>
+    <li>Diamond-rotated ability score boxes (D&amp;D style)</li>
+    <li>Dotted line separators for equipment/inventory (like a ledger)</li>
+    <li>Spell chips grouped by level, slot tracker at top</li>
+    <li>Proficient saves highlighted in gold, non-proficient dimmed</li>
+    <li>Unroll animation when opening from HUD portrait</li>
+    <li>Scrollable content between the fixed roll edges</li>
+  </ul>
+</div>

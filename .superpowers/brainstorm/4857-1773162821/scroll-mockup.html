@@ -1,0 +1,166 @@
+<h2>Character Sheet as a Scroll</h2>
+<p class="subtitle">How should the scroll look and feel? Click to select your favorite.</p>
+
+<div class="cards">
+  <!-- Option A: Classic Parchment Scroll -->
+  <div class="card" data-choice="classic-scroll" onclick="toggleSelect(this)" style="max-width:360px;margin:0 auto;">
+    <div class="card-image" style="padding:0;background:#0d0a08;overflow:hidden;">
+      <!-- Full scroll mockup -->
+      <div style="position:relative;padding:0 20px;">
+        <!-- Top roller -->
+        <div style="position:relative;z-index:2;height:28px;background:linear-gradient(180deg, #5c3d1a 0%, #8b6914 30%, #c9a84c 50%, #8b6914 70%, #5c3d1a 100%);border-radius:14px;margin:0 -8px;box-shadow:0 4px 12px rgba(0,0,0,0.6);"></div>
+        <div style="position:relative;z-index:2;width:8px;height:8px;background:#3d2a0f;border-radius:50%;position:absolute;top:10px;left:16px;"></div>
+        <div style="position:relative;z-index:2;width:8px;height:8px;background:#3d2a0f;border-radius:50%;position:absolute;top:10px;right:16px;"></div>
+
+        <!-- Parchment body -->
+        <div style="background:linear-gradient(90deg, #d4c4a0 0%, #e8dcc0 8%, #f0e6d0 50%, #e8dcc0 92%, #d4c4a0 100%);padding:20px 16px;margin:0 4px;box-shadow:inset 0 0 30px rgba(139,105,20,0.15);position:relative;">
+          <!-- Aged spots -->
+          <div style="position:absolute;top:15px;right:20px;width:40px;height:30px;background:radial-gradient(ellipse,rgba(160,130,80,0.2),transparent);border-radius:50%;"></div>
+          <div style="position:absolute;bottom:40px;left:15px;width:50px;height:35px;background:radial-gradient(ellipse,rgba(160,130,80,0.15),transparent);border-radius:50%;"></div>
+
+          <!-- Character header -->
+          <div style="text-align:center;margin-bottom:14px;border-bottom:1px solid #b8a070;padding-bottom:10px;">
+            <div style="font-size:18px;font-weight:bold;color:#2a1a08;font-family:serif;letter-spacing:1px;">Aldric Stormwind</div>
+            <div style="font-size:11px;color:#6b5730;font-family:serif;margin-top:2px;">Level 3 Human Fighter</div>
+          </div>
+
+          <!-- Ability scores -->
+          <div style="display:flex;justify-content:space-between;margin-bottom:12px;">
+            <div style="text-align:center;"><div style="font-size:14px;font-weight:bold;color:#2a1a08;font-family:serif;">16</div><div style="font-size:8px;color:#6b5730;">STR +3</div></div>
+            <div style="text-align:center;"><div style="font-size:14px;font-weight:bold;color:#2a1a08;font-family:serif;">14</div><div style="font-size:8px;color:#6b5730;">DEX +2</div></div>
+            <div style="text-align:center;"><div style="font-size:14px;font-weight:bold;color:#2a1a08;font-family:serif;">12</div><div style="font-size:8px;color:#6b5730;">CON +1</div></div>
+            <div style="text-align:center;"><div style="font-size:14px;font-weight:bold;color:#2a1a08;font-family:serif;">10</div><div style="font-size:8px;color:#6b5730;">INT +0</div></div>
+            <div style="text-align:center;"><div style="font-size:14px;font-weight:bold;color:#2a1a08;font-family:serif;">8</div><div style="font-size:8px;color:#6b5730;">WIS -1</div></div>
+            <div style="text-align:center;"><div style="font-size:14px;font-weight:bold;color:#2a1a08;font-family:serif;">13</div><div style="font-size:8px;color:#6b5730;">CHA +1</div></div>
+          </div>
+
+          <!-- Combat stats -->
+          <div style="display:flex;gap:8px;justify-content:center;margin-bottom:12px;">
+            <div style="border:1.5px solid #8b6914;border-radius:6px;padding:4px 10px;text-align:center;background:rgba(180,140,60,0.08);">
+              <div style="font-size:14px;font-weight:bold;color:#2a1a08;font-family:serif;">15</div>
+              <div style="font-size:8px;color:#6b5730;">AC</div>
+            </div>
+            <div style="border:1.5px solid #8b6914;border-radius:6px;padding:4px 10px;text-align:center;background:rgba(180,140,60,0.08);">
+              <div style="font-size:14px;font-weight:bold;color:#3a7a3a;font-family:serif;">24/24</div>
+              <div style="font-size:8px;color:#6b5730;">HP</div>
+            </div>
+            <div style="border:1.5px solid #8b6914;border-radius:6px;padding:4px 10px;text-align:center;background:rgba(180,140,60,0.08);">
+              <div style="font-size:14px;font-weight:bold;color:#2a1a08;font-family:serif;">30ft</div>
+              <div style="font-size:8px;color:#6b5730;">SPEED</div>
+            </div>
+          </div>
+
+          <!-- Equipment section -->
+          <div style="border-top:1px solid #b8a070;padding-top:8px;margin-bottom:10px;">
+            <div style="font-size:10px;font-weight:bold;color:#8b6914;letter-spacing:1.5px;margin-bottom:6px;font-family:serif;">EQUIPMENT</div>
+            <div style="font-size:11px;color:#2a1a08;font-family:serif;line-height:1.6;">
+              ⚔ Longsword <span style="color:#6b5730;font-size:9px;">(1d8 slashing)</span><br/>
+              🛡 Chain Mail <span style="color:#6b5730;font-size:9px;">(AC 16)</span><br/>
+              🛡 Shield <span style="color:#6b5730;font-size:9px;">(+2 AC)</span>
+            </div>
+          </div>
+
+          <!-- Spells teaser -->
+          <div style="border-top:1px solid #b8a070;padding-top:8px;">
+            <div style="font-size:10px;font-weight:bold;color:#8b6914;letter-spacing:1.5px;margin-bottom:6px;font-family:serif;">KNOWN SPELLS</div>
+            <div style="font-size:10px;color:#6b5730;font-style:italic;font-family:serif;">No spells known (Fighter)</div>
+          </div>
+        </div>
+
+        <!-- Bottom roller -->
+        <div style="height:28px;background:linear-gradient(180deg, #5c3d1a 0%, #8b6914 30%, #c9a84c 50%, #8b6914 70%, #5c3d1a 100%);border-radius:14px;margin:0 -8px;box-shadow:0 -4px 12px rgba(0,0,0,0.6);position:relative;z-index:2;"></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. Classic Parchment Scroll</h3>
+      <p>Wooden rollers top and bottom. Parchment texture with aged spots. Dark ink text. Gold section headers. Feels like unrolling an actual D&D character sheet.</p>
+    </div>
+  </div>
+
+  <!-- Option B: Dark Fantasy Scroll -->
+  <div class="card" data-choice="dark-scroll" onclick="toggleSelect(this)" style="max-width:360px;margin:0 auto;">
+    <div class="card-image" style="padding:0;background:#0d0a08;overflow:hidden;">
+      <div style="position:relative;padding:0 20px;">
+        <!-- Top ornamental bar -->
+        <div style="height:6px;background:linear-gradient(90deg, transparent, #b48c3c, transparent);margin:8px 0;"></div>
+        <div style="display:flex;justify-content:center;margin-bottom:4px;">
+          <div style="color:#b48c3c;font-size:16px;letter-spacing:8px;">◆ ◇ ◆</div>
+        </div>
+
+        <!-- Dark parchment body -->
+        <div style="background:linear-gradient(180deg, #1a1510 0%, #1e1812 50%, #1a1510 100%);padding:20px 16px;border-left:2px solid #3d3526;border-right:2px solid #3d3526;position:relative;">
+          <!-- Subtle vignette edges -->
+          <div style="position:absolute;inset:0;background:radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.3) 100%);pointer-events:none;"></div>
+
+          <!-- Character header -->
+          <div style="text-align:center;margin-bottom:14px;border-bottom:1px solid #3d3526;padding-bottom:10px;position:relative;">
+            <div style="font-size:18px;font-weight:bold;color:#b48c3c;font-family:serif;letter-spacing:1px;">Aldric Stormwind</div>
+            <div style="font-size:11px;color:#8a7d6b;font-family:serif;margin-top:2px;">Level 3 Human Fighter</div>
+          </div>
+
+          <!-- Ability scores -->
+          <div style="display:flex;justify-content:space-between;margin-bottom:12px;position:relative;">
+            <div style="text-align:center;"><div style="font-size:14px;font-weight:bold;color:#e8dcc8;font-family:serif;">16</div><div style="font-size:8px;color:#8a7d6b;">STR +3</div></div>
+            <div style="text-align:center;"><div style="font-size:14px;font-weight:bold;color:#e8dcc8;font-family:serif;">14</div><div style="font-size:8px;color:#8a7d6b;">DEX +2</div></div>
+            <div style="text-align:center;"><div style="font-size:14px;font-weight:bold;color:#e8dcc8;font-family:serif;">12</div><div style="font-size:8px;color:#8a7d6b;">CON +1</div></div>
+            <div style="text-align:center;"><div style="font-size:14px;font-weight:bold;color:#e8dcc8;font-family:serif;">10</div><div style="font-size:8px;color:#8a7d6b;">INT +0</div></div>
+            <div style="text-align:center;"><div style="font-size:14px;font-weight:bold;color:#e8dcc8;font-family:serif;">8</div><div style="font-size:8px;color:#8a7d6b;">WIS -1</div></div>
+            <div style="text-align:center;"><div style="font-size:14px;font-weight:bold;color:#e8dcc8;font-family:serif;">13</div><div style="font-size:8px;color:#8a7d6b;">CHA +1</div></div>
+          </div>
+
+          <!-- Combat stats -->
+          <div style="display:flex;gap:8px;justify-content:center;margin-bottom:12px;position:relative;">
+            <div style="border:1px solid #b48c3c;border-radius:6px;padding:4px 10px;text-align:center;background:rgba(180,140,60,0.06);">
+              <div style="font-size:14px;font-weight:bold;color:#b48c3c;font-family:serif;">15</div>
+              <div style="font-size:8px;color:#8a7d6b;">AC</div>
+            </div>
+            <div style="border:1px solid #b48c3c;border-radius:6px;padding:4px 10px;text-align:center;background:rgba(180,140,60,0.06);">
+              <div style="font-size:14px;font-weight:bold;color:#4ade80;font-family:serif;">24/24</div>
+              <div style="font-size:8px;color:#8a7d6b;">HP</div>
+            </div>
+            <div style="border:1px solid #b48c3c;border-radius:6px;padding:4px 10px;text-align:center;background:rgba(180,140,60,0.06);">
+              <div style="font-size:14px;font-weight:bold;color:#e8dcc8;font-family:serif;">30ft</div>
+              <div style="font-size:8px;color:#8a7d6b;">SPEED</div>
+            </div>
+          </div>
+
+          <!-- Equipment -->
+          <div style="border-top:1px solid #3d3526;padding-top:8px;margin-bottom:10px;position:relative;">
+            <div style="font-size:10px;font-weight:bold;color:#b48c3c;letter-spacing:1.5px;margin-bottom:6px;font-family:serif;">EQUIPMENT</div>
+            <div style="font-size:11px;color:#e8dcc8;font-family:serif;line-height:1.6;">
+              ⚔ Longsword <span style="color:#8a7d6b;font-size:9px;">(1d8 slashing)</span><br/>
+              🛡 Chain Mail <span style="color:#8a7d6b;font-size:9px;">(AC 16)</span><br/>
+              🛡 Shield <span style="color:#8a7d6b;font-size:9px;">(+2 AC)</span>
+            </div>
+          </div>
+
+          <!-- Spells -->
+          <div style="border-top:1px solid #3d3526;padding-top:8px;position:relative;">
+            <div style="font-size:10px;font-weight:bold;color:#b48c3c;letter-spacing:1.5px;margin-bottom:6px;font-family:serif;">KNOWN SPELLS</div>
+            <div style="font-size:10px;color:#8a7d6b;font-style:italic;font-family:serif;">No spells known (Fighter)</div>
+          </div>
+        </div>
+
+        <!-- Bottom ornamental bar -->
+        <div style="display:flex;justify-content:center;margin-top:4px;">
+          <div style="color:#b48c3c;font-size:16px;letter-spacing:8px;">◆ ◇ ◆</div>
+        </div>
+        <div style="height:6px;background:linear-gradient(90deg, transparent, #b48c3c, transparent);margin:8px 0;"></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. Dark Fantasy Scroll</h3>
+      <p>Keeps our dark theme but styled as a scroll with gold ornamental borders and dividers. Warm off-white text on dark parchment. Consistent with the rest of the app's aesthetic.</p>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top:24px;padding:16px;background:rgba(180,140,60,0.08);border:1px solid rgba(180,140,60,0.2);border-radius:8px;">
+  <h3 style="margin-top:0;">Both would include:</h3>
+  <ul style="margin:8px 0;padding-left:20px;line-height:1.8;">
+    <li>Unroll animation when opening (scroll expands from center)</li>
+    <li>HUD portrait button on game screen to trigger it</li>
+    <li>Scrollable content between the top/bottom edges</li>
+    <li>Generated character image as background (future)</li>
+  </ul>
+</div>

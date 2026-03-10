@@ -1,0 +1,133 @@
+<h2>Character Screen Layout</h2>
+<p class="subtitle">How should the character sheet be organized?</p>
+
+<div class="cards">
+  <!-- Option A: Tabbed -->
+  <div class="card" data-choice="tabbed" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:16px;background:#1a1510;">
+      <div style="display:flex;gap:2px;margin-bottom:12px;">
+        <div style="background:#b48c3c;color:#0d0a08;padding:6px 14px;border-radius:6px 6px 0 0;font-size:12px;font-weight:bold;">STATS</div>
+        <div style="background:#2a2318;color:#8a7d6b;padding:6px 14px;border-radius:6px 6px 0 0;font-size:12px;">GEAR</div>
+        <div style="background:#2a2318;color:#8a7d6b;padding:6px 14px;border-radius:6px 6px 0 0;font-size:12px;">SPELLS</div>
+      </div>
+      <div style="background:#0d0a08;border:1px solid #3d3526;border-radius:8px;padding:12px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
+          <div style="text-align:center;">
+            <div style="color:#b48c3c;font-size:20px;font-weight:bold;">16</div>
+            <div style="color:#8a7d6b;font-size:9px;">STR</div>
+            <div style="color:#e8dcc8;font-size:11px;">+3</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="color:#b48c3c;font-size:20px;font-weight:bold;">14</div>
+            <div style="color:#8a7d6b;font-size:9px;">DEX</div>
+            <div style="color:#e8dcc8;font-size:11px;">+2</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="color:#b48c3c;font-size:20px;font-weight:bold;">12</div>
+            <div style="color:#8a7d6b;font-size:9px;">CON</div>
+            <div style="color:#e8dcc8;font-size:11px;">+1</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="color:#b48c3c;font-size:20px;font-weight:bold;">10</div>
+            <div style="color:#8a7d6b;font-size:9px;">INT</div>
+            <div style="color:#e8dcc8;font-size:11px;">+0</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="color:#b48c3c;font-size:20px;font-weight:bold;">8</div>
+            <div style="color:#8a7d6b;font-size:9px;">WIS</div>
+            <div style="color:#e8dcc8;font-size:11px;">-1</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="color:#b48c3c;font-size:20px;font-weight:bold;">13</div>
+            <div style="color:#8a7d6b;font-size:9px;">CHA</div>
+            <div style="color:#e8dcc8;font-size:11px;">+1</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:center;">
+          <div style="background:#1a1510;border:1px solid #3d3526;border-radius:6px;padding:6px 12px;text-align:center;">
+            <div style="color:#e8dcc8;font-size:16px;font-weight:bold;">15</div>
+            <div style="color:#8a7d6b;font-size:9px;">AC</div>
+          </div>
+          <div style="background:#1a1510;border:1px solid #3d3526;border-radius:6px;padding:6px 12px;text-align:center;">
+            <div style="color:#4ade80;font-size:16px;font-weight:bold;">24/24</div>
+            <div style="color:#8a7d6b;font-size:9px;">HP</div>
+          </div>
+          <div style="background:#1a1510;border:1px solid #3d3526;border-radius:6px;padding:6px 12px;text-align:center;">
+            <div style="color:#e8dcc8;font-size:16px;font-weight:bold;">30ft</div>
+            <div style="color:#8a7d6b;font-size:9px;">SPEED</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. Tabbed Sections</h3>
+      <p>Three tabs at top: Stats, Gear, Spells. One section visible at a time. Clean and focused. Like D&D Beyond's mobile view.</p>
+    </div>
+  </div>
+
+  <!-- Option B: Scrollable -->
+  <div class="card" data-choice="scrollable" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:16px;background:#1a1510;">
+      <div style="background:#0d0a08;border:1px solid #3d3526;border-radius:8px;padding:10px;margin-bottom:8px;">
+        <div style="color:#b48c3c;font-size:10px;font-weight:bold;letter-spacing:1px;margin-bottom:6px;">ABILITY SCORES</div>
+        <div style="display:flex;justify-content:space-between;">
+          <div style="text-align:center;"><div style="color:#b48c3c;font-size:14px;">16</div><div style="color:#8a7d6b;font-size:8px;">STR +3</div></div>
+          <div style="text-align:center;"><div style="color:#b48c3c;font-size:14px;">14</div><div style="color:#8a7d6b;font-size:8px;">DEX +2</div></div>
+          <div style="text-align:center;"><div style="color:#b48c3c;font-size:14px;">12</div><div style="color:#8a7d6b;font-size:8px;">CON +1</div></div>
+          <div style="text-align:center;"><div style="color:#b48c3c;font-size:14px;">10</div><div style="color:#8a7d6b;font-size:8px;">INT +0</div></div>
+          <div style="text-align:center;"><div style="color:#b48c3c;font-size:14px;">8</div><div style="color:#8a7d6b;font-size:8px;">WIS -1</div></div>
+          <div style="text-align:center;"><div style="color:#b48c3c;font-size:14px;">13</div><div style="color:#8a7d6b;font-size:8px;">CHA +1</div></div>
+        </div>
+      </div>
+      <div style="background:#0d0a08;border:1px solid #3d3526;border-radius:8px;padding:10px;margin-bottom:8px;">
+        <div style="color:#b48c3c;font-size:10px;font-weight:bold;letter-spacing:1px;margin-bottom:6px;">EQUIPMENT</div>
+        <div style="color:#e8dcc8;font-size:11px;">⚔️ Longsword &nbsp; 🛡️ Chain Mail &nbsp; 🏹 Shield</div>
+      </div>
+      <div style="background:#0d0a08;border:1px solid #3d3526;border-radius:8px;padding:10px;">
+        <div style="color:#b48c3c;font-size:10px;font-weight:bold;letter-spacing:1px;margin-bottom:6px;">SPELLS</div>
+        <div style="color:#8a7d6b;font-size:10px;font-style:italic;">Slots: ●●●○ (3/4)</div>
+        <div style="color:#e8dcc8;font-size:11px;margin-top:4px;">✨ Shield &nbsp; ✨ Magic Missile &nbsp; ✨ Detect Magic</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. Single Scroll</h3>
+      <p>Everything on one long scrollable page. Sections stacked vertically: Stats → Combat → Equipment → Inventory → Spells → Features. See everything without switching tabs.</p>
+    </div>
+  </div>
+
+  <!-- Option C: Collapsible -->
+  <div class="card" data-choice="collapsible" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:16px;background:#1a1510;">
+      <div style="background:#0d0a08;border:1px solid #b48c3c;border-radius:8px;padding:10px;margin-bottom:6px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="color:#b48c3c;font-size:11px;font-weight:bold;letter-spacing:1px;">▼ STATS & COMBAT</div>
+          <div style="color:#8a7d6b;font-size:10px;">AC 15 · HP 24/24</div>
+        </div>
+        <div style="margin-top:8px;display:flex;justify-content:space-between;">
+          <div style="text-align:center;"><div style="color:#b48c3c;font-size:14px;">16</div><div style="color:#8a7d6b;font-size:8px;">STR +3</div></div>
+          <div style="text-align:center;"><div style="color:#b48c3c;font-size:14px;">14</div><div style="color:#8a7d6b;font-size:8px;">DEX +2</div></div>
+          <div style="text-align:center;"><div style="color:#b48c3c;font-size:14px;">12</div><div style="color:#8a7d6b;font-size:8px;">CON +1</div></div>
+          <div style="text-align:center;"><div style="color:#b48c3c;font-size:14px;">10</div><div style="color:#8a7d6b;font-size:8px;">INT +0</div></div>
+          <div style="text-align:center;"><div style="color:#b48c3c;font-size:14px;">8</div><div style="color:#8a7d6b;font-size:8px;">WIS -1</div></div>
+          <div style="text-align:center;"><div style="color:#b48c3c;font-size:14px;">13</div><div style="color:#8a7d6b;font-size:8px;">CHA +1</div></div>
+        </div>
+      </div>
+      <div style="background:#0d0a08;border:1px solid #3d3526;border-radius:8px;padding:10px;margin-bottom:6px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="color:#8a7d6b;font-size:11px;font-weight:bold;letter-spacing:1px;">▶ EQUIPMENT</div>
+          <div style="color:#8a7d6b;font-size:10px;">3 items</div>
+        </div>
+      </div>
+      <div style="background:#0d0a08;border:1px solid #3d3526;border-radius:8px;padding:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="color:#8a7d6b;font-size:11px;font-weight:bold;letter-spacing:1px;">▶ SPELLS</div>
+          <div style="color:#8a7d6b;font-size:10px;">3/4 slots</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. Accordion Sections</h3>
+      <p>Collapsible sections that expand/collapse on tap. Summary info visible when collapsed (AC, HP, slot count). Compact but still one screen. Each section expands to show full detail.</p>
+    </div>
+  </div>
+</div>
