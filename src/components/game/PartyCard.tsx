@@ -8,6 +8,7 @@ import { fonts, textStyles, spacing } from '@/theme/typography';
 import { useAccessibility } from '@/providers/AccessibilityProvider';
 import { getColorblindColor } from '@/theme/accessibility';
 import { HpBar } from './HpBar';
+import { PortraitFrame } from '@/components/ui';
 import type { Condition, RelationshipStage, ClassName } from '@/types/game';
 
 interface PartyCardProps {
@@ -57,11 +58,9 @@ export function PartyCard({
   return (
     <Pressable onPress={onPress} style={[styles.card, { borderColor: classColor }]} accessibilityLabel={accessibilityLabel}>
       {/* Portrait placeholder */}
-      <View style={[styles.portrait, { backgroundColor: classColor + '30' }]}>
-        <Text style={[styles.portraitText, { fontFamily: getFont('heading'), fontSize: scaleFontSize(22) }]}>
-          {name.charAt(0).toUpperCase()}
-        </Text>
-      </View>
+      <PortraitFrame size="sm" variant="ornate">
+        <Text style={styles.portraitInitial}>{name.charAt(0).toUpperCase()}</Text>
+      </PortraitFrame>
 
       {/* Info */}
       <View style={styles.info}>
@@ -120,18 +119,10 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
     marginRight: spacing.sm,
   },
-  portrait: {
-    width: '100%',
-    height: 48,
-    borderRadius: 6,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: spacing.xs,
-  },
-  portraitText: {
+  portraitInitial: {
     fontFamily: fonts.heading,
-    fontSize: 22,
-    color: colors.text.primary,
+    fontSize: 14,
+    color: '#e8dcc8',
   },
   info: {
     flex: 1,
