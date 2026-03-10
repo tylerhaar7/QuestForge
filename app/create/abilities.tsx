@@ -13,6 +13,7 @@ import { RACES } from '@/data/races';
 import { CLASSES } from '@/data/classes';
 import { getModifier } from '@/engine/character';
 import type { AbilityScore, ClassName, Skill } from '@/types/game';
+import { SKILLS } from '@/data/skills';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -34,6 +35,7 @@ const RECOMMENDED_SCORES: Record<ClassName, Record<AbilityScore, number>> = {
   sorcerer:   { charisma: 15, constitution: 14, dexterity: 13, wisdom: 12, intelligence: 10, strength: 8 },
   warlock:    { charisma: 15, constitution: 14, dexterity: 13, wisdom: 12, intelligence: 10, strength: 8 },
   wizard:     { intelligence: 15, constitution: 14, dexterity: 13, wisdom: 12, charisma: 10, strength: 8 },
+  artificer:  { intelligence: 15, constitution: 14, dexterity: 13, wisdom: 12, charisma: 10, strength: 8 },
 };
 
 // Recommended skill picks per class (first N from this list, where N = skillChoices.pick)
@@ -50,6 +52,7 @@ const RECOMMENDED_SKILLS: Record<ClassName, Skill[]> = {
   sorcerer:   ['persuasion', 'arcana'],
   warlock:    ['arcana', 'deception'],
   wizard:     ['arcana', 'investigation'],
+  artificer:  ['arcana', 'investigation'],
 };
 
 const ABILITY_LABELS: Record<AbilityScore, string> = {
@@ -324,24 +327,43 @@ export default function AbilityScoreScreen() {
                 const isSelected = selectedSkills.includes(skill);
                 const atCap = selectedSkills.length >= classData.skillChoices.pick;
                 const isDisabled = !isSelected && atCap;
+                const skillData = SKILLS[skill];
+                const abilityAbbr = skillData.ability.slice(0, 3).toUpperCase();
 
                 return (
                   <Pressable
                     key={skill}
                     style={[
-                      styles.skillPill,
-                      isSelected && styles.skillPillSelected,
-                      isDisabled && styles.skillPillDisabled,
+                      styles.skillCard,
+                      isSelected && styles.skillCardSelected,
+                      isDisabled && styles.skillCardDisabled,
                     ]}
                     onPress={() => handleSkillToggle(skill)}
                     disabled={isDisabled}
                   >
-                    <Text style={[
-                      styles.skillPillText,
-                      isSelected && styles.skillPillTextSelected,
-                      isDisabled && styles.skillPillTextDisabled,
-                    ]}>
-                      {formatSkillLabel(skill)}
+                    <View style={styles.skillCardHeader}>
+                      <Text style={[
+                        styles.skillCardName,
+                        isSelected && styles.skillCardNameSelected,
+                        isDisabled && styles.skillCardNameDisabled,
+                      ]}>
+                        {skillData.name}
+                      </Text>
+                      <Text style={[
+                        styles.skillCardAbility,
+                        isSelected && styles.skillCardAbilitySelected,
+                      ]}>
+                        {abilityAbbr}
+                      </Text>
+                    </View>
+                    <Text
+                      style={[
+                        styles.skillCardDesc,
+                        isDisabled && styles.skillCardDescDisabled,
+                      ]}
+                      numberOfLines={2}
+                    >
+                      {skillData.description}
                     </Text>
                   </Pressable>
                 );
@@ -577,35 +599,61 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   skillsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: spacing.sm,
   },
-  skillPill: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs + 2,
-    borderRadius: 20,
+  skillCard: {
+    padding: spacing.md,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: colors.gold.border,
     backgroundColor: colors.bg.secondary,
   },
-  skillPillSelected: {
+  skillCardSelected: {
     borderColor: colors.gold.primary,
     backgroundColor: colors.gold.glow,
   },
-  skillPillDisabled: {
+  skillCardDisabled: {
     opacity: 0.3,
   },
-  skillPillText: {
-    fontFamily: fonts.headingRegular,
-    fontSize: 11,
-    letterSpacing: 0.5,
-    color: colors.text.secondary,
+  skillCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
   },
-  skillPillTextSelected: {
+  skillCardName: {
+    fontFamily: fonts.heading,
+    fontSize: 14,
+    color: colors.text.primary,
+  },
+  skillCardNameSelected: {
     color: colors.gold.primary,
   },
-  skillPillTextDisabled: {
+  skillCardNameDisabled: {
+    color: colors.text.disabled,
+  },
+  skillCardAbility: {
+    fontFamily: fonts.headingRegular,
+    fontSize: 10,
+    letterSpacing: 1,
+    color: colors.text.tertiary,
+    borderWidth: 1,
+    borderColor: colors.gold.border,
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  skillCardAbilitySelected: {
+    borderColor: colors.gold.primary,
+    color: colors.gold.muted,
+  },
+  skillCardDesc: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    lineHeight: 17,
+    color: colors.text.secondary,
+  },
+  skillCardDescDisabled: {
     color: colors.text.disabled,
   },
 
