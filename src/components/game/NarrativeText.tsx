@@ -5,7 +5,7 @@ import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { Text, Pressable, StyleSheet, ScrollView, type TextStyle } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import { colors } from '@/theme/colors';
+import { colors, PARCHMENT_TEXT } from '@/theme/colors';
 import { textStyles, spacing, fonts } from '@/theme/typography';
 import { useAccessibility } from '@/providers/AccessibilityProvider';
 
@@ -137,7 +137,7 @@ export function NarrativeText({ text, speed, onComplete }: NarrativeTextProps) {
 
   const baseTextStyle: TextStyle = useMemo(() => ({
     ...textStyles.narrative,
-    color: colors.text.primary,
+    color: PARCHMENT_TEXT.primary,
     fontFamily: getFont('narrative'),
     fontSize: scaleFontSize(16),
   }), [getFont, scaleFontSize]);
@@ -169,11 +169,11 @@ const styles = StyleSheet.create({
   },
   text: {
     ...textStyles.narrative,
-    color: colors.text.primary,
+    color: PARCHMENT_TEXT.primary,
   },
   cursor: {
     ...textStyles.narrative,
-    color: colors.gold.primary,
+    color: PARCHMENT_TEXT.accent,
     opacity: 0.6,
   },
 });

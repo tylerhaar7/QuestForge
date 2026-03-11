@@ -1,7 +1,8 @@
 // src/components/ui/FantasyPanel.tsx
+// Fantasy-themed panel: wood frame + parchment + corner studs.
+// Uses styled Views instead of ImageBackground to avoid stretch distortion.
 import React from 'react';
-import { ImageBackground, StyleSheet, View, ViewStyle } from 'react-native';
-import { UI_ASSETS } from '@/assets/ui';
+import { StyleSheet, View, ViewStyle } from 'react-native';
 
 export type PanelVariant = 'card' | 'pinned' | 'modal' | 'button' | 'strip';
 
@@ -11,54 +12,164 @@ interface FantasyPanelProps {
   style?: ViewStyle;
 }
 
-const VARIANT_ASSETS: Record<PanelVariant, any> = {
-  card: UI_ASSETS.panel.card,
-  pinned: UI_ASSETS.panel.pinned,
-  modal: UI_ASSETS.panel.modal,
-  button: UI_ASSETS.panel.button,
-  strip: UI_ASSETS.panel.strip,
+// ─── Corner Stud (metal bolt decoration) ──────────────────────────────────────
+
+function Stud({ size, position }: { size: number; position: ViewStyle }) {
+  return (
+    <View
+      style={[
+        {
+          position: 'absolute',
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          backgroundColor: '#3a3028',
+          borderWidth: 1,
+          borderTopColor: '#6a5a48',
+          borderLeftColor: '#5a4a38',
+          borderBottomColor: '#1a1208',
+          borderRightColor: '#2a2018',
+        },
+        position,
+      ]}
+    />
+  );
+}
+
+// ─── Variant configs ──────────────────────────────────────────────────────────
+
+interface VariantConfig {
+  frameWidth: number;
+  frameColor: string;
+  frameRadius: number;
+  parchmentColor: string;
+  innerRadius: number;
+  studSize: number;
+  contentPadding: ViewStyle;
+  showStuds: boolean;
+}
+
+const VARIANTS: Record<PanelVariant, VariantConfig> = {
+  card: {
+    frameWidth: 6,
+    frameColor: '#2e1e10',
+    frameRadius: 10,
+    parchmentColor: '#d4c4a0',
+    innerRadius: 5,
+    studSize: 10,
+    contentPadding: { paddingHorizontal: 14, paddingVertical: 12 },
+    showStuds: true,
+  },
+  pinned: {
+    frameWidth: 4,
+    frameColor: '#3a2a18',
+    frameRadius: 8,
+    parchmentColor: '#d8caa6',
+    innerRadius: 4,
+    studSize: 12,
+    contentPadding: { paddingHorizontal: 16, paddingVertical: 14 },
+    showStuds: true,
+  },
+  modal: {
+    frameWidth: 8,
+    frameColor: '#2e1e10',
+    frameRadius: 12,
+    parchmentColor: '#d4c4a0',
+    innerRadius: 5,
+    studSize: 12,
+    contentPadding: { paddingHorizontal: 18, paddingVertical: 16 },
+    showStuds: true,
+  },
+  button: {
+    frameWidth: 5,
+    frameColor: '#2e1e10',
+    frameRadius: 8,
+    parchmentColor: '#d4c4a0',
+    innerRadius: 4,
+    studSize: 8,
+    contentPadding: { paddingHorizontal: 16, paddingVertical: 10 },
+    showStuds: true,
+  },
+  strip: {
+    frameWidth: 3,
+    frameColor: '#3a2a18',
+    frameRadius: 6,
+    parchmentColor: '#ddd0b4',
+    innerRadius: 3,
+    studSize: 0,
+    contentPadding: { paddingHorizontal: 12, paddingVertical: 8 },
+    showStuds: false,
+  },
 };
 
-// Padding insets per variant — derived from measuring each asset's actual
-// parchment safe-area. Sized for typical phone widths (340–375 px panels).
-//
-// Measured safe areas (from 512-px source images):
-//   modal  → 59 % w × 45 % h  ⇒  ~20 % L/R, ~29 % T, ~27 % B
-//   card   → 86 % w × 63 % h  ⇒  ~7 % L/R, ~18 % T/B
-//   pinned → 82 % w × 70 % h  ⇒  ~9 % L/R, ~15 % T/B
-//   button → ~80 % w × 70 % h ⇒  ~10 % L/R, ~15 % T/B
-//   strip  → ~60 % w × 50 % h ⇒  large dead space
-const VARIANT_PADDING: Record<PanelVariant, ViewStyle> = {
-  card:   { paddingHorizontal: 32, paddingVertical: 36 },
-  pinned: { paddingHorizontal: 36, paddingVertical: 40 },
-  modal:  { paddingHorizontal: 64, paddingVertical: 72 },
-  button: { paddingHorizontal: 40, paddingVertical: 32 },
-  strip:  { paddingHorizontal: 32, paddingVertical: 24 },
-};
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export function FantasyPanel({ variant, children, style }: FantasyPanelProps) {
+  const v = VARIANTS[variant];
+  const studOffset = -(v.studSize / 2 - v.frameWidth / 2);
+
   return (
-    <ImageBackground
-      source={VARIANT_ASSETS[variant]}
-      resizeMode="stretch"
-      style={[styles.container, style]}
-      imageStyle={styles.image}
+    <View
+      style={[
+        styles.outerFrame,
+        {
+          backgroundColor: v.frameColor,
+          borderRadius: v.frameRadius,
+          padding: v.frameWidth,
+        },
+        style,
+      ]}
     >
-      <View style={[styles.content, VARIANT_PADDING[variant]]}>
+      {/* Parchment inner surface */}
+      <View
+        style={[
+          styles.parchment,
+          {
+            backgroundColor: v.parchmentColor,
+            borderRadius: v.innerRadius,
+          },
+          v.contentPadding,
+        ]}
+      >
+        {/* Wood-grain edge highlight */}
+        <View
+          style={[
+            styles.innerEdge,
+            {
+              borderRadius: v.innerRadius,
+              borderColor: 'rgba(90,58,24,0.15)',
+            },
+          ]}
+        />
         {children}
       </View>
-    </ImageBackground>
+
+      {/* Corner studs */}
+      {v.showStuds && (
+        <>
+          <Stud size={v.studSize} position={{ top: studOffset, left: studOffset }} />
+          <Stud size={v.studSize} position={{ top: studOffset, right: studOffset }} />
+          <Stud size={v.studSize} position={{ bottom: studOffset, left: studOffset }} />
+          <Stud size={v.studSize} position={{ bottom: studOffset, right: studOffset }} />
+        </>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  outerFrame: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  parchment: {
     overflow: 'hidden',
   },
-  image: {
-    // No borderRadius — let the ornate frame corners render naturally
-  },
-  content: {
-    // Base styles — variant padding applied dynamically
+  innerEdge: {
+    ...StyleSheet.absoluteFillObject,
+    borderWidth: 1,
   },
 });

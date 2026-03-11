@@ -299,7 +299,7 @@ export default function GameSessionScreen() {
           keyboardShouldPersistTaps="handled"
         >
           {/* Narrative Area */}
-          <FantasyPanel variant="pinned" style={styles.narrativeArea}>
+          <FantasyPanel variant="pinned" style={styles.narrativePanel}>
             {isLoading ? (
               <View style={styles.loading}>
                 <ActivityIndicator size="small" color={colors.gold.primary} />
@@ -524,8 +524,10 @@ const styles = StyleSheet.create({
     color: colors.text.tertiary,
     letterSpacing: 1,
   },
-  narrativeArea: {
+  narrativePanel: {
     minHeight: 200,
+    marginHorizontal: spacing.sm,
+    marginTop: spacing.sm,
   },
   loading: {
     flex: 1,
