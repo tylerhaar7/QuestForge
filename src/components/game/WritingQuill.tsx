@@ -10,11 +10,14 @@ import Animated, {
   withSequence,
   cancelAnimation,
   Easing,
+  type SharedValue,
 } from 'react-native-reanimated';
 
 interface WritingQuillProps {
   isWriting: boolean;
   speed?: number; // char delay in ms — faster text = faster quill bob
+  posX: SharedValue<number>;
+  posY: SharedValue<number>;
 }
 
 const QUILL = {
@@ -25,7 +28,11 @@ const QUILL = {
   ink: '#3a2810',
 };
 
-export function WritingQuill({ isWriting, speed = 30 }: WritingQuillProps) {
+// Offset so the nib tip aligns with the text cursor position
+const NIB_OFFSET_X = -20;
+const NIB_OFFSET_Y = -26;
+
+export function WritingQuill({ isWriting, speed = 30, posX, posY }: WritingQuillProps) {
   const bobY = useSharedValue(0);
   const tilt = useSharedValue(0);
   const fade = useSharedValue(0);
@@ -66,6 +73,8 @@ export function WritingQuill({ isWriting, speed = 30 }: WritingQuillProps) {
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: fade.value,
+    left: posX.value + NIB_OFFSET_X,
+    top: posY.value + NIB_OFFSET_Y,
     transform: [
       { translateY: bobY.value },
       { rotate: `${tilt.value}deg` },
@@ -101,8 +110,6 @@ export function WritingQuill({ isWriting, speed = 30 }: WritingQuillProps) {
 const styles = StyleSheet.create({
   wrapper: {
     position: 'absolute',
-    bottom: 8,
-    right: 12,
   },
   quill: {
     alignItems: 'center',

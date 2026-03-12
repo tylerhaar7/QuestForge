@@ -86,6 +86,9 @@ export function NarrativeText({ text, speed, onComplete }: NarrativeTextProps) {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const indexRef = useRef(0);
   const opacity = useSharedValue(0);
+  const quillX = useSharedValue(0);
+  const quillY = useSharedValue(0);
+  const scrollRef = useRef<ScrollView>(null);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
@@ -102,11 +105,22 @@ export function NarrativeText({ text, speed, onComplete }: NarrativeTextProps) {
     onComplete?.();
   }, [text, onComplete, hapticsEnabled]);
 
+  const handleTextLayout = useCallback((e: { nativeEvent: { lines: { x: number; y: number; width: number; height: number }[] } }) => {
+    const { lines } = e.nativeEvent;
+    if (lines.length > 0) {
+      const lastLine = lines[lines.length - 1];
+      quillX.value = lastLine.x + lastLine.width;
+      quillY.value = lastLine.y;
+    }
+  }, []);
+
   useEffect(() => {
     // Reset on new text
     indexRef.current = 0;
     setDisplayedText('');
     setIsComplete(false);
+    quillX.value = 0;
+    quillY.value = 0;
 
     if (skipAnimations) {
       opacity.value = 1;
@@ -144,6 +158,13 @@ export function NarrativeText({ text, speed, onComplete }: NarrativeTextProps) {
     };
   }, [text, effectiveSpeed, delayMs, skipAnimations, hapticsEnabled]);
 
+  // Auto-scroll to follow text as it types
+  useEffect(() => {
+    if (displayedText && !isComplete) {
+      scrollRef.current?.scrollToEnd({ animated: false });
+    }
+  }, [displayedText, isComplete]);
+
   const baseTextStyle: TextStyle = useMemo(() => ({
     ...textStyles.narrative,
     color: PARCHMENT_TEXT.primary,
@@ -157,12 +178,19 @@ export function NarrativeText({ text, speed, onComplete }: NarrativeTextProps) {
 
   return (
     <Pressable onPress={isComplete ? undefined : completeText} style={styles.container}>
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Animated.View style={animatedStyle}>
-          <Text style={baseTextStyle}>{renderedText}</Text>
+      <ScrollView ref={scrollRef} style={styles.scroll} showsVerticalScrollIndicator={false}>
+        <Animated.View style={[animatedStyle, styles.textContainer]}>
+          <Text style={baseTextStyle} onTextLayout={handleTextLayout}>
+            {renderedText}
+          </Text>
+          <WritingQuill
+            isWriting={!isComplete && delayMs > 0}
+            speed={delayMs}
+            posX={quillX}
+            posY={quillY}
+          />
         </Animated.View>
       </ScrollView>
-      <WritingQuill isWriting={!isComplete && delayMs > 0} speed={delayMs} />
     </Pressable>
   );
 }
@@ -175,5 +203,8 @@ const styles = StyleSheet.create({
   },
   scroll: {
     flex: 1,
+  },
+  textContainer: {
+    overflow: 'visible',
   },
 });
