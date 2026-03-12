@@ -19,6 +19,7 @@ import type { Choice, Companion } from '@/types/game';
 import { EnemyIntentions } from '@/components/game/EnemyIntentions';
 import { CharacterHudButton } from '@/components/game/CharacterHudButton';
 import { DMChanneling } from '@/components/game/DMChanneling';
+import { MoodParticles } from '@/components/game/MoodParticles';
 
 export default function GameSessionScreen() {
   const router = useRouter();
@@ -285,6 +286,7 @@ export default function GameSessionScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <MoodParticles />
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}

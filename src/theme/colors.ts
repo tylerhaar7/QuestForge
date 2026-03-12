@@ -84,6 +84,7 @@ export const colors = {
     town:    { accent: 'rgba(40,35,30,0.4)', secondary: '#1a1815' },
     camp:    { accent: 'rgba(60,40,15,0.4)', secondary: '#1a1208' },
     threshold: { accent: 'rgba(30,30,50,0.4)', secondary: '#0f0f1a' },
+    boss: { accent: 'rgba(80,15,15,0.5)', secondary: '#1a0a0a' },
   },
 } as const;
 
