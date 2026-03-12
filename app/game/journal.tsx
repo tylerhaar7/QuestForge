@@ -6,8 +6,8 @@ import {
   View,
   Text,
   FlatList,
-  ScrollView,
   Pressable,
+  ScrollView,
   StyleSheet,
   SafeAreaView,
   ActivityIndicator,
@@ -216,32 +216,34 @@ export default function JournalScreen() {
       </View>
 
       {/* Filter tabs */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.filtersScroll}
-        contentContainerStyle={styles.filtersContent}
-      >
-        {FILTER_TABS.map((tab) => {
-          const isActive = tab.key === activeFilter;
-          return (
-            <Pressable
-              key={tab.key}
-              style={[styles.filterPill, isActive && styles.filterPillActive]}
-              onPress={() => handleFilterPress(tab.key)}
-            >
-              <Text
-                style={[
-                  styles.filterPillText,
-                  isActive && styles.filterPillTextActive,
-                ]}
+      {/* Filter tabs */}
+      <View style={styles.filtersScroll}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filtersContent}
+        >
+          {FILTER_TABS.map((tab) => {
+            const isActive = tab.key === activeFilter;
+            return (
+              <Pressable
+                key={tab.key}
+                style={[styles.filterPill, isActive && styles.filterPillActive]}
+                onPress={() => handleFilterPress(tab.key)}
               >
-                {tab.label}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
+                <Text
+                  style={[
+                    styles.filterPillText,
+                    isActive && styles.filterPillTextActive,
+                  ]}
+                >
+                  {tab.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </View>
 
       {/* Loading indicator */}
       {isLoading && (
@@ -318,22 +320,23 @@ const styles = StyleSheet.create({
 
   // Filter tabs
   filtersScroll: {
-    flexGrow: 0,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.gold.border,
   },
   filtersContent: {
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
-    gap: spacing.sm,
+    alignItems: 'center',
   },
   filterPill: {
-    paddingVertical: spacing.xs + 2,
-    paddingHorizontal: spacing.md,
-    borderRadius: 20,
+    height: 30,
+    justifyContent: 'center',
+    paddingHorizontal: spacing.lg,
+    borderRadius: 15,
     borderWidth: 1,
-    borderColor: colors.gold.border,
+    borderColor: 'rgba(180,140,60,0.3)',
     backgroundColor: colors.bg.secondary,
+    marginRight: spacing.sm,
   },
   filterPillActive: {
     backgroundColor: colors.gold.primary,
@@ -342,8 +345,9 @@ const styles = StyleSheet.create({
   filterPillText: {
     fontFamily: fonts.headingRegular,
     fontSize: 11,
-    letterSpacing: 1,
-    color: colors.text.tertiary,
+    letterSpacing: 1.5,
+    color: colors.text.secondary,
+    textTransform: 'uppercase',
   },
   filterPillTextActive: {
     color: colors.bg.primary,
@@ -436,14 +440,14 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: colors.gold.border,
-    backgroundColor: colors.bg.secondary,
+    borderColor: 'rgba(90,58,24,0.4)',
+    backgroundColor: 'rgba(90,58,24,0.12)',
   },
   tagText: {
     fontFamily: fonts.headingRegular,
     fontSize: 10,
     letterSpacing: 0.5,
-    color: PARCHMENT_TEXT.label,
+    color: PARCHMENT_TEXT.primary,
   },
 
   // Empty state

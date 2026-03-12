@@ -29,6 +29,7 @@ import { submitAction } from '@/services/campaign';
 import { NarrativeText } from '@/components/game/NarrativeText';
 import { FantasyPanel, FantasyButton, PortraitFrame } from '@/components/ui';
 import type { Companion } from '@/types/game';
+import { MoodParticles } from '@/components/game/MoodParticles';
 
 // ─── Types ───────────────────────────────────────────
 
@@ -356,6 +357,7 @@ export default function CampScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <MoodParticles />
       {/* Warm amber ambient overlay */}
       <Animated.View style={[styles.ambientOverlay, ambientStyle]} pointerEvents="none" />
 
