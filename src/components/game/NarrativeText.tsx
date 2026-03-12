@@ -3,11 +3,16 @@
 
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { Text, Pressable, StyleSheet, ScrollView, type TextStyle } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+} from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { colors, PARCHMENT_TEXT } from '@/theme/colors';
 import { textStyles, spacing, fonts } from '@/theme/typography';
 import { useAccessibility } from '@/providers/AccessibilityProvider';
+import { WritingQuill } from './WritingQuill';
 
 type FontKey = keyof typeof fonts;
 
@@ -155,9 +160,9 @@ export function NarrativeText({ text, speed, onComplete }: NarrativeTextProps) {
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         <Animated.View style={animatedStyle}>
           <Text style={baseTextStyle}>{renderedText}</Text>
-          {!isComplete && <Text style={styles.cursor}>|</Text>}
         </Animated.View>
       </ScrollView>
+      <WritingQuill isWriting={!isComplete && delayMs > 0} speed={delayMs} />
     </Pressable>
   );
 }
@@ -170,10 +175,5 @@ const styles = StyleSheet.create({
   },
   scroll: {
     flex: 1,
-  },
-  cursor: {
-    ...textStyles.narrative,
-    color: PARCHMENT_TEXT.accent,
-    opacity: 0.6,
   },
 });
