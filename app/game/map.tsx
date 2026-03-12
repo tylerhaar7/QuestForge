@@ -178,7 +178,7 @@ function groupByDepth(nodes: MapNode[], depthMap: Map<string, number>): MapNode[
 
 export default function AdventureMapScreen() {
   const router = useRouter();
-  const { campaign } = useGameStore();
+  const campaign = useGameStore((s) => s.campaign);
   const [selectedNode, setSelectedNode] = useState<MapNode | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);

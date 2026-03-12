@@ -26,7 +26,7 @@ import { FantasyPanel, FantasyButton } from '@/components/ui';
 
 export default function RecapScreen() {
   const router = useRouter();
-  const { campaign } = useGameStore();
+  const campaign = useGameStore((s) => s.campaign);
 
   const [recap, setRecap] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);

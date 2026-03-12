@@ -1,19 +1,14 @@
 // src/components/ui/FantasyButton.tsx
+// Fantasy-themed button using CSS Views (consistent with FantasyPanel approach).
 import React, { useCallback } from 'react';
-import {
-  ImageBackground,
-  Pressable,
-  Text,
-  StyleSheet,
-  ViewStyle,
-} from 'react-native';
+import { Pressable, Text, StyleSheet, View, ViewStyle } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import { UI_ASSETS } from '@/assets/ui';
+import { PARCHMENT_TEXT } from '@/theme/colors';
 import { fonts } from '@/theme/typography';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'danger';
@@ -26,10 +21,40 @@ interface FantasyButtonProps {
   style?: ViewStyle;
 }
 
-const VARIANT_SOURCES: Record<ButtonVariant, any> = {
-  primary: UI_ASSETS.panel.button,
-  secondary: UI_ASSETS.panel.strip,
-  danger: UI_ASSETS.panel.strip,
+interface ButtonConfig {
+  frameWidth: number;
+  frameColor: string;
+  frameRadius: number;
+  parchmentColor: string;
+  innerRadius: number;
+  textColor: string;
+}
+
+const BUTTON_VARIANTS: Record<ButtonVariant, ButtonConfig> = {
+  primary: {
+    frameWidth: 5,
+    frameColor: '#2e1e10',
+    frameRadius: 8,
+    parchmentColor: '#d4c4a0',
+    innerRadius: 4,
+    textColor: PARCHMENT_TEXT.primary,
+  },
+  secondary: {
+    frameWidth: 3,
+    frameColor: '#3a2a18',
+    frameRadius: 6,
+    parchmentColor: '#ddd0b4',
+    innerRadius: 3,
+    textColor: PARCHMENT_TEXT.primary,
+  },
+  danger: {
+    frameWidth: 3,
+    frameColor: '#3a2a18',
+    frameRadius: 6,
+    parchmentColor: '#ddd0b4',
+    innerRadius: 3,
+    textColor: '#8b1a1a',
+  },
 };
 
 export function FantasyButton({
@@ -40,6 +65,7 @@ export function FantasyButton({
   style,
 }: FantasyButtonProps) {
   const scale = useSharedValue(1);
+  const config = BUTTON_VARIANTS[variant];
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -68,35 +94,51 @@ export function FantasyButton({
         onPressOut={handlePressOut}
         disabled={disabled}
       >
-        <ImageBackground
-          source={VARIANT_SOURCES[variant]}
-          resizeMode="stretch"
-          style={[styles.background, disabled && styles.disabled]}
-          imageStyle={styles.image}
+        <View
+          style={[
+            styles.frame,
+            {
+              backgroundColor: config.frameColor,
+              borderRadius: config.frameRadius,
+              padding: config.frameWidth,
+            },
+            disabled && styles.disabled,
+          ]}
         >
-          <Text
+          <View
             style={[
-              styles.label,
-              variant === 'danger' && styles.labelDanger,
+              styles.parchment,
+              {
+                backgroundColor: config.parchmentColor,
+                borderRadius: config.innerRadius,
+                borderWidth: 1,
+                borderColor: 'rgba(90,58,24,0.15)',
+              },
             ]}
           >
-            {label}
-          </Text>
-        </ImageBackground>
+            <Text style={[styles.label, { color: config.textColor }]}>
+              {label}
+            </Text>
+          </View>
+        </View>
       </Pressable>
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  background: {
-    paddingHorizontal: 40,
-    paddingVertical: 18,
+  frame: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  parchment: {
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  image: {
-    // No borderRadius — let the ornate frame corners render naturally
+    paddingHorizontal: 24,
+    paddingVertical: 12,
   },
   disabled: {
     opacity: 0.4,
@@ -105,10 +147,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.heading,
     fontSize: 14,
     letterSpacing: 1.5,
-    color: '#3a2810', // Dark ink on parchment
     textTransform: 'uppercase',
-  },
-  labelDanger: {
-    color: '#8b1a1a',
   },
 });

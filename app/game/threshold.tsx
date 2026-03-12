@@ -22,6 +22,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { colors, PARCHMENT_TEXT } from '@/theme/colors';
 import { fonts, spacing } from '@/theme/typography';
 import { useGameStore } from '@/stores/useGameStore';
+import { useShallow } from 'zustand/react/shallow';
 import { submitAction } from '@/services/campaign';
 import { NarrativeText } from '@/components/game/NarrativeText';
 import { ChoiceButton } from '@/components/game/ChoiceButton';
@@ -104,8 +105,16 @@ export default function ThresholdScreen() {
     currentNarration,
     currentChoices,
     isNarrationComplete,
-    setNarrationComplete,
-  } = useGameStore();
+  } = useGameStore(
+    useShallow((s) => ({
+      campaign: s.campaign,
+      isLoading: s.isLoading,
+      currentNarration: s.currentNarration,
+      currentChoices: s.currentChoices,
+      isNarrationComplete: s.isNarrationComplete,
+    })),
+  );
+  const setNarrationComplete = useGameStore((s) => s.setNarrationComplete);
 
   // Phase: 'intro' → show death fade text; 'keeper' → show Keeper narration
   const [phase, setPhase] = useState<'intro' | 'keeper'>('intro');

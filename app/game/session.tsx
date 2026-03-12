@@ -8,6 +8,7 @@ import { colors, PARCHMENT_TEXT } from '@/theme/colors';
 import { fonts, spacing, textStyles } from '@/theme/typography';
 import { FantasyPanel, FantasyButton } from '@/components/ui';
 import { useGameStore } from '@/stores/useGameStore';
+import { useShallow } from 'zustand/react/shallow';
 import { NarrativeText } from '@/components/game/NarrativeText';
 import { ChoiceButton } from '@/components/game/ChoiceButton';
 import { PartyCard } from '@/components/game/PartyCard';
@@ -28,16 +29,30 @@ export default function GameSessionScreen() {
     currentNarration,
     currentChoices,
     currentMode,
-    currentMood,
     enemyIntentions,
     activeDiceRoll,
     pendingApprovalChanges,
     isNarrationComplete,
     isTutorialComplete,
-    setNarrationComplete,
-    shiftDiceRoll,
-    resetSession,
-  } = useGameStore();
+  } = useGameStore(
+    useShallow((s) => ({
+      campaign: s.campaign,
+      character: s.character,
+      isLoading: s.isLoading,
+      error: s.error,
+      currentNarration: s.currentNarration,
+      currentChoices: s.currentChoices,
+      currentMode: s.currentMode,
+      enemyIntentions: s.enemyIntentions,
+      activeDiceRoll: s.activeDiceRoll,
+      pendingApprovalChanges: s.pendingApprovalChanges,
+      isNarrationComplete: s.isNarrationComplete,
+      isTutorialComplete: s.isTutorialComplete,
+    })),
+  );
+  const setNarrationComplete = useGameStore((s) => s.setNarrationComplete);
+  const shiftDiceRoll = useGameStore((s) => s.shiftDiceRoll);
+  const resetSession = useGameStore((s) => s.resetSession);
 
   const handleDiceComplete = useCallback(() => {
     shiftDiceRoll();
@@ -637,7 +652,7 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    backgroundColor: colors.bg.overlay,
     justifyContent: 'center',
     alignItems: 'center',
     padding: spacing.xl,

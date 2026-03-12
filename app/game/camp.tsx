@@ -24,6 +24,7 @@ import * as Haptics from 'expo-haptics';
 import { colors, PARCHMENT_TEXT } from '@/theme/colors';
 import { fonts, spacing, textStyles } from '@/theme/typography';
 import { useGameStore } from '@/stores/useGameStore';
+import { useShallow } from 'zustand/react/shallow';
 import { submitAction } from '@/services/campaign';
 import { NarrativeText } from '@/components/game/NarrativeText';
 import { FantasyPanel, FantasyButton, PortraitFrame } from '@/components/ui';
@@ -224,11 +225,18 @@ export default function CampScreen() {
     character,
     isLoading,
     currentNarration,
-    setLoading,
-    setError,
-    processAIResponse,
-    setNarrationComplete,
-  } = useGameStore();
+  } = useGameStore(
+    useShallow((s) => ({
+      campaign: s.campaign,
+      character: s.character,
+      isLoading: s.isLoading,
+      currentNarration: s.currentNarration,
+    })),
+  );
+  const setLoading = useGameStore((s) => s.setLoading);
+  const setError = useGameStore((s) => s.setError);
+  const processAIResponse = useGameStore((s) => s.processAIResponse);
+  const setNarrationComplete = useGameStore((s) => s.setNarrationComplete);
 
   const [campView, setCampView] = useState<CampView>('activities');
   const [showCompanionPicker, setShowCompanionPicker] = useState(false);
@@ -518,7 +526,7 @@ const styles = StyleSheet.create({
   companionInitial: {
     fontFamily: fonts.heading,
     fontSize: 16,
-    color: '#e8dcc8',
+    color: colors.text.primary,
   },
   companionName: {
     fontFamily: fonts.headingRegular,
@@ -665,7 +673,7 @@ const styles = StyleSheet.create({
   // Companion picker modal
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.75)',
+    backgroundColor: colors.bg.overlay,
     justifyContent: 'center',
     alignItems: 'center',
     padding: spacing.xl,
@@ -702,7 +710,7 @@ const styles = StyleSheet.create({
   pickerPortraitInitial: {
     fontFamily: fonts.heading,
     fontSize: 14,
-    color: '#e8dcc8',
+    color: colors.text.primary,
   },
   pickerOptionText: {
     flex: 1,

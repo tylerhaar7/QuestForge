@@ -129,7 +129,7 @@ function JournalEntryCard({ entry }: JournalEntryCardProps) {
 
 export default function JournalScreen() {
   const router = useRouter();
-  const { campaign } = useGameStore();
+  const campaign = useGameStore((s) => s.campaign);
 
   const [entries, setEntries] = useState<JournalRow[]>([]);
   const [activeFilter, setActiveFilter] = useState<FilterKey>('all');

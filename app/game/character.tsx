@@ -1,7 +1,7 @@
 // Character Screen — Parchment scroll character sheet
 // Full-screen overlay styled as a classic D&D parchment with unroll animation
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,13 +10,13 @@ import {
   StyleSheet,
   SafeAreaView,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
 
 import { colors } from '@/theme/colors';
 import { fonts, spacing } from '@/theme/typography';
@@ -25,7 +25,7 @@ import { getModifier, getSkillModifier, getSaveModifier, SKILL_ABILITIES } from 
 import { CLASSES } from '@/data/classes';
 import { RACES } from '@/data/races';
 import type { Character, AbilityScore, Skill, EquipmentItem, InventoryItem, Spell } from '@/types/game';
-import { PortraitFrame, InventorySlot, SystemButton } from '@/components/ui';
+import { PortraitFrame, InventorySlot } from '@/components/ui';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -308,23 +308,98 @@ function SkillsSection({ character }: { character: Character }) {
 
 function EquipmentSection({ equipment }: { equipment: EquipmentItem[] }) {
   const equipped = equipment.filter((e) => e.equipped);
+  const [selectedItem, setSelectedItem] = useState<EquipmentItem | null>(null);
+
+  const handleSlotPress = useCallback((item: EquipmentItem) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSelectedItem((prev) => (prev?.id === item.id ? null : item));
+  }, []);
 
   if (equipped.length === 0) {
     return <Text style={styles.emptyText}>No equipment</Text>;
   }
 
   return (
-    <View style={styles.equipmentGrid}>
-      {equipped.map((item) => {
-        const icon = EQUIPMENT_ICONS[item.type] || '\u2726';
-        return (
-          <InventorySlot
-            key={item.id}
-            icon={icon}
-            label={item.name}
-          />
-        );
-      })}
+    <View>
+      <View style={styles.equipmentGrid}>
+        {equipped.map((item) => {
+          const icon = EQUIPMENT_ICONS[item.type] || '\u2726';
+          const isSelected = selectedItem?.id === item.id;
+          return (
+            <InventorySlot
+              key={item.id}
+              icon={icon}
+              label={item.name}
+              onPress={() => handleSlotPress(item)}
+              style={isSelected ? styles.slotSelected : undefined}
+            />
+          );
+        })}
+      </View>
+
+      {/* Detail card for selected item */}
+      {selectedItem && (
+        <Pressable
+          style={styles.itemDetailCard}
+          onPress={() => setSelectedItem(null)}
+        >
+          <View style={styles.itemDetailHeader}>
+            <Text style={styles.itemDetailIcon}>
+              {EQUIPMENT_ICONS[selectedItem.type] || '\u2726'}
+            </Text>
+            <View style={styles.itemDetailTitleBlock}>
+              <Text style={styles.itemDetailName}>{selectedItem.name}</Text>
+              <Text style={styles.itemDetailType}>
+                {selectedItem.type.charAt(0).toUpperCase() + selectedItem.type.slice(1)}
+              </Text>
+            </View>
+          </View>
+
+          {/* Properties */}
+          {selectedItem.properties && Object.keys(selectedItem.properties).length > 0 && (
+            <View style={styles.itemDetailProps}>
+              {selectedItem.properties.damage && (
+                <Text style={styles.itemDetailProp}>
+                  <Text style={styles.itemDetailPropLabel}>Damage: </Text>
+                  {selectedItem.properties.damage}
+                  {selectedItem.properties.damageType ? ` ${selectedItem.properties.damageType}` : ''}
+                </Text>
+              )}
+              {selectedItem.properties.ac != null && (
+                <Text style={styles.itemDetailProp}>
+                  <Text style={styles.itemDetailPropLabel}>AC: </Text>
+                  {selectedItem.properties.ac}
+                </Text>
+              )}
+              {selectedItem.properties.acBonus != null && (
+                <Text style={styles.itemDetailProp}>
+                  <Text style={styles.itemDetailPropLabel}>AC Bonus: </Text>
+                  +{selectedItem.properties.acBonus}
+                </Text>
+              )}
+              {selectedItem.properties.range && (
+                <Text style={styles.itemDetailProp}>
+                  <Text style={styles.itemDetailPropLabel}>Range: </Text>
+                  {selectedItem.properties.range}
+                </Text>
+              )}
+              {selectedItem.properties.weight != null && (
+                <Text style={styles.itemDetailProp}>
+                  <Text style={styles.itemDetailPropLabel}>Weight: </Text>
+                  {selectedItem.properties.weight} lb
+                </Text>
+              )}
+              {selectedItem.properties.description && (
+                <Text style={styles.itemDetailDesc}>
+                  {selectedItem.properties.description}
+                </Text>
+              )}
+            </View>
+          )}
+
+          <Text style={styles.itemDetailHint}>Tap to dismiss</Text>
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -527,7 +602,11 @@ export default function CharacterScreen() {
         <View style={styles.emptyStateContainer}>
           <Text style={styles.emptyStateText}>No character loaded</Text>
         </View>
-        <SystemButton variant="close" onPress={handleClose} style={styles.closeButton} />
+        <Pressable onPress={handleClose} style={styles.closeButton}>
+          <View style={styles.closeButtonInner}>
+            <Text style={styles.closeButtonText}>✕</Text>
+          </View>
+        </Pressable>
       </SafeAreaView>
     );
   }
@@ -583,8 +662,12 @@ export default function CharacterScreen() {
         <ParchmentCurlBottom />
       </Animated.View>
 
-      {/* Close button */}
-      <SystemButton variant="close" onPress={handleClose} style={styles.closeButton} />
+      {/* Close button — floats on parchment below the curl */}
+      <Pressable onPress={handleClose} style={styles.closeButton}>
+        <View style={styles.closeButtonInner}>
+          <Text style={styles.closeButtonText}>✕</Text>
+        </View>
+      </Pressable>
     </SafeAreaView>
   );
 }
@@ -604,9 +687,30 @@ const styles = StyleSheet.create({
   // ── Close button ──────────────────────────────────────────────────────────
   closeButton: {
     position: 'absolute',
-    top: 52,
-    right: 20,
+    top: 62,
+    right: 18,
     zIndex: 20,
+  },
+  closeButtonInner: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: PARCHMENT.body,
+    borderWidth: 1.5,
+    borderColor: PARCHMENT.divider,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  closeButtonText: {
+    fontFamily: fonts.heading,
+    fontSize: 14,
+    color: PARCHMENT.ink,
+    lineHeight: 16,
   },
 
   // ── Parchment curls ───────────────────────────────────────────────────────
@@ -858,7 +962,72 @@ const styles = StyleSheet.create({
   equipmentGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 12,
+    justifyContent: 'center',
+  },
+  slotSelected: {
+    opacity: 0.7,
+  },
+  itemDetailCard: {
+    marginTop: spacing.md,
+    backgroundColor: 'rgba(42,26,8,0.08)',
+    borderWidth: 1,
+    borderColor: PARCHMENT.divider,
+    borderRadius: 8,
+    padding: spacing.md,
+  },
+  itemDetailHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  itemDetailIcon: {
+    fontSize: 22,
+    marginRight: spacing.sm,
+  },
+  itemDetailTitleBlock: {
+    flex: 1,
+  },
+  itemDetailName: {
+    fontFamily: fonts.heading,
+    fontSize: 14,
+    color: PARCHMENT.ink,
+    letterSpacing: 0.5,
+  },
+  itemDetailType: {
+    fontFamily: fonts.bodyItalic,
+    fontSize: 11,
+    color: PARCHMENT.inkSecondary,
+    fontStyle: 'italic',
+    marginTop: 1,
+  },
+  itemDetailProps: {
+    gap: 3,
+  },
+  itemDetailProp: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    color: PARCHMENT.inkSecondary,
+    lineHeight: 18,
+  },
+  itemDetailPropLabel: {
+    fontFamily: fonts.bodyBold,
+    color: PARCHMENT.ink,
+  },
+  itemDetailDesc: {
+    fontFamily: fonts.bodyItalic,
+    fontSize: 12,
+    color: PARCHMENT.ink,
+    lineHeight: 18,
+    marginTop: spacing.xs,
+    fontStyle: 'italic',
+  },
+  itemDetailHint: {
+    fontFamily: fonts.body,
+    fontSize: 9,
+    color: PARCHMENT.divider,
+    textAlign: 'right',
+    marginTop: spacing.sm,
   },
   equipmentRow: {
     flexDirection: 'row',

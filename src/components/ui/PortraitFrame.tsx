@@ -2,6 +2,7 @@
 import React from 'react';
 import { Image, View, StyleSheet, ViewStyle } from 'react-native';
 import { UI_ASSETS } from '@/assets/ui';
+import { colors } from '@/theme/colors';
 
 type PortraitSize = 'sm' | 'md' | 'lg';
 type PortraitVariant = 'ornate' | 'simple';
@@ -71,7 +72,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#1a1510',
+    backgroundColor: colors.bg.secondary,
   },
   frame: {
     position: 'absolute',

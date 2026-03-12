@@ -12,30 +12,6 @@ interface FantasyPanelProps {
   style?: ViewStyle;
 }
 
-// ─── Corner Stud (metal bolt decoration) ──────────────────────────────────────
-
-function Stud({ size, position }: { size: number; position: ViewStyle }) {
-  return (
-    <View
-      style={[
-        {
-          position: 'absolute',
-          width: size,
-          height: size,
-          borderRadius: size / 2,
-          backgroundColor: '#3a3028',
-          borderWidth: 1,
-          borderTopColor: '#6a5a48',
-          borderLeftColor: '#5a4a38',
-          borderBottomColor: '#1a1208',
-          borderRightColor: '#2a2018',
-        },
-        position,
-      ]}
-    />
-  );
-}
-
 // ─── Variant configs ──────────────────────────────────────────────────────────
 
 interface VariantConfig {
@@ -102,11 +78,46 @@ const VARIANTS: Record<PanelVariant, VariantConfig> = {
   },
 };
 
+// ─── Precomputed stud styles (avoids fresh objects per render) ────────────────
+
+const STUD_BASE = {
+  position: 'absolute' as const,
+  backgroundColor: '#3a3028',
+  borderWidth: 1,
+  borderTopColor: '#6a5a48',
+  borderLeftColor: '#5a4a38',
+  borderBottomColor: '#1a1208',
+  borderRightColor: '#2a2018',
+};
+
+interface PrecomputedStuds {
+  size: ViewStyle;
+  topLeft: ViewStyle;
+  topRight: ViewStyle;
+  bottomLeft: ViewStyle;
+  bottomRight: ViewStyle;
+}
+
+const PRECOMPUTED_STUDS: Partial<Record<PanelVariant, PrecomputedStuds>> = {};
+
+for (const [key, v] of Object.entries(VARIANTS)) {
+  if (!v.showStuds) continue;
+  const offset = -(v.studSize / 2 - v.frameWidth / 2);
+  const sizeStyle = { width: v.studSize, height: v.studSize, borderRadius: v.studSize / 2 };
+  PRECOMPUTED_STUDS[key as PanelVariant] = {
+    size: sizeStyle,
+    topLeft: { top: offset, left: offset },
+    topRight: { top: offset, right: offset },
+    bottomLeft: { bottom: offset, left: offset },
+    bottomRight: { bottom: offset, right: offset },
+  };
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function FantasyPanel({ variant, children, style }: FantasyPanelProps) {
   const v = VARIANTS[variant];
-  const studOffset = -(v.studSize / 2 - v.frameWidth / 2);
+  const studs = PRECOMPUTED_STUDS[variant];
 
   return (
     <View
@@ -120,37 +131,29 @@ export function FantasyPanel({ variant, children, style }: FantasyPanelProps) {
         style,
       ]}
     >
-      {/* Parchment inner surface */}
+      {/* Parchment inner surface with inset border */}
       <View
         style={[
           styles.parchment,
           {
             backgroundColor: v.parchmentColor,
             borderRadius: v.innerRadius,
+            borderWidth: 1,
+            borderColor: 'rgba(90,58,24,0.15)',
           },
           v.contentPadding,
         ]}
       >
-        {/* Wood-grain edge highlight */}
-        <View
-          style={[
-            styles.innerEdge,
-            {
-              borderRadius: v.innerRadius,
-              borderColor: 'rgba(90,58,24,0.15)',
-            },
-          ]}
-        />
         {children}
       </View>
 
       {/* Corner studs */}
-      {v.showStuds && (
+      {studs && (
         <>
-          <Stud size={v.studSize} position={{ top: studOffset, left: studOffset }} />
-          <Stud size={v.studSize} position={{ top: studOffset, right: studOffset }} />
-          <Stud size={v.studSize} position={{ bottom: studOffset, left: studOffset }} />
-          <Stud size={v.studSize} position={{ bottom: studOffset, right: studOffset }} />
+          <View style={[STUD_BASE, studs.size, studs.topLeft]} />
+          <View style={[STUD_BASE, studs.size, studs.topRight]} />
+          <View style={[STUD_BASE, studs.size, studs.bottomLeft]} />
+          <View style={[STUD_BASE, studs.size, studs.bottomRight]} />
         </>
       )}
     </View>
@@ -167,9 +170,5 @@ const styles = StyleSheet.create({
   },
   parchment: {
     overflow: 'hidden',
-  },
-  innerEdge: {
-    ...StyleSheet.absoluteFillObject,
-    borderWidth: 1,
   },
 });

@@ -60,7 +60,7 @@ export default function IndexScreen() {
       // Check if user has any characters
       const { data: characters, error: charactersError } = await supabase
         .from('characters')
-        .select('*')
+        .select('id')
         .eq('user_id', session.user.id)
         .order('created_at', { ascending: false })
         .limit(1);
@@ -81,7 +81,7 @@ export default function IndexScreen() {
       // Check for active campaign
       const { data: campaigns, error: campaignsError } = await supabase
         .from('campaigns')
-        .select('*')
+        .select('id, character_id, turn_history')
         .eq('user_id', session.user.id)
         .order('updated_at', { ascending: false })
         .limit(1);

@@ -81,18 +81,15 @@ export default function LoginScreen() {
 
           {error && <Text style={styles.error}>{error}</Text>}
 
-          {loading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color={colors.gold.primary} />
-            </View>
-          ) : (
-            <FantasyButton
-              variant="primary"
-              label={isRegister ? 'CREATE ACCOUNT' : 'SIGN IN'}
-              onPress={handleSubmit}
-              disabled={loading}
-              style={styles.submitButton}
-            />
+          <FantasyButton
+            variant="primary"
+            label={isRegister ? 'CREATE ACCOUNT' : 'SIGN IN'}
+            onPress={handleSubmit}
+            disabled={loading}
+            style={styles.submitButton}
+          />
+          {loading && (
+            <ActivityIndicator size="small" color={colors.gold.primary} style={styles.loadingIndicator} />
           )}
 
           <FantasyButton
@@ -157,10 +154,8 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     textAlign: 'center',
   },
-  loadingContainer: {
-    alignItems: 'center',
-    paddingVertical: spacing.md + 2,
-    marginTop: spacing.xl,
+  loadingIndicator: {
+    marginTop: spacing.sm,
   },
   submitButton: {
     marginTop: spacing.xl,

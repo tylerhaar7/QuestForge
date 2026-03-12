@@ -116,8 +116,12 @@ export function NarrativeText({ text, speed, onComplete }: NarrativeTextProps) {
       return;
     }
 
+    // Advance multiple chars per tick to reduce render count while preserving perceived speed
+    const charsPerTick = delayMs <= 15 ? 3 : 2;
+    const tickInterval = delayMs * charsPerTick;
+
     intervalRef.current = setInterval(() => {
-      indexRef.current += 1;
+      indexRef.current = Math.min(indexRef.current + charsPerTick, text.length);
       if (indexRef.current >= text.length) {
         setDisplayedText(text);
         setIsComplete(true);
@@ -128,7 +132,7 @@ export function NarrativeText({ text, speed, onComplete }: NarrativeTextProps) {
       } else {
         setDisplayedText(text.slice(0, indexRef.current));
       }
-    }, delayMs);
+    }, tickInterval);
 
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
@@ -166,10 +170,6 @@ const styles = StyleSheet.create({
   },
   scroll: {
     flex: 1,
-  },
-  text: {
-    ...textStyles.narrative,
-    color: PARCHMENT_TEXT.primary,
   },
   cursor: {
     ...textStyles.narrative,
