@@ -8,7 +8,6 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import { PARCHMENT_TEXT } from '@/theme/colors';
 import { fonts } from '@/theme/typography';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'danger';
@@ -37,7 +36,7 @@ const BUTTON_VARIANTS: Record<ButtonVariant, ButtonConfig> = {
     frameRadius: 8,
     parchmentColor: '#d4c4a0',
     innerRadius: 4,
-    textColor: PARCHMENT_TEXT.primary,
+    textColor: '#3a2810',
   },
   secondary: {
     frameWidth: 3,
@@ -45,7 +44,7 @@ const BUTTON_VARIANTS: Record<ButtonVariant, ButtonConfig> = {
     frameRadius: 6,
     parchmentColor: '#ddd0b4',
     innerRadius: 3,
-    textColor: PARCHMENT_TEXT.primary,
+    textColor: '#3a2810',
   },
   danger: {
     frameWidth: 3,
