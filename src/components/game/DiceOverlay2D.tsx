@@ -1,8 +1,9 @@
 // 2D Dice Roll Overlay — Reanimated-based fallback for Expo Go / reduceMotion
 // Shows animated dice roll with result card, haptics, and tap-to-skip
+// Critical hits get a gold particle burst, screen flash, and emphasized animations
 
 import React, { useEffect, useCallback, useState } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Dimensions } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -16,7 +17,11 @@ import * as Haptics from 'expo-haptics';
 import { colors } from '@/theme/colors';
 import { fonts, spacing } from '@/theme/typography';
 import { useSettingsStore } from '@/stores/useSettingsStore';
+import { useAccessibility } from '@/providers/AccessibilityProvider';
+import { CriticalBurst } from './CriticalBurst';
 import type { DiceRollResult } from '@/types/game';
+
+const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
 interface DiceOverlay2DProps {
   roll: DiceRollResult;
@@ -28,7 +33,10 @@ const RESULT_DISPLAY_DURATION = 1500;
 
 export function DiceOverlay2D({ roll, onComplete }: DiceOverlay2DProps) {
   const [settled, setSettled] = useState(false);
+  const [showBurst, setShowBurst] = useState(false);
+  const [showFlash, setShowFlash] = useState(false);
   const hapticsEnabled = useSettingsStore((s) => s.accessibility.hapticFeedback);
+  const { skipAnimations } = useAccessibility();
 
   // Animation values
   const dieRotation = useSharedValue(0);
@@ -38,6 +46,10 @@ export function DiceOverlay2D({ roll, onComplete }: DiceOverlay2DProps) {
   const resultTranslateY = useSharedValue(20);
   const overlayOpacity = useSharedValue(0);
   const numberScale = useSharedValue(0.5);
+
+  // Critical hit animation values
+  const flashOpacity = useSharedValue(0);
+  const critGlowOpacity = useSharedValue(0);
 
   const resultColor = roll.isCritical
     ? colors.gold.primary
@@ -96,9 +108,10 @@ export function DiceOverlay2D({ roll, onComplete }: DiceOverlay2DProps) {
       withTiming(1, { duration: 80 }),
     );
 
-    // Reveal number
+    // Reveal number — larger scale peak for crits
+    const peakScale = roll.isCritical ? 1.8 : 1.4;
     numberScale.value = withSequence(
-      withTiming(1.4, { duration: 150, easing: Easing.out(Easing.cubic) }),
+      withTiming(peakScale, { duration: 150, easing: Easing.out(Easing.cubic) }),
       withTiming(1, { duration: 150 }),
     );
 
@@ -106,10 +119,36 @@ export function DiceOverlay2D({ roll, onComplete }: DiceOverlay2DProps) {
     resultOpacity.value = withDelay(200, withTiming(1, { duration: 300 }));
     resultTranslateY.value = withDelay(200, withTiming(0, { duration: 300, easing: Easing.out(Easing.cubic) }));
 
+    // Critical hit enhancements
+    if (roll.isCritical && !skipAnimations) {
+      // Gold particle burst
+      setShowBurst(true);
+
+      // Screen flash: white overlay 0 -> 0.4 -> 0 over 300ms
+      setShowFlash(true);
+      flashOpacity.value = withSequence(
+        withTiming(0.4, { duration: 100, easing: Easing.out(Easing.cubic) }),
+        withTiming(0, { duration: 200, easing: Easing.in(Easing.cubic) }),
+      );
+
+      // Gold glow on result card border
+      critGlowOpacity.value = withDelay(
+        200,
+        withSequence(
+          withTiming(1, { duration: 200 }),
+          withTiming(0.6, { duration: 400 }),
+        ),
+      );
+    }
+
     // Haptic feedback
     if (hapticsEnabled) {
       if (roll.isCritical) {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+        // Second delayed haptic for emphasis
+        setTimeout(() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+        }, 250);
       } else if (roll.success) {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       } else {
@@ -118,7 +157,7 @@ export function DiceOverlay2D({ roll, onComplete }: DiceOverlay2DProps) {
     }
 
     // No auto-advance — player taps to dismiss
-  }, [settled, roll, hapticsEnabled]);
+  }, [settled, roll, hapticsEnabled, skipAnimations]);
 
   const handleTap = useCallback(() => {
     if (!settled) {
@@ -149,14 +188,33 @@ export function DiceOverlay2D({ roll, onComplete }: DiceOverlay2DProps) {
     transform: [{ translateY: resultTranslateY.value }],
   }));
 
+  const flashStyle = useAnimatedStyle(() => ({
+    opacity: flashOpacity.value,
+  }));
+
+  const critGlowStyle = useAnimatedStyle(() => ({
+    shadowOpacity: critGlowOpacity.value,
+  }));
+
   return (
     <Pressable style={StyleSheet.absoluteFill} onPress={handleTap}>
       <Animated.View style={[styles.overlay, overlayStyle]}>
+        {/* Screen flash for critical hits */}
+        {showFlash && !skipAnimations && (
+          <Animated.View style={[styles.screenFlash, flashStyle]} pointerEvents="none" />
+        )}
+
         {/* Die face */}
         <Animated.View style={[styles.dieContainer, dieStyle]}>
           <View style={[styles.dieFace, settled && { borderColor: resultColor }]}>
             <Animated.View style={numberStyle}>
-              <Text style={[styles.dieNumber, settled && { color: resultColor }]}>
+              <Text
+                style={[
+                  styles.dieNumber,
+                  settled && { color: resultColor },
+                  settled && roll.isCritical && styles.critNumber,
+                ]}
+              >
                 {settled ? roll.roll : '?'}
               </Text>
             </Animated.View>
@@ -164,8 +222,21 @@ export function DiceOverlay2D({ roll, onComplete }: DiceOverlay2DProps) {
           <Text style={styles.dieLabel}>D20</Text>
         </Animated.View>
 
+        {/* Gold particle burst for critical hits */}
+        {showBurst && !skipAnimations && (
+          <CriticalBurst centerX={SCREEN_W / 2} centerY={SCREEN_H / 2 - 40} />
+        )}
+
         {/* Result card */}
-        <Animated.View style={[styles.resultCard, resultStyle, settled && { borderColor: resultColor }]}>
+        <Animated.View
+          style={[
+            styles.resultCard,
+            resultStyle,
+            settled && { borderColor: resultColor },
+            settled && roll.isCritical && styles.critResultCard,
+            settled && roll.isCritical && critGlowStyle,
+          ]}
+        >
           <Text style={styles.rollLabel}>{roll.label.toUpperCase()}</Text>
 
           <View style={styles.numberRow}>
@@ -280,5 +351,24 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: colors.text.disabled,
     marginTop: spacing.xl,
+  },
+  screenFlash: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#ffffff',
+    zIndex: 10,
+  },
+  critNumber: {
+    fontSize: 56,
+    textShadowColor: colors.gold.bright,
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 12,
+  },
+  critResultCard: {
+    borderWidth: 2,
+    borderColor: colors.gold.primary,
+    shadowColor: colors.gold.bright,
+    shadowOffset: { width: 0, height: 0 },
+    shadowRadius: 16,
+    elevation: 8,
   },
 });
