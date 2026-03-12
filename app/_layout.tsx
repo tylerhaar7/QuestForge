@@ -2,13 +2,10 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { View, ActivityIndicator } from 'react-native';
 import { colors } from '@/theme/colors';
 import { AccessibilityProvider } from '@/providers/AccessibilityProvider';
-
-const queryClient = new QueryClient();
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -32,18 +29,16 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <QueryClientProvider client={queryClient}>
-        <AccessibilityProvider>
-          <StatusBar style="light" />
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              contentStyle: { backgroundColor: colors.bg.primary },
-              animation: 'fade',
-            }}
-          />
-        </AccessibilityProvider>
-      </QueryClientProvider>
+      <AccessibilityProvider>
+        <StatusBar style="light" />
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: colors.bg.primary },
+            animation: 'fade',
+          }}
+        />
+      </AccessibilityProvider>
     </GestureHandlerRootView>
   );
 }
