@@ -2,7 +2,7 @@
 // Layout: Narrative (60%) → Party strip (15%) → Choices (25%)
 
 import React, { useCallback, useState } from 'react';
-import { View, StyleSheet, FlatList, ActivityIndicator, Text, SafeAreaView, TextInput, Pressable, Keyboard, ScrollView, KeyboardAvoidingView, Platform, Modal } from 'react-native';
+import { View, StyleSheet, FlatList, Text, SafeAreaView, TextInput, Pressable, Keyboard, ScrollView, KeyboardAvoidingView, Platform, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors, PARCHMENT_TEXT } from '@/theme/colors';
 import { fonts, spacing, textStyles } from '@/theme/typography';
@@ -18,6 +18,7 @@ import { submitAction, SubmitActionResult } from '@/services/campaign';
 import type { Choice, Companion } from '@/types/game';
 import { EnemyIntentions } from '@/components/game/EnemyIntentions';
 import { CharacterHudButton } from '@/components/game/CharacterHudButton';
+import { DMChanneling } from '@/components/game/DMChanneling';
 
 export default function GameSessionScreen() {
   const router = useRouter();
@@ -316,10 +317,7 @@ export default function GameSessionScreen() {
           {/* Narrative Area */}
           <FantasyPanel variant="pinned" style={styles.narrativePanel}>
             {isLoading ? (
-              <View style={styles.loading}>
-                <ActivityIndicator size="small" color={colors.gold.primary} />
-                <Text style={styles.loadingText}>The DM ponders...</Text>
-              </View>
+              <DMChanneling />
             ) : (
               <NarrativeText
                 text={currentNarration}
@@ -543,18 +541,6 @@ const styles = StyleSheet.create({
     minHeight: 200,
     marginHorizontal: spacing.sm,
     marginTop: spacing.sm,
-  },
-  loading: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    fontFamily: fonts.narrative,
-    fontSize: 14,
-    color: colors.text.tertiary,
-    marginTop: spacing.sm,
-    fontStyle: 'italic',
   },
   partyStrip: {
     borderTopWidth: StyleSheet.hairlineWidth,
