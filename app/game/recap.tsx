@@ -23,6 +23,7 @@ import { useGameStore } from '@/stores/useGameStore';
 import { getSessionRecap } from '@/services/campaign';
 import { NarrativeText } from '@/components/game/NarrativeText';
 import { FantasyPanel, FantasyButton } from '@/components/ui';
+import { MoodParticles } from '@/components/game/MoodParticles';
 
 export default function RecapScreen() {
   const router = useRouter();
@@ -95,6 +96,7 @@ export default function RecapScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <MoodParticles />
       {/* Skip button — top-right corner */}
       <Pressable style={styles.skipButton} onPress={handleContinue}>
         <Text style={styles.skipText}>Skip</Text>

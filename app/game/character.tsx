@@ -26,6 +26,7 @@ import { CLASSES } from '@/data/classes';
 import { RACES } from '@/data/races';
 import type { Character, AbilityScore, Skill, EquipmentItem, InventoryItem, Spell } from '@/types/game';
 import { PortraitFrame, InventorySlot } from '@/components/ui';
+import { MoodParticles } from '@/components/game/MoodParticles';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -614,6 +615,7 @@ export default function CharacterScreen() {
   // ── Main layout ──────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.container}>
+      <MoodParticles />
       <Animated.View style={[styles.scrollContainer, animatedStyle]}>
         {/* Top curl */}
         <ParchmentCurlTop />

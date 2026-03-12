@@ -20,6 +20,7 @@ import { fonts, spacing, textStyles } from '@/theme/typography';
 import { useGameStore } from '@/stores/useGameStore';
 import { getJournalEntries, JournalRow } from '@/services/campaign';
 import { FantasyPanel } from '@/components/ui';
+import { MoodParticles } from '@/components/game/MoodParticles';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -206,6 +207,7 @@ export default function JournalScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <MoodParticles />
       {/* Header */}
       <View style={styles.header}>
         <Pressable style={styles.backButton} onPress={() => router.back()}>

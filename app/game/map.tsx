@@ -27,6 +27,7 @@ import { useGameStore } from '@/stores/useGameStore';
 import { submitAction } from '@/services/campaign';
 import { FantasyPanel, FantasyButton } from '@/components/ui';
 import type { MapNode, MapNodeType } from '@/types/game';
+import { MoodParticles } from '@/components/game/MoodParticles';
 
 // ─── Constants ──────────────────────────────────────
 
@@ -278,6 +279,7 @@ export default function AdventureMapScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <MoodParticles />
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
