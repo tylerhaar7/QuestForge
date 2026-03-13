@@ -45,7 +45,7 @@ export function ApprovalIndicator({ change, onDismiss }: ApprovalIndicatorProps)
     }, 2500);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [change]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }],

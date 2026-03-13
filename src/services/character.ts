@@ -1,5 +1,38 @@
 import { supabase } from './supabase';
-import type { Character, AbilityScores } from '@/types/game';
+import type { Character, AbilityScores, RaceName, ClassName, Skill, AbilityScore, EquipmentItem, InventoryItem, Spell, Condition } from '@/types/game';
+
+interface CharacterRow {
+  id: string;
+  user_id: string;
+  name: string;
+  race: RaceName;
+  class_name: ClassName;
+  subclass: string | null;
+  level: number;
+  xp: number;
+  ability_scores: AbilityScores;
+  hp: number;
+  max_hp: number;
+  temp_hp: number | null;
+  ac: number;
+  speed: number;
+  proficiency_bonus: number;
+  proficient_skills: Skill[] | null;
+  proficient_saves: AbilityScore[] | null;
+  spell_slots: number[] | null;
+  max_spell_slots: number[] | null;
+  equipment: EquipmentItem[] | null;
+  inventory: InventoryItem[] | null;
+  known_spells: Spell[] | null;
+  features: string[] | null;
+  conditions: Condition[] | null;
+  origin_story: string | null;
+  origin_ai_context: string | null;
+  personal_quest_flags: Record<string, boolean> | null;
+  portrait_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
 
 // Map Character object to Supabase row (camelCase → snake_case)
 function toRow(char: Omit<Character, 'id' | 'createdAt' | 'updatedAt'>) {
@@ -35,7 +68,7 @@ function toRow(char: Omit<Character, 'id' | 'createdAt' | 'updatedAt'>) {
 }
 
 // Map Supabase row to Character object (snake_case → camelCase)
-function fromRow(row: any): Character {
+function fromRow(row: CharacterRow): Character {
   return {
     id: row.id,
     userId: row.user_id,

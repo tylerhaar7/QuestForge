@@ -14,6 +14,7 @@ import * as Haptics from 'expo-haptics';
 import { colors } from '@/theme/colors';
 import { textStyles, spacing, fonts } from '@/theme/typography';
 import { useAccessibility } from '@/providers/AccessibilityProvider';
+import { formatSnakeCase } from '@/utils/formatting';
 import type { Choice } from '@/types/game';
 
 interface ChoiceButtonProps {
@@ -62,7 +63,7 @@ export function ChoiceButton({ choice, onPress, disabled }: ChoiceButtonProps) {
         {hasSkillCheck && choice.skillCheck && (
           <View style={styles.skillCheckRow}>
             <Text style={styles.skillLabel}>
-              {formatSkillName(choice.skillCheck.skill)}
+              {formatSnakeCase(choice.skillCheck.skill)}
             </Text>
             <Text style={[
               styles.chance,
@@ -75,12 +76,6 @@ export function ChoiceButton({ choice, onPress, disabled }: ChoiceButtonProps) {
       </Animated.View>
     </Pressable>
   );
-}
-
-function formatSkillName(skill: string): string {
-  return skill
-    .replace(/_/g, ' ')
-    .replace(/\b\w/g, c => c.toUpperCase());
 }
 
 function getChanceColor(chance: number): string {

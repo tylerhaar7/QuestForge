@@ -147,7 +147,9 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const token = authHeader.replace('Bearer ', '');
+    const match = authHeader.match(/^Bearer\s+(\S+)$/);
+    if (!match) return errorResponse('Invalid authorization format', 401, headers);
+    const token = match[1];
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
       return errorResponse('Unauthorized', 401, headers);

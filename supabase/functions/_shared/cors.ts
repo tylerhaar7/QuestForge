@@ -9,13 +9,19 @@ function getAllowedOrigins(): string[] {
 export function getCorsHeaders(origin?: string | null): Record<string, string> {
   const allowed = getAllowedOrigins();
   const isAllowed = !!origin && allowed.some(o => origin.startsWith(o));
-  // Mobile RN apps don't send Origin — allow those through with '*'
-  const resolved = !origin ? '*' : isAllowed ? origin : allowed[0] ?? 'http://localhost:8081';
 
-  return {
-    'Access-Control-Allow-Origin': resolved,
+  const base: Record<string, string> = {
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   };
+
+  // Mobile RN apps don't send Origin — they don't need CORS headers.
+  // Only set Access-Control-Allow-Origin for whitelisted browser origins.
+  if (!origin) {
+    return base;
+  }
+
+  base['Access-Control-Allow-Origin'] = isAllowed ? origin : allowed[0] ?? 'http://localhost:8081';
+  return base;
 }
 
 // Backward-compatible static export (used by guards.ts errorResponse default)

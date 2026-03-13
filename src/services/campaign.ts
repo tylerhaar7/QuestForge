@@ -1,6 +1,7 @@
 // Campaign service — calls Supabase Edge Functions and manages campaign state
 import { supabase } from './supabase';
-import type { Campaign, Character, Companion, AIResponse, DiceRollResult } from '@/types/game';
+import type { Campaign, Character, Companion, AIResponse, DiceRollResult, CombatState, Quest, DeathRecord, DifficultyProfile, AdventureMap, CompanionPoolEntry } from '@/types/game';
+import type { CompanionTemplate } from '@/data/companions';
 
 // ─── Edge Function callers ──────────────────────────
 
@@ -9,7 +10,7 @@ export interface InitCampaignParams {
   mode: 'generated' | 'custom' | 'tutorial';
   customPrompt?: string;
   campaignName?: string;
-  companions?: any[];  // CompanionTemplate objects from companion selection
+  companions?: CompanionTemplate[];
   recruitmentMode?: 'choose' | 'discover';
 }
 
@@ -37,7 +38,7 @@ export async function submitAction(campaignId: string, action: string): Promise<
 
 async function invokeEdgeFunction<T>(
   fnName: 'campaign-init' | 'game-turn' | 'session-recap',
-  body: Record<string, any>,
+  body: Record<string, unknown> | InitCampaignParams | { campaignId: string; action?: string },
   failurePrefix: string
 ): Promise<T> {
   const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
@@ -56,29 +57,32 @@ async function invokeEdgeFunction<T>(
     }
   }
 
-  let data: any;
-  let error: any;
+  let data: T | null;
+  let error: { message: string; context?: { json(): Promise<Record<string, unknown>> } } | null;
   try {
     const result = await supabase.functions.invoke(fnName, {
       body,
       headers: { Authorization: `Bearer ${accessToken}` },
     });
-    data = result.data;
-    error = result.error;
-  } catch (fetchErr: any) {
-    throw new Error(`${failurePrefix}: Network error — ${fetchErr?.message || 'check your connection'}`);
+    data = result.data as T | null;
+    error = result.error as typeof error;
+  } catch (fetchErr: unknown) {
+    const message = fetchErr instanceof Error ? fetchErr.message : 'check your connection';
+    throw new Error(`${failurePrefix}: Network error — ${message}`);
   }
 
   if (error) {
     let message = error.message;
     try {
-      const errorBody = await (error as any).context?.json();
-      if (errorBody?.error) message = errorBody.error;
-    } catch {}
+      const errorBody = await error.context?.json();
+      if (errorBody?.error) message = String(errorBody.error);
+    } catch (e) { console.warn('Failed to parse error body:', e); }
     throw new Error(`${failurePrefix}: ${message}`);
   }
 
-  if ((data as any)?.error) throw new Error((data as any).error);
+  if (data && typeof data === 'object' && 'error' in data) {
+    throw new Error(String((data as Record<string, unknown>).error));
+  }
   return data as T;
 }
 
@@ -92,19 +96,19 @@ interface CampaignRow {
   current_location: string;
   current_mood: string;
   current_mode: string;
-  companions: any;
-  companion_pool: any;
+  companions: Companion[] | null;
+  companion_pool: CompanionPoolEntry[] | null;
   recruitment_mode: string;
-  combat_state: any;
-  quest_log: any;
+  combat_state: CombatState | null;
+  quest_log: Quest[] | null;
   story_summary: string;
   death_count: number;
-  death_history: any;
-  threshold_unlocks: any;
-  difficulty_profile: any;
-  adventure_map: any;
+  death_history: DeathRecord[] | null;
+  threshold_unlocks: string[] | null;
+  difficulty_profile: DifficultyProfile | null;
+  adventure_map: AdventureMap | null;
   turn_count: number;
-  turn_history: any;
+  turn_history: Record<string, unknown>[] | null;
   last_session_at: string;
   created_at: string;
   updated_at: string;

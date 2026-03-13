@@ -129,7 +129,9 @@ Deno.serve(async (req) => {
     );
 
     // Pass JWT explicitly — newer SDK versions don't use global headers for getUser()
-    const token = authHeader.replace('Bearer ', '');
+    const match = authHeader.match(/^Bearer\s+(\S+)$/);
+    if (!match) return errorResponse('Invalid authorization format', 401, headers);
+    const token = match[1];
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
       return errorResponse('Unauthorized', 401, headers);
@@ -276,7 +278,6 @@ Deno.serve(async (req) => {
       diceRequestCount: rawDiceCheck.length,
       mode: aiResponse.mode,
       hasChoices: Array.isArray(aiResponse.choices) && aiResponse.choices.length > 0,
-      actionSnippet: action.substring(0, 80),
     });
 
     // If dice_requests present, resolve and call Claude again for narration

@@ -84,7 +84,7 @@ export interface EquipmentItem {
   name: string;
   type: 'weapon' | 'armor' | 'shield' | 'accessory';
   equipped: boolean;
-  properties: Record<string, any>;
+  properties: Record<string, string | number>;
 }
 
 export interface InventoryItem {
@@ -332,7 +332,7 @@ export interface DiceRollResult {
 export interface StateChange {
   type: 'hp' | 'condition' | 'item' | 'xp' | 'spell_slot' | 'quest' | 'location';
   target: string;
-  value: any;
+  value: string | number | boolean | Record<string, unknown>;
 }
 
 export interface ApprovalChange {

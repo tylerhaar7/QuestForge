@@ -128,8 +128,8 @@ function getEquipmentSummary(item: EquipmentItem): string {
   const props = item.properties;
   if (item.type === 'weapon') {
     const parts: string[] = [];
-    if (props.damage) parts.push(props.damage);
-    if (props.damageType) parts.push(props.damageType);
+    if (props.damage) parts.push(String(props.damage));
+    if (props.damageType) parts.push(String(props.damageType));
     return parts.join(' ');
   }
   if (item.type === 'armor') {

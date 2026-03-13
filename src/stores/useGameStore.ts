@@ -5,13 +5,13 @@ import { create } from 'zustand';
 import type {
   Campaign, Character, Companion, CombatState,
   GameMode, MoodType, AIResponse, Choice,
-  EnemyIntention, ApprovalChange, DiceRollResult,
+  EnemyIntention, ApprovalChange, DiceRollResult, DeathRecord,
 } from '@/types/game';
 
 interface DeathMeta {
   deathCount: number;
   newUnlocks: string[];
-  deathRecord: any;
+  deathRecord: DeathRecord;
 }
 
 interface GameState {

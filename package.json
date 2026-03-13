@@ -11,7 +11,6 @@
     "doctor": "npx expo-doctor"
   },
   "dependencies": {
-    "@expo/ngrok": "^4.1.0",
     "@supabase/supabase-js": "^2.98.0",
     "babel-preset-expo": "~54.0.10",
     "expo": "~54.0.33",
@@ -34,6 +33,7 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
+    "@expo/ngrok": "^4.1.0",
     "@types/react": "~19.1.10",
     "typescript": "~5.9.2"
   },

@@ -9,6 +9,7 @@ import { useAccessibility } from '@/providers/AccessibilityProvider';
 import { getColorblindColor } from '@/theme/accessibility';
 import { HpBar } from './HpBar';
 import { PortraitFrame } from '@/components/ui';
+import { formatSnakeCase } from '@/utils/formatting';
 import type { Condition, RelationshipStage, ClassName } from '@/types/game';
 
 interface PartyCardProps {
@@ -51,7 +52,7 @@ export function PartyCard({
   const { font: getFont, fontSize: scaleFontSize, settings } = useAccessibility();
   const classColor = colors.class[className] || colors.gold.muted;
 
-  const accessibilityLabel = `${name}, ${formatClassName(className)} Level ${level}, HP ${currentHp}/${maxHp}, AC ${ac}${
+  const accessibilityLabel = `${name}, ${formatSnakeCase(className)} Level ${level}, HP ${currentHp}/${maxHp}, AC ${ac}${
     conditions.length > 0 ? `, ${conditions.map(formatCondition).join(', ')}` : ''
   }${relationshipStage ? `, ${STAGE_LABELS[relationshipStage]}` : ''}`;
 
@@ -72,7 +73,7 @@ export function PartyCard({
         </View>
 
         <Text style={[styles.classLabel, { fontFamily: getFont('body'), fontSize: scaleFontSize(10) }]}>
-          Lv{level} {formatClassName(className)}
+          Lv{level} {formatSnakeCase(className)}
         </Text>
 
         <HpBar current={currentHp} max={maxHp} showLabel={false} />
@@ -100,10 +101,6 @@ export function PartyCard({
       </View>
     </Pressable>
   );
-}
-
-function formatClassName(cn: string): string {
-  return cn.charAt(0).toUpperCase() + cn.slice(1);
 }
 
 function formatCondition(c: string): string {
