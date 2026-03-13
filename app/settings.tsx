@@ -10,6 +10,7 @@ import {
   ScrollView,
   SafeAreaView,
   StyleSheet,
+  Linking,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors, PARCHMENT_TEXT } from '@/theme/colors';
@@ -395,6 +396,51 @@ export default function SettingsScreen() {
           onPress={resetAccessibility}
           style={styles.resetButton}
         />
+
+        {/* Legal / Credits */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>LEGAL</Text>
+
+          <FantasyPanel variant="card" style={styles.settingCard}>
+            <Text style={styles.legalText}>
+              This game uses mechanics from the{' '}
+              <Text style={styles.legalItalic}>
+                Systems Reference Document 5.1
+              </Text>{' '}
+              by Wizards of the Coast LLC, licensed under the{' '}
+              <Text
+                style={styles.legalLink}
+                onPress={() =>
+                  Linking.openURL(
+                    'https://creativecommons.org/licenses/by/4.0/',
+                  )
+                }
+              >
+                Creative Commons Attribution 4.0 International License
+              </Text>
+              .
+            </Text>
+            <Text style={[styles.legalText, styles.legalSpacing]}>
+              The material has been adapted and modified for use in this
+              application. Original material {'\u00A9'} Wizards of the Coast LLC.
+            </Text>
+            <Text style={[styles.legalText, styles.legalSpacing]}>
+              Dungeons & Dragons, D&D, and the Systems Reference Document are
+              property of Wizards of the Coast LLC. QuestForge is not affiliated
+              with, endorsed, or sponsored by Wizards of the Coast.
+            </Text>
+          </FantasyPanel>
+
+          <FantasyPanel variant="card" style={styles.settingCard}>
+            <Text style={styles.legalText}>
+              QuestForge uses AI (Claude by Anthropic) as the Dungeon Master to
+              narrate your adventure. Game mechanics are resolved
+              deterministically by the app's rules engine.
+            </Text>
+          </FantasyPanel>
+
+          <Text style={styles.versionText}>QuestForge v0.1.0</Text>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -465,5 +511,30 @@ const styles = StyleSheet.create({
   },
   resetButton: {
     marginTop: spacing.lg,
+    marginBottom: spacing.xxl,
+  },
+  legalText: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    lineHeight: 20,
+    color: PARCHMENT_TEXT.secondary,
+  },
+  legalItalic: {
+    fontStyle: 'italic',
+  },
+  legalLink: {
+    color: colors.gold.primary,
+    textDecorationLine: 'underline',
+  },
+  legalSpacing: {
+    marginTop: spacing.sm,
+  },
+  versionText: {
+    fontFamily: fonts.headingRegular,
+    fontSize: 11,
+    color: colors.text.tertiary,
+    textAlign: 'center',
+    marginTop: spacing.md,
+    letterSpacing: 1,
   },
 });
