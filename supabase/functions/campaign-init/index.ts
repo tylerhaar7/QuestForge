@@ -315,10 +315,14 @@ Deno.serve(async (req) => {
       ];
     }
 
-    // Save starting spells to character if the AI provided them
-    const startingSpells = parsedResponse.starting_spells || parsedResponse.startingSpells || [];
-    if (startingSpells.length > 0) {
-      await adminClient.from('characters').update({ known_spells: startingSpells }).eq('id', characterId);
+    // Save starting spells to character if the AI provided them AND the character doesn't already have spells
+    // (Spells may have been chosen during character creation)
+    const existingSpells = character.known_spells || [];
+    if (existingSpells.length === 0) {
+      const startingSpells = parsedResponse.starting_spells || parsedResponse.startingSpells || [];
+      if (startingSpells.length > 0) {
+        await adminClient.from('characters').update({ known_spells: startingSpells }).eq('id', characterId);
+      }
     }
 
     // Update campaign with initial state from AI

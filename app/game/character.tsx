@@ -24,9 +24,10 @@ import { useGameStore } from '@/stores/useGameStore';
 import { getModifier, getSkillModifier, getSaveModifier, SKILL_ABILITIES } from '@/engine/character';
 import { CLASSES } from '@/data/classes';
 import { RACES } from '@/data/races';
-import type { Character, AbilityScore, Skill, EquipmentItem, InventoryItem, Spell } from '@/types/game';
-import { PortraitFrame, InventorySlot } from '@/components/ui';
+import type { Character, AbilityScore, Skill, EquipmentItem, EquipmentSlot, InventoryItem, Spell } from '@/types/game';
+import { PortraitFrame, InventorySlot, FantasyPanel, FantasyButton } from '@/components/ui';
 import { MoodParticles } from '@/components/game/MoodParticles';
+import { updateCharacterEquipment } from '@/services/character';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -203,6 +204,31 @@ function CharacterHeader({ character }: { character: Character }) {
   );
 }
 
+// D&D 5e XP thresholds (mirrors progression.ts)
+const XP_THRESHOLDS = [0, 0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000, 85000, 100000, 120000, 140000, 165000, 195000, 225000, 265000, 305000, 355000];
+
+function ExperienceSection({ character }: { character: Character }) {
+  const currentXP = character.xp || 0;
+  const isMaxLevel = character.level >= 20;
+  const nextLevelXP = isMaxLevel ? XP_THRESHOLDS[20] : XP_THRESHOLDS[character.level + 1];
+  const currentLevelXP = XP_THRESHOLDS[character.level];
+  const progress = isMaxLevel ? 1 : Math.min(1, (currentXP - currentLevelXP) / Math.max(1, nextLevelXP - currentLevelXP));
+
+  return (
+    <View style={styles.xpContainer}>
+      <View style={styles.xpLabelRow}>
+        <Text style={styles.xpLabel}>EXPERIENCE</Text>
+        <Text style={styles.xpValue}>
+          {isMaxLevel ? 'MAX LEVEL' : `${currentXP.toLocaleString()} / ${nextLevelXP.toLocaleString()}`}
+        </Text>
+      </View>
+      <View style={styles.xpBarBg}>
+        <View style={[styles.xpBarFill, { width: `${Math.round(progress * 100)}%` }]} />
+      </View>
+    </View>
+  );
+}
+
 function AbilityScoresSection({ character }: { character: Character }) {
   return (
     <View style={styles.abilitiesRow}>
@@ -307,43 +333,130 @@ function SkillsSection({ character }: { character: Character }) {
   );
 }
 
+// All wearable equipment slots — ordered for the character doll grid layout
+const ALL_SLOTS: { slot: EquipmentSlot; label: string; icon: string }[] = [
+  { slot: 'head',     label: 'HEAD',      icon: '\uD83D\uDC51' },  // crown
+  { slot: 'neck',     label: 'NECK',      icon: '\uD83D\uDCFF' },  // necklace
+  { slot: 'cloak',    label: 'CLOAK',     icon: '\uD83E\uDDE3' },  // scarf (cloak)
+  { slot: 'body',     label: 'BODY',      icon: '\uD83E\uDEE0' },  // armor stand — fallback
+  { slot: 'mainhand', label: 'MAIN HAND', icon: '\u2694' },         // swords
+  { slot: 'offhand',  label: 'OFF HAND',  icon: '\uD83D\uDEE1' },  // shield
+  { slot: 'hands',    label: 'HANDS',     icon: '\uD83E\uDDE4' },  // gloves
+  { slot: 'waist',    label: 'WAIST',     icon: '\uD83E\uDD4B' },  // belt
+  { slot: 'feet',     label: 'FEET',      icon: '\uD83E\uDD7E' },  // boot
+  { slot: 'ring1',    label: 'RING',      icon: '\uD83D\uDC8D' },  // ring
+  { slot: 'ring2',    label: 'RING',      icon: '\uD83D\uDC8D' },  // ring
+];
+
+/** Infer slot from item type when slot field is absent */
+function getItemSlot(item: EquipmentItem): EquipmentSlot {
+  if (item.slot) return item.slot;
+  switch (item.type) {
+    case 'weapon': return 'mainhand';
+    case 'armor':  return 'body';
+    case 'shield': return 'offhand';
+    default:       return 'neck'; // generic accessory fallback
+  }
+}
+
 function EquipmentSection({ equipment }: { equipment: EquipmentItem[] }) {
-  const equipped = equipment.filter((e) => e.equipped);
+  const toggleEquip = useGameStore((s) => s.toggleEquip);
   const [selectedItem, setSelectedItem] = useState<EquipmentItem | null>(null);
+  const unequipped = equipment.filter((e) => !e.equipped);
+
+  // Build a map: slot → equipped item
+  const slotMap = new Map<EquipmentSlot, EquipmentItem>();
+  for (const item of equipment) {
+    if (!item.equipped) continue;
+    const slot = getItemSlot(item);
+    slotMap.set(slot, item);
+  }
 
   const handleSlotPress = useCallback((item: EquipmentItem) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedItem((prev) => (prev?.id === item.id ? null : item));
   }, []);
 
-  if (equipped.length === 0) {
+  const handleEquipToggle = useCallback((item: EquipmentItem) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    toggleEquip(item.id);
+    setSelectedItem(null);
+
+    // Persist to Supabase in background
+    const char = useGameStore.getState().character;
+    if (char) {
+      updateCharacterEquipment(char.id, char.equipment, char.ac).catch(() => {});
+    }
+  }, [toggleEquip]);
+
+  if (equipment.length === 0) {
     return <Text style={styles.emptyText}>No equipment</Text>;
   }
 
   return (
     <View>
-      <View style={styles.equipmentGrid}>
-        {equipped.map((item) => {
-          const icon = EQUIPMENT_ICONS[item.type] || '\u2726';
-          const isSelected = selectedItem?.id === item.id;
-          return (
-            <InventorySlot
-              key={item.id}
-              icon={icon}
-              label={item.name}
-              onPress={() => handleSlotPress(item)}
-              style={isSelected ? styles.slotSelected : undefined}
-            />
-          );
-        })}
-      </View>
+      {/* Worn equipment panel — character doll style */}
+      <FantasyPanel variant="card" style={styles.wornPanel}>
+        <Text style={styles.wornTitle}>WORN EQUIPMENT</Text>
+
+        {/* Row 1: Head */}
+        <View style={styles.dollRow}>
+          <SlotCell slot="head" slotMap={slotMap} selectedItem={selectedItem} onPress={handleSlotPress} />
+        </View>
+
+        {/* Row 2: Cloak — Body — Neck */}
+        <View style={styles.dollRow}>
+          <SlotCell slot="cloak" slotMap={slotMap} selectedItem={selectedItem} onPress={handleSlotPress} />
+          <SlotCell slot="body" slotMap={slotMap} selectedItem={selectedItem} onPress={handleSlotPress} />
+          <SlotCell slot="neck" slotMap={slotMap} selectedItem={selectedItem} onPress={handleSlotPress} />
+        </View>
+
+        {/* Row 3: Main Hand — Waist — Off Hand */}
+        <View style={styles.dollRow}>
+          <SlotCell slot="mainhand" slotMap={slotMap} selectedItem={selectedItem} onPress={handleSlotPress} />
+          <SlotCell slot="waist" slotMap={slotMap} selectedItem={selectedItem} onPress={handleSlotPress} />
+          <SlotCell slot="offhand" slotMap={slotMap} selectedItem={selectedItem} onPress={handleSlotPress} />
+        </View>
+
+        {/* Row 4: Hands — Feet */}
+        <View style={styles.dollRow}>
+          <SlotCell slot="hands" slotMap={slotMap} selectedItem={selectedItem} onPress={handleSlotPress} />
+          <SlotCell slot="feet" slotMap={slotMap} selectedItem={selectedItem} onPress={handleSlotPress} />
+        </View>
+
+        {/* Row 5: Ring — Ring */}
+        <View style={styles.dollRow}>
+          <SlotCell slot="ring1" slotMap={slotMap} selectedItem={selectedItem} onPress={handleSlotPress} />
+          <SlotCell slot="ring2" slotMap={slotMap} selectedItem={selectedItem} onPress={handleSlotPress} />
+        </View>
+      </FantasyPanel>
+
+      {/* Pack — unequipped items */}
+      {unequipped.length > 0 && (
+        <FantasyPanel variant="strip" style={styles.packPanel}>
+          <Text style={styles.packLabel}>PACK</Text>
+          <View style={styles.packGrid}>
+            {unequipped.map((item) => {
+              const icon = EQUIPMENT_ICONS[item.type] || '\u2726';
+              const isSelected = selectedItem?.id === item.id;
+              return (
+                <InventorySlot
+                  key={item.id}
+                  icon={icon}
+                  label={item.name}
+                  variant="square"
+                  onPress={() => handleSlotPress(item)}
+                  style={isSelected ? styles.wornSlotSelected : undefined}
+                />
+              );
+            })}
+          </View>
+        </FantasyPanel>
+      )}
 
       {/* Detail card for selected item */}
       {selectedItem && (
-        <Pressable
-          style={styles.itemDetailCard}
-          onPress={() => setSelectedItem(null)}
-        >
+        <FantasyPanel variant="pinned" style={styles.detailPanel}>
           <View style={styles.itemDetailHeader}>
             <Text style={styles.itemDetailIcon}>
               {EQUIPMENT_ICONS[selectedItem.type] || '\u2726'}
@@ -352,6 +465,7 @@ function EquipmentSection({ equipment }: { equipment: EquipmentItem[] }) {
               <Text style={styles.itemDetailName}>{selectedItem.name}</Text>
               <Text style={styles.itemDetailType}>
                 {selectedItem.type.charAt(0).toUpperCase() + selectedItem.type.slice(1)}
+                {selectedItem.equipped ? ' \u2022 Equipped' : ''}
               </Text>
             </View>
           </View>
@@ -384,12 +498,6 @@ function EquipmentSection({ equipment }: { equipment: EquipmentItem[] }) {
                   {selectedItem.properties.range}
                 </Text>
               )}
-              {selectedItem.properties.weight != null && (
-                <Text style={styles.itemDetailProp}>
-                  <Text style={styles.itemDetailPropLabel}>Weight: </Text>
-                  {selectedItem.properties.weight} lb
-                </Text>
-              )}
               {selectedItem.properties.description && (
                 <Text style={styles.itemDetailDesc}>
                   {selectedItem.properties.description}
@@ -398,8 +506,59 @@ function EquipmentSection({ equipment }: { equipment: EquipmentItem[] }) {
             </View>
           )}
 
-          <Text style={styles.itemDetailHint}>Tap to dismiss</Text>
-        </Pressable>
+          {/* Equip / Unequip + Close */}
+          <View style={styles.itemDetailActions}>
+            <FantasyButton
+              variant="primary"
+              label={selectedItem.equipped ? 'UNEQUIP' : 'EQUIP'}
+              onPress={() => handleEquipToggle(selectedItem)}
+              style={{ flex: 1 }}
+            />
+            <FantasyButton
+              variant="secondary"
+              label="CLOSE"
+              onPress={() => setSelectedItem(null)}
+              style={{ flex: 1 }}
+            />
+          </View>
+        </FantasyPanel>
+      )}
+    </View>
+  );
+}
+
+/** Individual slot cell used in the character doll layout */
+function SlotCell({
+  slot,
+  slotMap,
+  selectedItem,
+  onPress,
+}: {
+  slot: EquipmentSlot;
+  slotMap: Map<EquipmentSlot, EquipmentItem>;
+  selectedItem: EquipmentItem | null;
+  onPress: (item: EquipmentItem) => void;
+}) {
+  const meta = ALL_SLOTS.find((s) => s.slot === slot)!;
+  const item = slotMap.get(slot);
+  const isSelected = selectedItem?.id === item?.id;
+
+  return (
+    <View style={styles.wornSlotWrapper}>
+      <InventorySlot
+        icon={item ? (EQUIPMENT_ICONS[item.type] || meta.icon) : undefined}
+        label={item ? item.name : undefined}
+        empty={!item}
+        variant="square"
+        onPress={item ? () => onPress(item) : undefined}
+        style={isSelected ? styles.wornSlotSelected : undefined}
+      >
+        {!item && <Text style={styles.emptySlotLabel}>{meta.label}</Text>}
+      </InventorySlot>
+      {item && (
+        <Text style={styles.wornSlotDetail} numberOfLines={1}>
+          {getEquipmentSummary(item)}
+        </Text>
       )}
     </View>
   );
@@ -632,6 +791,8 @@ export default function CharacterScreen() {
 
           <CharacterHeader character={character} />
 
+          <ExperienceSection character={character} />
+
           <SectionDivider label="ABILITY SCORES" />
           <AbilityScoresSection character={character} />
 
@@ -827,6 +988,43 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
 
+  // ── XP bar ──────────────────────────────────────────────────────────────
+  xpContainer: {
+    marginTop: spacing.md,
+    paddingHorizontal: spacing.xs,
+  },
+  xpLabelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  xpLabel: {
+    fontFamily: fonts.heading,
+    fontSize: 9,
+    letterSpacing: 3,
+    color: PARCHMENT.gold,
+    textTransform: 'uppercase',
+  },
+  xpValue: {
+    fontFamily: fonts.body,
+    fontSize: 11,
+    color: PARCHMENT.inkSecondary,
+  },
+  xpBarBg: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(42,26,8,0.12)',
+    borderWidth: 0.5,
+    borderColor: PARCHMENT.divider,
+    overflow: 'hidden',
+  },
+  xpBarFill: {
+    height: '100%',
+    borderRadius: 3,
+    backgroundColor: PARCHMENT.gold,
+  },
+
   // ── Ability scores ────────────────────────────────────────────────────────
   abilitiesRow: {
     flexDirection: 'row',
@@ -961,14 +1159,69 @@ const styles = StyleSheet.create({
   },
 
   // ── Equipment & Inventory ─────────────────────────────────────────────────
-  equipmentGrid: {
+  wornPanel: {
+    marginBottom: spacing.sm,
+  },
+  wornTitle: {
+    fontFamily: fonts.heading,
+    fontSize: 10,
+    letterSpacing: 3,
+    color: '#8b6914',
+    textAlign: 'center',
+    marginBottom: spacing.sm,
+    textTransform: 'uppercase',
+  },
+  dollRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  wornSlotWrapper: {
+    alignItems: 'center',
+  },
+  wornSlotSelected: {
+    borderColor: '#b48c3c',
+    borderWidth: 2,
+  },
+  emptySlotLabel: {
+    fontFamily: fonts.headingRegular,
+    fontSize: 7,
+    letterSpacing: 0.5,
+    color: '#5a4a2a',
+    textAlign: 'center',
+  },
+  wornSlotDetail: {
+    fontFamily: fonts.bodyItalic,
+    fontSize: 9,
+    color: '#6b5730',
+    marginTop: 2,
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  packPanel: {
+    marginTop: spacing.sm,
+  },
+  packLabel: {
+    fontFamily: fonts.heading,
+    fontSize: 10,
+    letterSpacing: 3,
+    color: '#8b6914',
+    marginBottom: spacing.sm,
+    textTransform: 'uppercase',
+  },
+  packGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
-    justifyContent: 'center',
+    gap: spacing.sm,
   },
-  slotSelected: {
-    opacity: 0.7,
+  detailPanel: {
+    marginTop: spacing.sm,
+  },
+  itemDetailActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.md,
   },
   itemDetailCard: {
     marginTop: spacing.md,

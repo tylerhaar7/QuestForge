@@ -24,8 +24,8 @@ function IntentionRow({ intention, index }: { intention: EnemyIntention; index: 
     const timeout = setTimeout(() => {
       opacity.value = withRepeat(
         withSequence(
-          withTiming(0.6, { duration: 1400, easing: Easing.inOut(Easing.sine) }),
-          withTiming(1, { duration: 1400, easing: Easing.inOut(Easing.sine) }),
+          withTiming(0.6, { duration: 1400, easing: Easing.inOut(Easing.sin) }),
+          withTiming(1, { duration: 1400, easing: Easing.inOut(Easing.sin) }),
         ),
         -1,
         false,

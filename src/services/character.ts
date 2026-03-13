@@ -126,3 +126,17 @@ export async function getCharacter(id: string): Promise<Character> {
   if (error) throw new Error(`Failed to fetch character: ${error.message}`);
   return fromRow(data);
 }
+
+/** Persist equipment and AC changes after equip/unequip toggle */
+export async function updateCharacterEquipment(
+  characterId: string,
+  equipment: EquipmentItem[],
+  ac: number,
+): Promise<void> {
+  const { error } = await supabase
+    .from('characters')
+    .update({ equipment, ac })
+    .eq('id', characterId);
+
+  if (error) throw new Error(`Failed to update equipment: ${error.message}`);
+}

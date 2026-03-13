@@ -8,6 +8,7 @@ import { buildSystemPrompt, selectModel } from '../_shared/prompts.ts';
 import { processDiceRequests } from '../_shared/dice-engine.ts';
 import { parseAIJson, normalizeResponse } from '../_shared/ai-parser.ts';
 import { validateGameTurnInput, errorResponse, checkRateLimit } from '../_shared/guards.ts';
+import { checkLevelUp, getLevelUpChanges } from '../_shared/progression.ts';
 import type { CompanionData } from '../_shared/types.ts';
 
 const MAX_TURN_HISTORY = 20;
@@ -385,16 +386,23 @@ Deno.serve(async (req) => {
       normalized.tutorialComplete = true;
     }
 
+    // Track last combat turn for pacing (before campaign save)
+    if (normalized.mode === 'combat') {
+      campaignUpdates.last_combat_turn = campaign.turn_count + 1;
+    }
+
     const { error: campUpdateErr } = await adminClient.from('campaigns').update(campaignUpdates).eq('id', campaignId);
     if (campUpdateErr) {
       console.error('campaign update failed', { campaignId, error: campUpdateErr.message });
       return errorResponse('Failed to save game state.', 500, headers);
     }
 
-    // Apply HP changes to character if needed + death detection
+    // Apply state changes to character
     let deathMeta: any = null;
+    let levelUpMeta: any = null;
     if (normalized.stateChanges) {
       for (const change of normalized.stateChanges) {
+        // ─── HP changes + death detection ───
         if (change.type === 'hp' && change.target === character.name) {
           const newHp = Math.max(0, Math.min(character.max_hp, character.hp + Number(change.value)));
           const { error: hpUpdateErr } = await adminClient.from('characters').update({ hp: newHp }).eq('id', character.id);
@@ -427,7 +435,6 @@ Deno.serve(async (req) => {
               .map(t => t.unlock);
             const allUnlocks = [...existingUnlocks, ...newUnlocks];
 
-            // Update campaign with death data
             await adminClient.from('campaigns').update({
               death_count: newDeathCount,
               death_history: deathHistory,
@@ -437,6 +444,80 @@ Deno.serve(async (req) => {
 
             normalized.mode = 'threshold';
             deathMeta = { deathCount: newDeathCount, newUnlocks, deathRecord };
+          }
+        }
+
+        // ─── XP gains + level-up detection ───
+        if (change.type === 'xp' && change.target === character.name) {
+          const xpGain = Math.min(Math.max(0, Number(change.value)), 5000);
+          const newXP = (character.xp || 0) + xpGain;
+          const charUpdates: Record<string, any> = { xp: newXP };
+
+          const newLevel = checkLevelUp(newXP, character.level);
+          if (newLevel !== null) {
+            const changes = getLevelUpChanges(
+              character.class_name,
+              character.level,
+              newLevel,
+              character.ability_scores.constitution
+            );
+            charUpdates.level = newLevel;
+            charUpdates.max_hp = changes.newMaxHp;
+            charUpdates.hp = changes.newMaxHp; // Full heal on level up
+            charUpdates.proficiency_bonus = changes.newProficiencyBonus;
+            if (changes.newMaxSpellSlots) {
+              charUpdates.max_spell_slots = changes.newMaxSpellSlots;
+              charUpdates.spell_slots = changes.newMaxSpellSlots;
+            }
+            levelUpMeta = {
+              oldLevel: character.level,
+              newLevel,
+              newMaxHp: changes.newMaxHp,
+              newProficiencyBonus: changes.newProficiencyBonus,
+              xpGain,
+              totalXP: newXP,
+            };
+          }
+
+          const { error: xpErr } = await adminClient.from('characters').update(charUpdates).eq('id', character.id);
+          if (xpErr) {
+            console.error('character XP update failed', { characterId: character.id, error: xpErr.message });
+          }
+        }
+
+        // ─── Item / loot drops ───
+        if (change.type === 'item' && change.target === character.name) {
+          const itemData = typeof change.value === 'object' && change.value !== null
+            ? change.value as Record<string, any>
+            : { name: String(change.value), type: 'misc', quantity: 1, description: '' };
+
+          const itemType = itemData.type || 'misc';
+
+          if (itemType === 'weapon' || itemType === 'armor' || itemType === 'shield' || itemType === 'accessory') {
+            const equipment = character.equipment || [];
+            equipment.push({
+              id: crypto.randomUUID(),
+              name: itemData.name || 'Unknown Item',
+              type: itemType,
+              equipped: false,
+              properties: itemData.properties || {},
+            });
+            await adminClient.from('characters').update({ equipment }).eq('id', character.id);
+          } else {
+            const inventory = character.inventory || [];
+            const existing = inventory.find((i: any) => i.name === itemData.name);
+            if (existing) {
+              existing.quantity += (itemData.quantity || 1);
+            } else {
+              inventory.push({
+                id: crypto.randomUUID(),
+                name: itemData.name || 'Unknown Item',
+                quantity: itemData.quantity || 1,
+                description: itemData.description || '',
+                type: itemType,
+              });
+            }
+            await adminClient.from('characters').update({ inventory }).eq('id', character.id);
           }
         }
       }
@@ -501,6 +582,7 @@ Deno.serve(async (req) => {
       companions: updatedCompanions,
       turnCount: campaign.turn_count + 1,
       ...(deathMeta ? { deathMeta } : {}),
+      ...(levelUpMeta ? { levelUpMeta } : {}),
     }), {
       headers: { ...headers, 'Content-Type': 'application/json' },
     });

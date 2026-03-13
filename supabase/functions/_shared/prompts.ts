@@ -1,6 +1,7 @@
 // DM prompts for Edge Functions — mirrors src/ai/prompts/dm-system.ts + context-builder.ts
 
 import type { CampaignRow, CharacterRow, CompanionData, GameMode } from './types.ts';
+import { xpForNextLevel } from './progression.ts';
 
 export const DM_SYSTEM_PROMPT = `You are the Dungeon Master for QuestForge, a solo D&D 5e adventure.
 
@@ -50,6 +51,16 @@ NARRATIVE RULES:
 7. Make the player's class and abilities matter in narration
 8. Reference the player's origin story and personal quest naturally
 
+ENCOUNTERS & REWARDS:
+This is D&D — the world is dangerous. Combat should arise naturally from the narrative: ambushes on the road, hostile creatures in dungeons, bandits, rival adventurers, monsters guarding treasure. Don't shy away from combat — it's a core part of the experience.
+- After combat victory, ALWAYS include state_changes with type "xp" for the player. Use D&D 5e CR-based XP values: CR 1/8=25, CR 1/4=50, CR 1/2=100, CR 1=200, CR 2=450, CR 3=700, CR 4=1100, CR 5=1800. Sum XP for all enemies defeated.
+- After combat or treasure discoveries, include state_changes with type "item" when loot is found. Not every fight has loot, but meaningful victories and treasure hoards should reward the player.
+- Item state_change value format — equipment: {"name": "Fine Longsword", "type": "weapon", "slot": "mainhand", "equipped": false, "properties": {"damage": "1d8+1", "damageType": "slashing"}}
+- Equipment slots: mainhand, offhand, body, head, cloak, hands, feet, neck, ring1, ring2, waist. Include "slot" so the item appears in the right equipment slot. If omitted, slot is inferred from type (weapon→mainhand, armor→body, shield→offhand, accessory→neck).
+- Item state_change value format — consumable/misc: {"name": "Healing Potion", "type": "consumable", "quantity": 1, "description": "Restores 2d4+2 HP"}
+- XP state_change format: {"type": "xp", "target": "PlayerName", "value": 200}
+- The player should feel progression — gaining XP, finding gear, growing stronger. This is what makes D&D rewarding.
+
 COMPANION APPROVAL:
 After EVERY player choice with moral, tactical, or personal implications, include approval_changes.
 Small changes (-3 to +3) for minor choices, medium (-5 to +5) for significant ones, large (-10 to +10) for major moral decisions.
@@ -76,8 +87,33 @@ JOURNAL ENTRIES:
 When something notable happens (NPC met, quest accepted/completed, location discovered, lore learned, major decision, combat outcome, companion event), include a "journal_entries" array with 1-2 entries. Only log meaningful moments, not every turn.
 Entry format: {"entry_type": "npc_met|quest_accepted|quest_completed|location_discovered|item_found|lore_learned|decision_made|companion_event|combat_victory|combat_defeat", "title": "Short title", "description": "2-3 sentences", "related_npcs": ["Name"], "related_locations": ["Place"]}
 
-SPELLS:
-For spellcasting classes, include a "spell_changes" object when the player learns new spells (level up, found spellbook, divine revelation, etc.). Format: {"learned": [{"name": "Shield", "level": 1, "school": "abjuration", "casting_time": "1 reaction", "range": "Self", "duration": "1 round", "description": "An invisible barrier of magical force appears and protects you. Until the start of your next turn, you have a +5 bonus to AC.", "components": "V, S"}], "removed": []}
+SPELLS & SPELL PROGRESSION:
+You have COMPLETE knowledge of all D&D 5e spells (cantrips through 9th level). Use ONLY official D&D 5e SRD spells — never invent spells.
+
+When a character levels up, include "spell_changes" with appropriate new spells. Spell progression by class:
+- WIZARD: Learns 2 new spells per level (any wizard spell of a level they can cast). Knows 6 at level 1.
+- SORCERER: Learns 1 new spell per level (any sorcerer spell). Can swap 1 old spell. Starts with 2.
+- BARD: Learns 1 new spell per level (any bard spell). Can swap 1 old spell. Starts with 4.
+- WARLOCK: Learns 1 new spell per level (any warlock spell). Can swap 1 old spell. Starts with 2. All slots are same level (Pact Magic).
+- CLERIC/DRUID: Prepared casters — know their FULL class list. Grant access to new spell levels when unlocked. Prepared count = ability mod + level.
+- PALADIN: Prepared caster, spells at level 2+. Prepared count = CHA mod + half paladin level.
+- RANGER: Known caster, spells at level 2+. Learns 1 per level starting at 2.
+- ARTIFICER: Prepared caster, spells at level 1. INT mod + half artificer level.
+
+New spell levels unlock at: 2nd-level spells at character level 3, 3rd at 5, 4th at 7, 5th at 9, 6th at 11, 7th at 13, 8th at 15, 9th at 17.
+
+Spell change format: {"learned": [{"name": "Shield", "level": 1, "school": "abjuration", "castingTime": "1 reaction", "range": "Self", "duration": "1 round", "description": "An invisible barrier of magical force appears and protects you. Until the start of your next turn, you have a +5 bonus to AC.", "components": "V, S"}], "removed": ["old spell name"]}
+
+Include high-level spells appropriately: Fireball at 5th level, Polymorph at 7th, Teleport at 9th, Power Word Kill at 17th, Wish at 17th+, etc. D&D has incredible spells at every tier — use them.
+
+EQUIPMENT & CRAFTING:
+The player can find, buy, commission, or CRAFT equipment. If a player describes custom gear they want to create, work with them narratively:
+- Crafting requires appropriate materials, tools, time, and often skill checks
+- Magic items require special components and higher-level abilities
+- Use the D&D 5e magic item rarity system: Common, Uncommon, Rare, Very Rare, Legendary
+- Item format for state_changes: {"type": "item", "target": "PlayerName", "value": {"name": "Flame Tongue Longsword", "type": "weapon", "slot": "mainhand", "properties": {"damage": "1d8+2d6", "damageType": "slashing/fire", "description": "This sword is wreathed in flames when drawn"}}}
+- Players can request custom items — if reasonable for their level and resources, allow it through crafting quests or NPC artisans
+- High-level characters should find appropriately powerful gear: +1 weapons around level 5, +2 around level 10, +3 and legendary items at 15+
 
 JSON SCHEMA:
 {
@@ -152,12 +188,59 @@ export function buildSystemPrompt(
   ];
 
   // Character context
-  layers.push(`PLAYER CHARACTER:
+  const nextLevelXP = xpForNextLevel(character.level);
+  const knownSpells = character.known_spells || [];
+  const equipment = character.equipment || [];
+  const inventory = character.inventory || [];
+
+  let charBlock = `PLAYER CHARACTER:
 - ${character.name}, ${character.race} ${character.class_name} (Lv${character.level})
 - HP: ${character.hp}/${character.max_hp}, AC: ${character.ac}
+- XP: ${character.xp || 0}/${nextLevelXP}${character.level >= 20 ? ' (MAX LEVEL)' : ''}
 - STR ${character.ability_scores.strength} DEX ${character.ability_scores.dexterity} CON ${character.ability_scores.constitution} INT ${character.ability_scores.intelligence} WIS ${character.ability_scores.wisdom} CHA ${character.ability_scores.charisma}
 - Conditions: ${character.conditions.length > 0 ? character.conditions.join(', ') : 'none'}
-- Origin: ${character.origin_story || 'Unknown'}${character.origin_ai_context ? `\n\nORIGIN CONTEXT (weave this into the narrative naturally):\n${character.origin_ai_context}` : ''}`);
+- Origin: ${character.origin_story || 'Unknown'}`;
+
+  // Equipment & inventory
+  if (equipment.length > 0) {
+    const equipLines = equipment.map((e: any) => {
+      const props = e.properties || {};
+      const details = [props.damage, props.ac ? `AC ${props.ac}` : null, props.acBonus ? `+${props.acBonus} AC` : null].filter(Boolean).join(', ');
+      return `  ${e.equipped ? '⚔' : '○'} ${e.name} (${e.type})${details ? ` — ${details}` : ''}`;
+    });
+    charBlock += `\n- Equipment:\n${equipLines.join('\n')}`;
+  }
+  if (inventory.length > 0) {
+    const invLines = inventory.map((i: any) => `  ${i.name}${i.quantity > 1 ? ` x${i.quantity}` : ''}`);
+    charBlock += `\n- Inventory:\n${invLines.join('\n')}`;
+  }
+
+  // Known spells
+  if (knownSpells.length > 0) {
+    const spellSlots = character.spell_slots || [];
+    const maxSlots = character.max_spell_slots || [];
+    const slotInfo = maxSlots.length > 0
+      ? maxSlots.map((max: number, i: number) => i > 0 && max > 0 ? `L${i}: ${spellSlots[i] ?? 0}/${max}` : null).filter(Boolean).join(', ')
+      : '';
+    const grouped: Record<number, string[]> = {};
+    for (const spell of knownSpells) {
+      const lvl = (spell as any).level ?? 0;
+      if (!grouped[lvl]) grouped[lvl] = [];
+      grouped[lvl].push((spell as any).name);
+    }
+    const spellLines: string[] = [];
+    for (const [lvl, names] of Object.entries(grouped).sort(([a], [b]) => Number(a) - Number(b))) {
+      const label = Number(lvl) === 0 ? 'Cantrips' : `Level ${lvl}`;
+      spellLines.push(`  ${label}: ${names.join(', ')}`);
+    }
+    charBlock += `\n- Known Spells${slotInfo ? ` (Slots: ${slotInfo})` : ''}:\n${spellLines.join('\n')}`;
+  }
+
+  if (character.origin_ai_context) {
+    charBlock += `\n\nORIGIN CONTEXT (weave this into the narrative naturally):\n${character.origin_ai_context}`;
+  }
+
+  layers.push(charBlock);
 
   // Location
   layers.push(`CURRENT LOCATION: ${campaign.current_location || 'Unknown'}`);
@@ -201,6 +284,12 @@ ${lines.join('\n')}`);
     if (enemies) {
       layers.push(`ENEMIES IN COMBAT:\n${enemies}\nRound: ${campaign.combat_state.round || 1}`);
     }
+  }
+
+  // Soft combat pacing nudge — only when it's been a long time
+  const turnsSinceCombat = campaign.turn_count - (campaign.last_combat_turn ?? 0);
+  if (turnsSinceCombat >= 8 && campaign.current_mode !== 'combat') {
+    layers.push(`PACING NOTE: The party has not faced combat in ${turnsSinceCombat} turns. The world is dangerous — consider weaving a combat encounter naturally into the narrative when it fits.`);
   }
 
   return layers.join('\n\n---\n\n');

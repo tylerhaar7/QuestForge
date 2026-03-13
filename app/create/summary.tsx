@@ -20,6 +20,7 @@ import { ORIGIN_MAP } from '@/data/origins';
 import { getModifier, calculateMaxHP, getProficiencyBonus } from '@/engine/character';
 import { createCharacter } from '@/services/character';
 import { getCurrentUserId } from '@/services/supabase';
+import { getStartingSpellSlots, CLASS_SPELLS } from '@/data/spells';
 import type { Skill, EquipmentItem } from '@/types/game';
 
 // Ability abbreviations for display
@@ -67,6 +68,9 @@ export default function CharacterSummaryScreen() {
     selectedSkills,
     getFinalAbilityScores,
     abilityAssignment,
+    getResolvedEquipment,
+    selectedCantrips,
+    selectedSpells,
   } = useCharacterCreationStore();
 
   const [saving, setSaving] = useState(false);
@@ -106,13 +110,19 @@ export default function CharacterSummaryScreen() {
     : classData.hitDie;
   const profBonus = getProficiencyBonus(1);
 
-  // AC from starting equipment
+  // Resolved equipment from player choices (or class defaults)
+  const resolvedEquipment = getResolvedEquipment();
+  const allStartingSpells = [...selectedCantrips, ...selectedSpells];
+  const hasSpells = allStartingSpells.length > 0;
+  const spellConfig = className ? CLASS_SPELLS[className] : null;
+
+  // AC from selected equipment
   function computeAC(): number {
     const dexScore = finalScores?.dexterity ?? 10;
     const dexMod = getModifier(dexScore);
 
-    const armor = classData.startingEquipment.find(e => e.type === 'armor' && e.equipped);
-    const shield = classData.startingEquipment.find(e => e.type === 'shield' && e.equipped);
+    const armor = resolvedEquipment.find(e => e.type === 'armor' && e.equipped);
+    const shield = resolvedEquipment.find(e => e.type === 'shield' && e.equipped);
 
     let ac = 10 + dexMod;
 
@@ -168,7 +178,8 @@ export default function CharacterSummaryScreen() {
 
       const hp = calculateMaxHP(resolvedClassName, 1, finalScores.constitution);
       const computedAC = computeAC();
-      const equipment: EquipmentItem[] = classData.startingEquipment;
+      const equipment: EquipmentItem[] = resolvedEquipment;
+      const startingSpellSlots = getStartingSpellSlots(resolvedClassName);
 
       const savedCharacter = await createCharacter({
         userId,
@@ -187,11 +198,11 @@ export default function CharacterSummaryScreen() {
         proficiencyBonus: getProficiencyBonus(1),
         proficientSkills: allProficientSkills,
         proficientSaves: classData.saveProficiencies,
-        spellSlots: [],
-        maxSpellSlots: [],
+        spellSlots: startingSpellSlots,
+        maxSpellSlots: startingSpellSlots,
         equipment,
         inventory: [],
-        knownSpells: [],
+        knownSpells: allStartingSpells,
         features,
         conditions: [],
         originStory: originId ?? '',
@@ -216,7 +227,7 @@ export default function CharacterSummaryScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.stepLabel}>STEP 5 OF 5</Text>
+        <Text style={styles.stepLabel}>{spellConfig ? 'STEP 7 OF 7' : 'STEP 6 OF 6'}</Text>
         <Text style={styles.title}>Review & Name</Text>
       </View>
 
@@ -288,8 +299,8 @@ export default function CharacterSummaryScreen() {
 
           {/* Starting Equipment */}
           <SummarySection title="Starting Equipment">
-            {classData.startingEquipment.map(item => (
-              <View key={item.id} style={styles.equipmentRow}>
+            {resolvedEquipment.map((item, idx) => (
+              <View key={`${item.id}-${idx}`} style={styles.equipmentRow}>
                 <View style={styles.equipmentTypeBadge}>
                   <Text style={styles.equipmentTypeText}>{item.type.toUpperCase()}</Text>
                 </View>
@@ -297,6 +308,36 @@ export default function CharacterSummaryScreen() {
               </View>
             ))}
           </SummarySection>
+
+          {/* Starting Spells */}
+          {hasSpells && (
+            <SummarySection title="Starting Spells">
+              {selectedCantrips.length > 0 && (
+                <View style={styles.spellGroup}>
+                  <Text style={styles.spellGroupLabel}>Cantrips</Text>
+                  <View style={styles.skillChips}>
+                    {selectedCantrips.map(spell => (
+                      <View key={spell.name} style={styles.skillChip}>
+                        <Text style={styles.skillChipText}>{spell.name}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              )}
+              {selectedSpells.length > 0 && (
+                <View style={styles.spellGroup}>
+                  <Text style={styles.spellGroupLabel}>1st Level</Text>
+                  <View style={styles.skillChips}>
+                    {selectedSpells.map(spell => (
+                      <View key={spell.name} style={styles.skillChip}>
+                        <Text style={styles.skillChipText}>{spell.name}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              )}
+            </SummarySection>
+          )}
 
           {/* Computed Stats */}
           <SummarySection title="Starting Stats">
@@ -531,6 +572,18 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: PARCHMENT_TEXT.secondary,
     lineHeight: 19,
+  },
+
+  // Spell groups
+  spellGroup: {
+    marginBottom: spacing.sm,
+  },
+  spellGroupLabel: {
+    fontFamily: fonts.heading,
+    fontSize: 10,
+    color: PARCHMENT_TEXT.label,
+    letterSpacing: 1.5,
+    marginBottom: spacing.xs,
   },
 
   // Equipment

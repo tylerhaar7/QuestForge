@@ -64,7 +64,7 @@ export default function ClassSelectionScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.stepLabel}>STEP 2 OF 5</Text>
+        <Text style={styles.stepLabel}>STEP 2</Text>
         <Text style={styles.title}>Choose Your Class</Text>
       </View>
 

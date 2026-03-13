@@ -51,7 +51,7 @@ export default function RaceSelectionScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.stepLabel}>STEP 1 OF 5</Text>
+        <Text style={styles.stepLabel}>STEP 1</Text>
         <Text style={styles.title}>Choose Your Race</Text>
       </View>
 

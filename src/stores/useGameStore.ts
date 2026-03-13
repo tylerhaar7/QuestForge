@@ -7,6 +7,7 @@ import type {
   GameMode, MoodType, AIResponse, Choice,
   EnemyIntention, ApprovalChange, DiceRollResult, DeathRecord,
 } from '@/types/game';
+import type { LevelUpMeta } from '@/services/campaign';
 
 interface DeathMeta {
   deathCount: number;
@@ -40,6 +41,11 @@ interface GameState {
   setDeathMeta: (meta: DeathMeta) => void;
   clearDeathMeta: () => void;
 
+  // Level Up
+  levelUpMeta: LevelUpMeta | null;
+  setLevelUpMeta: (meta: LevelUpMeta) => void;
+  clearLevelUpMeta: () => void;
+
   // Actions
   setCampaign: (campaign: Campaign) => void;
   setCharacter: (character: Character) => void;
@@ -61,6 +67,9 @@ interface GameState {
 
   // Tutorial
   clearTutorialComplete: () => void;
+
+  // Equipment
+  toggleEquip: (itemId: string) => void;
 
   // Approvals
   clearPendingApprovals: () => void;
@@ -85,6 +94,7 @@ const initialState = {
   pendingApprovalChanges: [],
   isTutorialComplete: false,
   deathMeta: null,
+  levelUpMeta: null,
 };
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -92,6 +102,9 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   setDeathMeta: (deathMeta) => set({ deathMeta }),
   clearDeathMeta: () => set({ deathMeta: null }),
+
+  setLevelUpMeta: (levelUpMeta) => set({ levelUpMeta }),
+  clearLevelUpMeta: () => set({ levelUpMeta: null }),
 
   setCampaign: (campaign) => set({ campaign }),
   setCharacter: (character) => set({ character }),
@@ -177,6 +190,57 @@ export const useGameStore = create<GameState>((set, get) => ({
       set({ isTutorialComplete: true });
     }
 
+    // Update character XP and inventory from state changes (mirrors server-side persistence)
+    if (response.stateChanges) {
+      const char = get().character;
+      if (char) {
+        let updated = { ...char };
+        for (const change of response.stateChanges) {
+          if (change.type === 'xp' && change.target === char.name) {
+            updated = { ...updated, xp: (updated.xp || 0) + Number(change.value) };
+          }
+          if (change.type === 'item' && change.target === char.name) {
+            const itemData = typeof change.value === 'object' && change.value !== null
+              ? change.value as Record<string, any>
+              : { name: String(change.value), type: 'misc', quantity: 1, description: '' };
+            const itemType = itemData.type || 'misc';
+
+            if (itemType === 'weapon' || itemType === 'armor' || itemType === 'shield' || itemType === 'accessory') {
+              updated = {
+                ...updated,
+                equipment: [...updated.equipment, {
+                  id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+                  name: itemData.name || 'Unknown Item',
+                  type: itemType,
+                  slot: itemData.slot || undefined,
+                  equipped: false,
+                  properties: itemData.properties || {},
+                }],
+              };
+            } else {
+              const inventory = [...updated.inventory];
+              const existing = inventory.find(i => i.name === itemData.name);
+              if (existing) {
+                existing.quantity += (itemData.quantity || 1);
+              } else {
+                inventory.push({
+                  id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+                  name: itemData.name || 'Unknown Item',
+                  quantity: itemData.quantity || 1,
+                  description: itemData.description || '',
+                  type: itemType as any,
+                });
+              }
+              updated = { ...updated, inventory };
+            }
+          }
+        }
+        if (updated !== char) {
+          set({ character: updated });
+        }
+      }
+    }
+
     // Update character spells if changed
     if (response.spellChanges) {
       const char = get().character;
@@ -239,6 +303,53 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   clearTutorialComplete: () => set({ isTutorialComplete: false }),
+
+  toggleEquip: (itemId) => {
+    const char = get().character;
+    if (!char) return;
+
+    const target = char.equipment.find(e => e.id === itemId);
+    if (!target) return;
+
+    const isEquipping = !target.equipped;
+
+    // Infer slot from item
+    const slotOf = (item: typeof target) => {
+      if (item.slot) return item.slot;
+      if (item.type === 'weapon') return 'mainhand';
+      if (item.type === 'armor') return 'body';
+      if (item.type === 'shield') return 'offhand';
+      return 'neck';
+    };
+    const targetSlot = slotOf(target);
+
+    const equipment = char.equipment.map(item => {
+      if (item.id === itemId) {
+        return { ...item, equipped: isEquipping };
+      }
+      // If equipping, unequip anything currently in the same slot
+      if (isEquipping && item.equipped && slotOf(item) === targetSlot) {
+        return { ...item, equipped: false };
+      }
+      return item;
+    });
+
+    // Recalculate AC based on new equipment state
+    const armor = equipment.find(e => e.type === 'armor' && e.equipped);
+    const shield = equipment.find(e => e.type === 'shield' && e.equipped);
+    const dexMod = Math.floor((char.abilityScores.dexterity - 10) / 2);
+    let ac = 10 + dexMod;
+    if (armor) {
+      const armorAC = Number(armor.properties.ac) || 10;
+      const maxDex = armor.properties.maxDex as number ?? Infinity;
+      const effectiveDex = isFinite(maxDex) ? Math.min(dexMod, maxDex) : dexMod;
+      ac = armorAC + effectiveDex;
+    }
+    if (shield) {
+      ac += Number(shield.properties.acBonus) || 2;
+    }
+    set({ character: { ...char, equipment, ac } });
+  },
 
   clearPendingApprovals: () => set({ pendingApprovalChanges: [] }),
 

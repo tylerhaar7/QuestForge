@@ -141,13 +141,13 @@ export default function OriginSelectionScreen() {
   const handleNext = () => {
     if (!canContinue) return;
     setStep(4);
-    router.push('/create/summary');
+    router.push('/create/equipment');
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.stepLabel}>STEP 4 OF 5</Text>
+        <Text style={styles.stepLabel}>STEP 4</Text>
         <Text style={styles.title}>Choose Your Origin</Text>
       </View>
 

@@ -24,17 +24,30 @@ export async function initCampaign(params: InitCampaignParams): Promise<InitCamp
   return invokeEdgeFunction<InitCampaignResult>('campaign-init', params, 'Campaign init failed');
 }
 
+export interface LevelUpMeta {
+  oldLevel: number;
+  newLevel: number;
+  newMaxHp: number;
+  newProficiencyBonus: number;
+  xpGain: number;
+  totalXP: number;
+}
+
 export interface SubmitActionResult {
   aiResponse: AIResponse;
   diceResults: string[];
   diceRollResults?: DiceRollResult[];
   companions: Companion[];
   turnCount: number;
+  levelUpMeta?: LevelUpMeta;
 }
 
 export async function submitAction(campaignId: string, action: string): Promise<SubmitActionResult> {
   return invokeEdgeFunction<SubmitActionResult>('game-turn', { campaignId, action }, 'Game turn failed');
 }
+
+const MAX_RETRIES = 2;
+const BASE_DELAY_MS = 1500;
 
 async function invokeEdgeFunction<T>(
   fnName: 'campaign-init' | 'game-turn' | 'session-recap',
@@ -57,33 +70,46 @@ async function invokeEdgeFunction<T>(
     }
   }
 
-  let data: T | null;
-  let error: { message: string; context?: { json(): Promise<Record<string, unknown>> } } | null;
-  try {
-    const result = await supabase.functions.invoke(fnName, {
-      body,
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-    data = result.data as T | null;
-    error = result.error as typeof error;
-  } catch (fetchErr: unknown) {
-    const message = fetchErr instanceof Error ? fetchErr.message : 'check your connection';
-    throw new Error(`${failurePrefix}: Network error — ${message}`);
-  }
+  let lastError: Error | null = null;
 
-  if (error) {
-    let message = error.message;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    if (attempt > 0) {
+      const delay = BASE_DELAY_MS * Math.pow(2, attempt - 1);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+
+    let data: T | null;
+    let error: { message: string; context?: { json(): Promise<Record<string, unknown>> } } | null;
     try {
-      const errorBody = await error.context?.json();
-      if (errorBody?.error) message = String(errorBody.error);
-    } catch (e) { console.warn('Failed to parse error body:', e); }
-    throw new Error(`${failurePrefix}: ${message}`);
+      const result = await supabase.functions.invoke(fnName, {
+        body,
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      data = result.data as T | null;
+      error = result.error as typeof error;
+    } catch (fetchErr: unknown) {
+      const message = fetchErr instanceof Error ? fetchErr.message : 'check your connection';
+      lastError = new Error(`${failurePrefix}: Network error — ${message}`);
+      continue;
+    }
+
+    if (error) {
+      let message = error.message;
+      try {
+        const errorBody = await error.context?.json();
+        if (errorBody?.error) message = String(errorBody.error);
+      } catch (e) { console.warn('Failed to parse error body:', e); }
+      lastError = new Error(`${failurePrefix}: ${message}`);
+      continue;
+    }
+
+    if (data && typeof data === 'object' && 'error' in data) {
+      throw new Error(String((data as Record<string, unknown>).error));
+    }
+    return data as T;
   }
 
-  if (data && typeof data === 'object' && 'error' in data) {
-    throw new Error(String((data as Record<string, unknown>).error));
-  }
-  return data as T;
+  throw lastError ?? new Error(`${failurePrefix}: Failed after ${MAX_RETRIES + 1} attempts`);
 }
 
 // ─── Supabase queries ───────────────────────────────

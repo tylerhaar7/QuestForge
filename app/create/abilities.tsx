@@ -186,7 +186,7 @@ export default function AbilityScoreScreen() {
 
       {/* ── Header ── */}
       <View style={styles.header}>
-        <Text style={styles.stepLabel}>STEP 3 OF 5</Text>
+        <Text style={styles.stepLabel}>STEP 3</Text>
         <Text style={styles.title}>Assign Ability Scores</Text>
         <Text style={styles.subtext}>
           Distribute the standard array values across your six abilities.

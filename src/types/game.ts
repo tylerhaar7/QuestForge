@@ -79,10 +79,16 @@ export interface Character {
   updatedAt: string;
 }
 
+export type EquipmentSlot =
+  | 'mainhand' | 'offhand' | 'body' | 'head'
+  | 'cloak' | 'hands' | 'feet' | 'neck'
+  | 'ring1' | 'ring2' | 'waist';
+
 export interface EquipmentItem {
   id: string;
   name: string;
   type: 'weapon' | 'armor' | 'shield' | 'accessory';
+  slot?: EquipmentSlot;  // Where it's worn; inferred from type if absent
   equipped: boolean;
   properties: Record<string, string | number>;
 }

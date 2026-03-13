@@ -62,6 +62,8 @@ export interface CharacterRow {
   proficient_saves: AbilityScore[];
   spell_slots: number[];
   max_spell_slots: number[];
+  xp: number;
+  inventory: any[];
   known_spells: any[];
   equipment: any[];
   conditions: string[];
@@ -90,6 +92,8 @@ export interface CampaignRow {
   last_session_at: string;
   death_history: any;
   threshold_unlocks: any;
+  last_combat_turn: number | null;
+  is_tutorial?: boolean;
 }
 
 export interface CompanionData {
