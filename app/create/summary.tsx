@@ -12,11 +12,13 @@ import {
 import { useRouter } from 'expo-router';
 import { colors, PARCHMENT_TEXT } from '@/theme/colors';
 import { fonts, spacing, textStyles } from '@/theme/typography';
-import { FantasyPanel, FantasyButton } from '@/components/ui';
+import { FantasyPanel, FantasyButton, CreationHeader } from '@/components/ui';
 import { useCharacterCreationStore } from '@/stores/useCharacterCreationStore';
 import { RACES } from '@/data/races';
 import { CLASSES } from '@/data/classes';
 import { ORIGIN_MAP } from '@/data/origins';
+import { BACKGROUNDS } from '@/data/backgrounds';
+import { FEATS } from '@/data/feats';
 import { getModifier, calculateMaxHP, getProficiencyBonus } from '@/engine/character';
 import { createCharacter } from '@/services/character';
 import { getCurrentUserId } from '@/services/supabase';
@@ -71,6 +73,8 @@ export default function CharacterSummaryScreen() {
     getResolvedEquipment,
     selectedCantrips,
     selectedSpells,
+    backgroundId,
+    selectedFeatId,
   } = useCharacterCreationStore();
 
   const [saving, setSaving] = useState(false);
@@ -95,19 +99,23 @@ export default function CharacterSummaryScreen() {
   const raceData = RACES[resolvedRace];
   const classData = CLASSES[resolvedClassName];
   const originData = originId && originId !== 'custom' ? ORIGIN_MAP[originId] : null;
+  const backgroundData = backgroundId ? BACKGROUNDS[backgroundId] : null;
+  const selectedFeat = selectedFeatId ? FEATS[selectedFeatId] : null;
   const finalScores = getFinalAbilityScores();
 
   // All proficient skills (deduplicated)
   const raceSkills: Skill[] = raceData.skillProficiencies ?? [];
   const originSkills: Skill[] = originData?.bonusSkills ?? [];
+  const backgroundSkills: Skill[] = backgroundData?.skillProficiencies ?? [];
   const allProficientSkills: Skill[] = [
-    ...new Set([...selectedSkills, ...raceSkills, ...originSkills]),
+    ...new Set([...selectedSkills, ...raceSkills, ...originSkills, ...backgroundSkills]),
   ];
 
-  // Computed stats
+  // Computed stats (Tough feat adds 2 HP per level)
+  const toughBonus = selectedFeatId === 'tough' ? 2 * 1 : 0;
   const maxHP = finalScores
-    ? calculateMaxHP(className, 1, finalScores.constitution)
-    : classData.hitDie;
+    ? calculateMaxHP(className, 1, finalScores.constitution) + toughBonus
+    : classData.hitDie + toughBonus;
   const profBonus = getProficiencyBonus(1);
 
   // Resolved equipment from player choices (or class defaults)
@@ -176,7 +184,8 @@ export default function CharacterSummaryScreen() {
       // Build features list from class
       const features: string[] = classData.features.map(f => f.name);
 
-      const hp = calculateMaxHP(resolvedClassName, 1, finalScores.constitution);
+      const baseHp = calculateMaxHP(resolvedClassName, 1, finalScores.constitution);
+      const hp = baseHp + (selectedFeatId === 'tough' ? 2 * 1 : 0);
       const computedAC = computeAC();
       const equipment: EquipmentItem[] = resolvedEquipment;
       const startingSpellSlots = getStartingSpellSlots(resolvedClassName);
@@ -208,6 +217,12 @@ export default function CharacterSummaryScreen() {
         originStory: originId ?? '',
         originAiContext: originData?.aiContext ?? customOrigin ?? '',
         personalQuestFlags,
+        backgroundId: backgroundId ?? '',
+        backgroundFeature: backgroundData?.featureName ?? '',
+        featId: selectedFeatId ?? '',
+        featData: selectedFeat?.engineEffect ?? {},
+        toolProficiencies: backgroundData?.toolProficiencies ?? [],
+        languages: backgroundData?.languages ? [`${backgroundData.languages} extra`] : [],
       });
 
       // Navigate to companion selection with character ID
@@ -226,10 +241,7 @@ export default function CharacterSummaryScreen() {
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.stepLabel}>{spellConfig ? 'STEP 7 OF 7' : 'STEP 6 OF 6'}</Text>
-        <Text style={styles.title}>Review & Name</Text>
-      </View>
+      <CreationHeader step={spellConfig ? 'STEP 8 OF 8' : 'STEP 7 OF 7'} title="Review & Name" />
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
         {/* Name Input */}
@@ -296,6 +308,34 @@ export default function CharacterSummaryScreen() {
             <Text style={styles.originName}>{originName}</Text>
             <Text style={styles.originQuest}>{originQuest}</Text>
           </SummarySection>
+
+          {/* Background */}
+          {backgroundData && (
+            <SummarySection title="Background">
+              <Text style={styles.originName}>{backgroundData.name}</Text>
+              <Text style={styles.bodyText}>{backgroundData.featureName}: {backgroundData.featureDescription}</Text>
+              {backgroundData.toolProficiencies.length > 0 && (
+                <View style={styles.bgDetailRow}>
+                  <Text style={styles.bgDetailLabel}>Tool Proficiencies:</Text>
+                  <Text style={styles.bodyText}>{backgroundData.toolProficiencies.join(', ')}</Text>
+                </View>
+              )}
+              {backgroundData.languages > 0 && (
+                <View style={styles.bgDetailRow}>
+                  <Text style={styles.bgDetailLabel}>Languages:</Text>
+                  <Text style={styles.bodyText}>{backgroundData.languages} extra</Text>
+                </View>
+              )}
+            </SummarySection>
+          )}
+
+          {/* Origin Feat */}
+          {selectedFeat && (
+            <SummarySection title="Origin Feat">
+              <Text style={styles.originName}>{selectedFeat.name}</Text>
+              <Text style={styles.bodyText}>{selectedFeat.mechanicalEffect}</Text>
+            </SummarySection>
+          )}
 
           {/* Starting Equipment */}
           <SummarySection title="Starting Equipment">
@@ -572,6 +612,19 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: PARCHMENT_TEXT.secondary,
     lineHeight: 19,
+  },
+
+  // Background detail rows
+  bgDetailRow: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+    alignItems: 'baseline',
+  },
+  bgDetailLabel: {
+    fontFamily: fonts.heading,
+    fontSize: 11,
+    color: PARCHMENT_TEXT.label,
+    letterSpacing: 0.5,
   },
 
   // Spell groups

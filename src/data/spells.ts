@@ -183,6 +183,17 @@ export const CLASS_SPELLS: Partial<Record<ClassName, ClassSpellConfig>> = {
     recommendedCantrips: ['Eldritch Blast', 'Minor Illusion'],
     recommendedSpells: ['Hex', 'Hellish Rebuke'],
   },
+
+  artificer: {
+    cantripCount: 2,
+    spellCount: 0,  // Prepared caster — uses INT mod + half level
+    isPreparedCaster: true,
+    primaryAbility: 'intelligence',
+    cantrips: [ACID_SPLASH, FIRE_BOLT, GUIDANCE, LIGHT, MAGE_HAND, MENDING, PRESTIDIGITATION, THORN_WHIP, SPARE_THE_DYING],
+    spells: [CURE_WOUNDS, DETECT_MAGIC, FAERIE_FIRE, GREASE, IDENTIFY],
+    recommendedCantrips: ['Mending', 'Fire Bolt'],
+    recommendedSpells: ['Cure Wounds', 'Detect Magic'],
+  },
 };
 
 // ── Spell slot helper ────────────────────────────────────────────────────────
@@ -196,6 +207,7 @@ export function getStartingSpellSlots(className: ClassName): number[] {
     sorcerer: [0, 2],
     warlock: [0, 1], // Pact magic
     wizard: [0, 2],
+    artificer: [0, 2],
   };
   return SLOTS[className] ?? [];
 }

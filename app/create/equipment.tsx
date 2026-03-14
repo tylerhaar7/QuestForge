@@ -5,29 +5,61 @@ import {
 import { useRouter } from 'expo-router';
 import { colors, PARCHMENT_TEXT } from '@/theme/colors';
 import { fonts, spacing, textStyles } from '@/theme/typography';
-import { FantasyPanel, FantasyButton } from '@/components/ui';
+import { FantasyPanel, FantasyButton, CreationHeader } from '@/components/ui';
 import { useCharacterCreationStore } from '@/stores/useCharacterCreationStore';
 import { CLASSES } from '@/data/classes';
 import type { EquipmentItem } from '@/types/game';
 
-function formatProperty(key: string, value: string | number): string {
-  if (key === 'damage') return `${value} damage`;
-  if (key === 'damageType') return '';
-  if (key === 'ac') return `AC ${value}`;
-  if (key === 'acBonus') return `+${value} AC`;
-  if (key === 'range') return `Range ${value}`;
-  if (key === 'maxDex') return '';
-  return '';
+function getItemStats(item: EquipmentItem): { label: string; value: string }[] {
+  const stats: { label: string; value: string }[] = [];
+  const props = item.properties;
+
+  if (item.type === 'weapon') {
+    if (props.damage) {
+      stats.push({ label: 'Damage', value: `${props.damage}${props.damageType ? ` ${props.damageType}` : ''}` });
+    }
+    if (props.range) {
+      stats.push({ label: 'Range', value: `${props.range} ft` });
+    } else {
+      stats.push({ label: 'Range', value: 'Melee' });
+    }
+  }
+
+  if (item.type === 'armor') {
+    if (props.ac != null) {
+      stats.push({ label: 'Base AC', value: String(props.ac) });
+    }
+    const maxDex = props.maxDex as number;
+    if (maxDex === 0) {
+      stats.push({ label: 'DEX Bonus', value: 'None' });
+      stats.push({ label: 'Stealth', value: 'Disadvantage' });
+    } else if (maxDex != null && isFinite(maxDex)) {
+      stats.push({ label: 'DEX Bonus', value: `+${maxDex} max` });
+      if (Number(props.ac) >= 14) {
+        stats.push({ label: 'Stealth', value: 'Disadvantage' });
+      }
+    } else {
+      stats.push({ label: 'DEX Bonus', value: 'Full' });
+    }
+    if (props.ac != null) {
+      const weight = Number(props.ac) >= 16 ? 'Heavy' : Number(props.ac) >= 13 ? 'Medium' : 'Light';
+      stats.push({ label: 'Weight', value: weight });
+    }
+  }
+
+  if (item.type === 'shield') {
+    stats.push({ label: 'AC Bonus', value: `+${props.acBonus || 2}` });
+    stats.push({ label: 'Requires', value: 'Free hand' });
+  }
+
+  return stats;
 }
 
 function ItemSummary({ items }: { items: EquipmentItem[] }) {
   return (
     <View style={styles.itemList}>
       {items.map((item, idx) => {
-        const props = Object.entries(item.properties)
-          .map(([k, v]) => formatProperty(k, v))
-          .filter(Boolean)
-          .join(' | ');
+        const stats = getItemStats(item);
         return (
           <View key={`${item.id}-${idx}`} style={styles.itemRow}>
             <View style={styles.typeBadge}>
@@ -35,7 +67,16 @@ function ItemSummary({ items }: { items: EquipmentItem[] }) {
             </View>
             <View style={styles.itemInfo}>
               <Text style={styles.itemName}>{item.name}</Text>
-              {props ? <Text style={styles.itemProps}>{props}</Text> : null}
+              {stats.length > 0 && (
+                <View style={styles.statRow}>
+                  {stats.map((s, i) => (
+                    <Text key={i} style={styles.statText}>
+                      <Text style={styles.statLabel}>{s.label}: </Text>
+                      {s.value}
+                    </Text>
+                  ))}
+                </View>
+              )}
             </View>
           </View>
         );
@@ -72,19 +113,16 @@ export default function EquipmentSelectionScreen() {
 
   const handleNext = () => {
     if (!allSelected) return;
-    setStep(5);
+    setStep(6);
     const nextRoute = isSpellcasterWithSpells() ? '/create/spells' : '/create/summary';
     router.push(nextRoute as any);
   };
 
-  const totalSteps = isSpellcasterWithSpells() ? 7 : 6;
+  const totalSteps = isSpellcasterWithSpells() ? 8 : 7;
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.stepLabel}>STEP 5 OF {totalSteps}</Text>
-        <Text style={styles.title}>Choose Equipment</Text>
-      </View>
+      <CreationHeader step={`STEP 6 OF ${totalSteps}`} title="Choose Equipment" />
 
       <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
         {choices.map((group, groupIdx) => (
@@ -234,11 +272,21 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: PARCHMENT_TEXT.primary,
   },
-  itemProps: {
+  statRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    marginTop: 3,
+  },
+  statText: {
     fontFamily: fonts.body,
-    fontSize: 11,
+    fontSize: 10,
     color: PARCHMENT_TEXT.secondary,
-    marginTop: 1,
+    lineHeight: 14,
+  },
+  statLabel: {
+    fontFamily: fonts.bodyBold,
+    color: PARCHMENT_TEXT.label,
   },
 
   footer: {

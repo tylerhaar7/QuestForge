@@ -28,6 +28,12 @@ interface CharacterRow {
   conditions: Condition[] | null;
   origin_story: string | null;
   origin_ai_context: string | null;
+  background_id: string;
+  background_feature: string;
+  feat_id: string;
+  feat_data: Record<string, any> | null;
+  tool_proficiencies: string[] | null;
+  languages: string[] | null;
   personal_quest_flags: Record<string, boolean> | null;
   portrait_url: string | null;
   created_at: string;
@@ -62,6 +68,12 @@ function toRow(char: Omit<Character, 'id' | 'createdAt' | 'updatedAt'>) {
     conditions: char.conditions,
     origin_story: char.originStory,
     origin_ai_context: char.originAiContext ?? '',
+    background_id: char.backgroundId,
+    background_feature: char.backgroundFeature,
+    feat_id: char.featId,
+    feat_data: char.featData,
+    tool_proficiencies: char.toolProficiencies,
+    languages: char.languages,
     personal_quest_flags: char.personalQuestFlags,
     portrait_url: char.portraitUrl ?? null,
   };
@@ -96,6 +108,12 @@ function fromRow(row: CharacterRow): Character {
     conditions: row.conditions ?? [],
     originStory: row.origin_story ?? '',
     originAiContext: row.origin_ai_context ?? '',
+    backgroundId: row.background_id ?? '',
+    backgroundFeature: row.background_feature ?? '',
+    featId: row.feat_id ?? '',
+    featData: row.feat_data ?? {},
+    toolProficiencies: row.tool_proficiencies ?? [],
+    languages: row.languages ?? [],
     personalQuestFlags: row.personal_quest_flags ?? {},
     portraitUrl: row.portrait_url ?? undefined,
     createdAt: row.created_at,

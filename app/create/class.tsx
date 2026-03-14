@@ -1,20 +1,27 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View, Text, Pressable, ScrollView, StyleSheet, SafeAreaView,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { colors, PARCHMENT_TEXT } from '@/theme/colors';
 import { fonts, spacing, textStyles } from '@/theme/typography';
-import { FantasyPanel, FantasyButton } from '@/components/ui';
+import { FantasyPanel, FantasyButton, CreationHeader } from '@/components/ui';
 import { useCharacterCreationStore } from '@/stores/useCharacterCreationStore';
 import { CLASS_LIST, type ClassData } from '@/data/classes';
 import type { ClassName } from '@/types/game';
 
 function ClassCard({ cls, selected, onPress }: { cls: ClassData; selected: boolean; onPress: () => void }) {
+  const [expandedFeature, setExpandedFeature] = useState<string | null>(null);
   const primaryText = cls.primaryAbility.slice(0, 3).toUpperCase();
   const savesText = cls.saveProficiencies
     .map(s => s.slice(0, 3).toUpperCase())
     .join(' / ');
+
+  const handleFeaturePress = (name: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setExpandedFeature(prev => prev === name ? null : name);
+  };
 
   return (
     <Pressable onPress={onPress} style={{ opacity: selected ? 1 : 0.85 }}>
@@ -39,9 +46,22 @@ function ClassCard({ cls, selected, onPress }: { cls: ClassData; selected: boole
         </View>
         <View style={styles.traits}>
           {cls.features.map(f => (
-            <Text key={f.name} style={styles.traitName}>{f.name}</Text>
+            <Pressable
+              key={f.name}
+              onPress={(e) => { e.stopPropagation(); handleFeaturePress(f.name); }}
+              style={[styles.traitPill, expandedFeature === f.name && styles.traitPillExpanded]}
+            >
+              <Text style={[styles.traitName, expandedFeature === f.name && styles.traitNameExpanded]}>
+                {f.name}
+              </Text>
+            </Pressable>
           ))}
         </View>
+        {expandedFeature && (
+          <Text style={styles.featureDescription}>
+            {cls.features.find(f => f.name === expandedFeature)?.description}
+          </Text>
+        )}
       </FantasyPanel>
     </Pressable>
   );
@@ -63,10 +83,7 @@ export default function ClassSelectionScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.stepLabel}>STEP 2</Text>
-        <Text style={styles.title}>Choose Your Class</Text>
-      </View>
+      <CreationHeader step="STEP 2" title="Choose Your Class" />
 
       <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
         {CLASS_LIST.map(c => (
@@ -110,16 +127,34 @@ const styles = StyleSheet.create({
   cardMetaDivider: { fontFamily: fonts.body, fontSize: 11, color: PARCHMENT_TEXT.secondary },
   spellcasterTag: { fontFamily: fonts.heading, fontSize: 10, color: PARCHMENT_TEXT.secondary, letterSpacing: 0.5 },
   traits: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
-  traitName: {
-    fontFamily: fonts.headingRegular,
-    fontSize: 10,
-    color: PARCHMENT_TEXT.label,
+  traitPill: {
     borderWidth: 1,
     borderColor: '#b8a070',
     borderRadius: 4,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
+  },
+  traitPillExpanded: {
+    borderColor: PARCHMENT_TEXT.accent,
+    backgroundColor: 'rgba(180,140,60,0.12)',
+  },
+  traitName: {
+    fontFamily: fonts.headingRegular,
+    fontSize: 10,
+    color: PARCHMENT_TEXT.label,
     letterSpacing: 0.5,
+  },
+  traitNameExpanded: {
+    color: PARCHMENT_TEXT.accent,
+  },
+  featureDescription: {
+    fontFamily: fonts.bodyItalic,
+    fontSize: 11,
+    color: PARCHMENT_TEXT.secondary,
+    fontStyle: 'italic',
+    lineHeight: 16,
+    marginTop: spacing.xs,
+    paddingHorizontal: spacing.xs,
   },
   footer: { paddingHorizontal: spacing.xl, paddingBottom: spacing.lg, paddingTop: spacing.sm },
 });

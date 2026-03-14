@@ -692,10 +692,18 @@ function SpellsSection({ character }: { character: Character }) {
                           <Text style={styles.spellDetailLabel}>Duration: </Text>
                           {spell.duration}
                         </Text>
-                        <Text style={styles.spellDetailRow}>
+                        <View style={styles.componentRow}>
                           <Text style={styles.spellDetailLabel}>Components: </Text>
-                          {spell.components}
-                        </Text>
+                          {spell.components.split(',').map((c: string) => {
+                            const key = c.trim().charAt(0).toUpperCase();
+                            const label = key === 'V' ? 'Verbal' : key === 'S' ? 'Somatic' : key === 'M' ? 'Material' : c.trim();
+                            return (
+                              <View key={c} style={styles.componentPill}>
+                                <Text style={styles.componentPillText}>{label}</Text>
+                              </View>
+                            );
+                          })}
+                        </View>
                         <Text style={styles.spellDescription}>
                           {spell.description}
                         </Text>
@@ -1397,6 +1405,26 @@ const styles = StyleSheet.create({
   spellDetailLabel: {
     fontFamily: fonts.bodyBold,
     color: PARCHMENT.ink,
+  },
+  componentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 4,
+    marginTop: 2,
+  },
+  componentPill: {
+    borderWidth: 1,
+    borderColor: PARCHMENT.divider,
+    borderRadius: 3,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+  },
+  componentPillText: {
+    fontFamily: fonts.headingRegular,
+    fontSize: 9,
+    color: PARCHMENT.inkSecondary,
+    letterSpacing: 0.3,
   },
   spellDescription: {
     fontFamily: fonts.bodyItalic,

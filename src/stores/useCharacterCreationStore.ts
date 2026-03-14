@@ -5,6 +5,9 @@ import { RACES } from '@/data/races';
 import { CLASSES } from '@/data/classes';
 import { ORIGIN_MAP } from '@/data/origins';
 import { CLASS_SPELLS } from '@/data/spells';
+import { BACKGROUNDS } from '@/data/backgrounds';
+import { FEATS } from '@/data/feats';
+import type { FeatData } from '@/data/feats';
 import { getModifier, calculateMaxHP, calculateAC, getProficiencyBonus } from '@/engine/character';
 
 // Standard Array for ability score assignment
@@ -12,13 +15,15 @@ export const STANDARD_ARRAY = [15, 14, 13, 12, 10, 8];
 
 interface CharacterCreationState {
   // Step state
-  step: number;   // 0=race, 1=class, 2=abilities, 3=origin, 4=equipment, 5=spells, 6=summary
+  step: number;   // 0=race, 1=class, 2=abilities, 3=background, 4=origin, 5=equipment, 6=spells, 7=summary
 
   // Selections
   race: RaceName | null;
   className: ClassName | null;
   abilityAssignment: Partial<Record<AbilityScore, number>>;  // ability -> base score (before race bonus)
   selectedSkills: Skill[];
+  backgroundId: string | null;
+  selectedFeatId: string | null;
   originId: string | null;
   customOrigin: string | null;  // If player writes their own
   name: string;
@@ -33,6 +38,8 @@ interface CharacterCreationState {
   setAbilityScore: (ability: AbilityScore, score: number) => void;
   clearAbilityScore: (ability: AbilityScore) => void;
   setSelectedSkills: (skills: Skill[]) => void;
+  setBackground: (backgroundId: string) => void;
+  setFeat: (featId: string) => void;
   setOrigin: (originId: string) => void;
   setCustomOrigin: (text: string) => void;
   setName: (name: string) => void;
@@ -49,6 +56,8 @@ interface CharacterCreationState {
   getResolvedEquipment: () => EquipmentItem[];
   isSpellcasterWithSpells: () => boolean;
   getRequiredSpellCount: () => number;
+  getBackgroundSkills: () => Skill[];
+  getSelectedFeat: () => FeatData | null;
 }
 
 const ABILITIES: AbilityScore[] = ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'];
@@ -59,6 +68,8 @@ const initialState = {
   className: null as ClassName | null,
   abilityAssignment: {} as Partial<Record<AbilityScore, number>>,
   selectedSkills: [] as Skill[],
+  backgroundId: null as string | null,
+  selectedFeatId: null as string | null,
   originId: null as string | null,
   customOrigin: null as string | null,
   name: '',
@@ -82,6 +93,8 @@ export const useCharacterCreationStore = create<CharacterCreationState>((set, ge
     return { abilityAssignment: next };
   }),
   setSelectedSkills: (skills) => set({ selectedSkills: skills }),
+  setBackground: (backgroundId) => set({ backgroundId, selectedFeatId: null }),
+  setFeat: (featId) => set({ selectedFeatId: featId }),
   setOrigin: (originId) => set({ originId, customOrigin: null }),
   setCustomOrigin: (text) => set({ customOrigin: text, originId: 'custom' }),
   setName: (name) => set({ name }),
@@ -175,5 +188,18 @@ export const useCharacterCreationStore = create<CharacterCreationState>((set, ge
       return Math.max(1, mod + 1); // Level 1: mod + level
     }
     return config.spellCount;
+  },
+
+  getBackgroundSkills: () => {
+    const { backgroundId } = get();
+    if (!backgroundId) return [];
+    const bg = BACKGROUNDS[backgroundId];
+    return bg?.skillProficiencies ?? [];
+  },
+
+  getSelectedFeat: () => {
+    const { selectedFeatId } = get();
+    if (!selectedFeatId) return null;
+    return FEATS[selectedFeatId] ?? null;
   },
 }));

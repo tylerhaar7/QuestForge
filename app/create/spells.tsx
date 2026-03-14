@@ -5,10 +5,33 @@ import {
 import { useRouter } from 'expo-router';
 import { colors, PARCHMENT_TEXT } from '@/theme/colors';
 import { fonts, spacing, textStyles } from '@/theme/typography';
-import { FantasyPanel, FantasyButton } from '@/components/ui';
+import { FantasyPanel, FantasyButton, CreationHeader } from '@/components/ui';
 import { useCharacterCreationStore } from '@/stores/useCharacterCreationStore';
 import { CLASS_SPELLS } from '@/data/spells';
 import type { Spell } from '@/types/game';
+
+const COMPONENT_LABELS: Record<string, string> = {
+  V: 'Verbal',
+  S: 'Somatic',
+  M: 'Material',
+};
+
+function ComponentPills({ components }: { components: string }) {
+  const parts = components.split(',').map(c => c.trim());
+  return (
+    <View style={styles.componentRow}>
+      {parts.map((c) => {
+        const key = c.charAt(0).toUpperCase();
+        const label = COMPONENT_LABELS[key] || c;
+        return (
+          <View key={c} style={styles.componentPill}>
+            <Text style={styles.componentPillText}>{label}</Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
 
 function SpellCard({
   spell,
@@ -36,7 +59,7 @@ function SpellCard({
           <Text style={styles.metaText}>{spell.range}</Text>
         </View>
         <Text style={styles.spellDesc}>{spell.description}</Text>
-        <Text style={styles.spellComponents}>{spell.components}</Text>
+        <ComponentPills components={spell.components} />
       </FantasyPanel>
     </Pressable>
   );
@@ -105,15 +128,14 @@ export default function SpellSelectionScreen() {
 
   const handleNext = () => {
     if (!canContinue) return;
-    setStep(6);
+    setStep(7);
     router.push('/create/summary');
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.stepLabel}>STEP 6 OF 7</Text>
-        <Text style={styles.title}>Choose Spells</Text>
+      <CreationHeader step="STEP 7 OF 8" title="Choose Spells" />
+      <View style={styles.recommendedRow}>
         <Pressable onPress={fillRecommended} style={styles.recommendedBtn}>
           <Text style={styles.recommendedText}>RECOMMENDED</Text>
         </Pressable>
@@ -197,9 +219,11 @@ const styles = StyleSheet.create({
     color: colors.gold.primary,
     fontSize: 22,
   },
+  recommendedRow: {
+    paddingHorizontal: spacing.xl,
+  },
   recommendedBtn: {
     alignSelf: 'flex-start',
-    marginTop: spacing.sm,
     borderWidth: 1,
     borderColor: colors.gold.border,
     borderRadius: 4,
@@ -302,9 +326,20 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     marginBottom: spacing.xs,
   },
-  spellComponents: {
+  componentRow: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+  },
+  componentPill: {
+    borderWidth: 1,
+    borderColor: '#b8a070',
+    borderRadius: 4,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+  },
+  componentPillText: {
     fontFamily: fonts.headingRegular,
-    fontSize: 10,
+    fontSize: 9,
     color: PARCHMENT_TEXT.label,
     letterSpacing: 0.5,
   },

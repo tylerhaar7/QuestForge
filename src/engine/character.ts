@@ -79,6 +79,7 @@ export const CLASS_HIT_DIE: Record<ClassName, number> = {
   sorcerer: 6,
   warlock: 8,
   wizard: 6,
+  artificer: 8,
 };
 
 /**

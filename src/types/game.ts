@@ -37,6 +37,13 @@ export type RaceName =
   | 'human' | 'elf' | 'dwarf' | 'halfling' | 'gnome'
   | 'half_elf' | 'half_orc' | 'tiefling' | 'dragonborn';
 
+export type BackgroundName =
+  | 'acolyte' | 'charlatan' | 'criminal' | 'entertainer' | 'folk_hero'
+  | 'guild_artisan' | 'hermit' | 'noble' | 'outlander' | 'sage'
+  | 'sailor' | 'soldier' | 'urchin'
+  | 'far_traveler' | 'haunted_one' | 'knight' | 'pirate'
+  | 'urban_bounty_hunter' | 'faceless' | 'courtier';
+
 export interface AbilityScores {
   strength: number;
   dexterity: number;
@@ -73,6 +80,12 @@ export interface Character {
   conditions: Condition[];
   originStory: string;         // Origin story ID
   originAiContext: string;     // AI prompt context for origin
+  backgroundId: string;
+  backgroundFeature: string;
+  featId: string;
+  featData: Record<string, any>;
+  toolProficiencies: string[];
+  languages: string[];
   personalQuestFlags: Record<string, boolean>;
   portraitUrl?: string;
   createdAt: string;

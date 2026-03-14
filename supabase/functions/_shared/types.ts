@@ -69,6 +69,12 @@ export interface CharacterRow {
   conditions: string[];
   origin_story: string;
   origin_ai_context: string;
+  background_id?: string;
+  background_feature?: string;
+  feat_id?: string;
+  feat_data?: Record<string, any>;
+  tool_proficiencies?: string[];
+  extra_languages?: string[];
 }
 
 export interface CampaignRow {

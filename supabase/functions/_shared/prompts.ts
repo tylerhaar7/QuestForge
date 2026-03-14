@@ -199,6 +199,8 @@ export function buildSystemPrompt(
 - XP: ${character.xp || 0}/${nextLevelXP}${character.level >= 20 ? ' (MAX LEVEL)' : ''}
 - STR ${character.ability_scores.strength} DEX ${character.ability_scores.dexterity} CON ${character.ability_scores.constitution} INT ${character.ability_scores.intelligence} WIS ${character.ability_scores.wisdom} CHA ${character.ability_scores.charisma}
 - Conditions: ${character.conditions.length > 0 ? character.conditions.join(', ') : 'none'}
+- Background: ${character.background_id || 'Unknown'}${character.background_feature ? ` (${character.background_feature})` : ''}
+- Origin Feat: ${character.feat_id || 'none'}
 - Origin: ${character.origin_story || 'Unknown'}`;
 
   // Equipment & inventory
@@ -236,8 +238,17 @@ export function buildSystemPrompt(
     charBlock += `\n- Known Spells${slotInfo ? ` (Slots: ${slotInfo})` : ''}:\n${spellLines.join('\n')}`;
   }
 
-  if (character.origin_ai_context) {
-    charBlock += `\n\nORIGIN CONTEXT (weave this into the narrative naturally):\n${character.origin_ai_context}`;
+  if (character.background_id || character.origin_ai_context) {
+    charBlock += `\n\nBACKGROUND & ORIGIN CONTEXT (weave this into the narrative naturally):`;
+    if (character.background_id) {
+      charBlock += `\nBackground: ${character.background_id}${character.background_feature ? ` — ${character.background_feature}` : ''}`;
+    }
+    if (character.feat_id) {
+      charBlock += `\nOrigin Feat: ${character.feat_id}`;
+    }
+    if (character.origin_ai_context) {
+      charBlock += `\n${character.origin_ai_context}`;
+    }
   }
 
   layers.push(charBlock);

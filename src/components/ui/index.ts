@@ -5,3 +5,4 @@ export { FantasyButton } from './FantasyButton';
 export type { ButtonVariant } from './FantasyButton';
 export { PortraitFrame } from './PortraitFrame';
 export { InventorySlot } from './InventorySlot';
+export { CreationHeader } from './CreationHeader';

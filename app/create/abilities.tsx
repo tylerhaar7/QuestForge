@@ -5,7 +5,7 @@ import {
 import { useRouter } from 'expo-router';
 import { colors, PARCHMENT_TEXT } from '@/theme/colors';
 import { fonts, spacing, textStyles } from '@/theme/typography';
-import { FantasyPanel, FantasyButton } from '@/components/ui';
+import { FantasyPanel, FantasyButton, CreationHeader } from '@/components/ui';
 import {
   useCharacterCreationStore,
   STANDARD_ARRAY,
@@ -176,7 +176,7 @@ export default function AbilityScoreScreen() {
   const handleContinue = () => {
     if (!canProceed) return;
     setStep(3);
-    router.push('/create/origin');
+    router.push('/create/background');
   };
 
   // ── Render ──────────────────────────────────────────────────────────────────
@@ -185,9 +185,8 @@ export default function AbilityScoreScreen() {
     <SafeAreaView style={styles.container}>
 
       {/* ── Header ── */}
-      <View style={styles.header}>
-        <Text style={styles.stepLabel}>STEP 3</Text>
-        <Text style={styles.title}>Assign Ability Scores</Text>
+      <CreationHeader step="STEP 3" title="Assign Ability Scores" />
+      <View style={styles.headerExtra}>
         <Text style={styles.subtext}>
           Distribute the standard array values across your six abilities.
           Race bonuses are applied automatically.
@@ -402,6 +401,9 @@ const styles = StyleSheet.create({
     color: colors.gold.primary,
     fontSize: 22,
     marginBottom: spacing.sm,
+  },
+  headerExtra: {
+    paddingHorizontal: spacing.xl,
   },
   subtext: {
     fontFamily: fonts.body,

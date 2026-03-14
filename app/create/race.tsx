@@ -1,19 +1,26 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View, Text, Pressable, ScrollView, StyleSheet, SafeAreaView,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { colors, PARCHMENT_TEXT } from '@/theme/colors';
 import { fonts, spacing, textStyles } from '@/theme/typography';
-import { FantasyPanel, FantasyButton } from '@/components/ui';
+import { FantasyPanel, FantasyButton, CreationHeader } from '@/components/ui';
 import { useCharacterCreationStore } from '@/stores/useCharacterCreationStore';
 import { RACE_LIST, type RaceData } from '@/data/races';
 import type { RaceName } from '@/types/game';
 
 function RaceCard({ race, selected, onPress }: { race: RaceData; selected: boolean; onPress: () => void }) {
+  const [expandedTrait, setExpandedTrait] = useState<string | null>(null);
   const bonusText = Object.entries(race.abilityBonuses)
     .map(([ability, bonus]) => `${ability.slice(0, 3).toUpperCase()} +${bonus}`)
     .join('  ');
+
+  const handleTraitPress = (traitName: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setExpandedTrait(prev => prev === traitName ? null : traitName);
+  };
 
   return (
     <Pressable onPress={onPress} style={{ opacity: selected ? 1 : 0.85 }}>
@@ -26,9 +33,22 @@ function RaceCard({ race, selected, onPress }: { race: RaceData; selected: boole
         {bonusText ? <Text style={styles.cardBonuses}>{bonusText}</Text> : null}
         <View style={styles.traits}>
           {race.traits.map(t => (
-            <Text key={t.name} style={styles.traitName}>{t.name}</Text>
+            <Pressable
+              key={t.name}
+              onPress={(e) => { e.stopPropagation(); handleTraitPress(t.name); }}
+              style={[styles.traitPill, expandedTrait === t.name && styles.traitPillExpanded]}
+            >
+              <Text style={[styles.traitName, expandedTrait === t.name && styles.traitNameExpanded]}>
+                {t.name}
+              </Text>
+            </Pressable>
           ))}
         </View>
+        {expandedTrait && (
+          <Text style={styles.traitDescription}>
+            {race.traits.find(t => t.name === expandedTrait)?.description}
+          </Text>
+        )}
       </FantasyPanel>
     </Pressable>
   );
@@ -50,10 +70,7 @@ export default function RaceSelectionScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.stepLabel}>STEP 1</Text>
-        <Text style={styles.title}>Choose Your Race</Text>
-      </View>
+      <CreationHeader step="STEP 1" title="Choose Your Race" showBack={false} />
 
       <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
         {RACE_LIST.map(r => (
@@ -87,16 +104,35 @@ const styles = StyleSheet.create({
   cardDesc: { fontFamily: fonts.body, fontSize: 13, color: PARCHMENT_TEXT.secondary, lineHeight: 19, marginBottom: spacing.sm },
   cardBonuses: { fontFamily: fonts.heading, fontSize: 11, color: PARCHMENT_TEXT.accent, letterSpacing: 1, marginBottom: spacing.sm },
   traits: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
-  traitName: {
-    fontFamily: fonts.headingRegular,
-    fontSize: 10,
-    color: PARCHMENT_TEXT.label,
+  traitPill: {
     borderWidth: 1,
     borderColor: '#b8a070',
     borderRadius: 4,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
+  },
+  traitPillExpanded: {
+    borderColor: PARCHMENT_TEXT.accent,
+    backgroundColor: 'rgba(180,140,60,0.12)',
+  },
+  traitName: {
+    fontFamily: fonts.headingRegular,
+    fontSize: 10,
+    color: PARCHMENT_TEXT.label,
     letterSpacing: 0.5,
+  },
+  traitNameExpanded: {
+    color: PARCHMENT_TEXT.accent,
+  },
+  traitDescription: {
+    fontFamily: fonts.bodyItalic,
+    fontSize: 11,
+    color: PARCHMENT_TEXT.secondary,
+    fontStyle: 'italic',
+    lineHeight: 16,
+    paddingHorizontal: spacing.xs,
+    paddingTop: 3,
+    paddingBottom: spacing.xs,
   },
   footer: { paddingHorizontal: spacing.xl, paddingBottom: spacing.lg, paddingTop: spacing.sm },
 });

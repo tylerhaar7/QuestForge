@@ -379,6 +379,44 @@ export const CLASSES: Record<ClassName, ClassData> = {
     ],
     spellcaster: true,
   },
+
+  artificer: {
+    id: 'artificer',
+    name: 'Artificer',
+    description: 'A master of invention who infuses mundane items with magical power.',
+    hitDie: 8,
+    primaryAbility: 'intelligence',
+    saveProficiencies: ['constitution', 'intelligence'],
+    skillChoices: { pick: 2, from: ['arcana', 'history', 'investigation', 'medicine', 'nature', 'perception', 'sleight_of_hand'] },
+    startingEquipment: [
+      { id: 'light-crossbow', name: 'Light Crossbow', type: 'weapon', equipped: true, properties: { damage: '1d8', damageType: 'piercing', range: '80/320' } },
+      { id: 'scale-mail', name: 'Scale Mail', type: 'armor', equipped: true, properties: { ac: 14, maxDex: 2 } },
+      { id: 'thieves-tools', name: "Thieves' Tools", type: 'accessory', equipped: false, properties: {} },
+      { id: 'dungeoneers-pack', name: "Dungeoneer's Pack", type: 'accessory', equipped: false, properties: {} },
+    ],
+    equipmentChoices: [
+      {
+        label: 'Primary Weapon',
+        options: [
+          [{ id: 'light-crossbow', name: 'Light Crossbow', type: 'weapon', equipped: true, properties: { damage: '1d8', damageType: 'piercing', range: '80/320' } }],
+          [{ id: 'handaxe-1', name: 'Handaxe', type: 'weapon', equipped: true, properties: { damage: '1d6', damageType: 'slashing', range: '20/60' } },
+           { id: 'handaxe-2', name: 'Handaxe', type: 'weapon', equipped: true, properties: { damage: '1d6', damageType: 'slashing', range: '20/60' } }],
+        ],
+      },
+      {
+        label: 'Armor',
+        options: [
+          [{ id: 'scale-mail', name: 'Scale Mail', type: 'armor', equipped: true, properties: { ac: 14, maxDex: 2 } }],
+          [{ id: 'studded-leather', name: 'Studded Leather', type: 'armor', equipped: true, properties: { ac: 12, maxDex: Infinity } }],
+        ],
+      },
+    ],
+    features: [
+      { name: 'Magical Tinkering', description: 'Imbue mundane items with minor magical properties — light, sound, odor, or visual effects.' },
+      { name: 'Spellcasting', description: 'Cast spells using Intelligence. Use tools as your spellcasting focus.' },
+    ],
+    spellcaster: true,
+  },
 };
 
 export const CLASS_LIST = Object.values(CLASSES);
