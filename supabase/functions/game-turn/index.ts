@@ -526,12 +526,44 @@ Deno.serve(async (req) => {
     // Companion encounter handling (Discover mode)
     if (normalized.companionEncounter && campaign.recruitment_mode === 'discover') {
       const pool = campaign.companion_pool || [];
+      const encounterName = normalized.companionEncounter.companionName;
       const found = pool.find((c: any) =>
-        c.name.toLowerCase() === normalized.companionEncounter.companionName.toLowerCase()
+        c.name.toLowerCase() === encounterName.toLowerCase()
       );
-      if (found && !found.introduced) {
+
+      if (found && !found.recruited) {
+        // Mark as introduced and recruited in the pool
         found.introduced = true;
-        await adminClient.from('campaigns').update({ companion_pool: pool }).eq('id', campaignId);
+        found.recruited = true;
+
+        // Build the active companion object (strip pool-only fields)
+        const { recruited: _, introduced: __, aiGenerated: ___, introductionTurn: ____, ...companionData } = found;
+        const activeCompanion = {
+          ...companionData,
+          approvalScore: 50,
+          relationshipStage: 'neutral',
+        };
+
+        // Add to the outer updatedCompanions so the response includes them
+        updatedCompanions.push(activeCompanion);
+
+        // Persist updated pool
+        await adminClient.from('campaigns').update({
+          companion_pool: pool,
+        }).eq('id', campaignId);
+
+        // Create companion_states row for persistence
+        await adminClient.from('companion_states').insert({
+          campaign_id: campaignId,
+          companion_name: found.name,
+          approval_score: 50,
+          relationship_stage: 'neutral',
+          personal_quest_stage: 0,
+          personal_quest_flags: {},
+          memorable_moments: [],
+          unlocked_abilities: [],
+          gift_history: [],
+        });
       }
     }
 

@@ -8,7 +8,20 @@ AI-powered solo D&D 5e mobile RPG. Claude serves as the Dungeon Master, narratin
 - **State:** Zustand (client), React Query (server), MMKV (local cache)
 - **Backend:** Supabase (auth, Postgres, Edge Functions)
 - **AI:** Claude API (Haiku for exploration, Sonnet for combat/story) via Edge Functions
-- **UI:** react-native-reanimated, expo-haptics, Cinzel/Crimson Text/IM Fell English fonts
+- **UI:** react-native-reanimated, expo-haptics, custom fantasy UI kit
+- **Fonts:** Cinzel (headings), Crimson Text (body), IM Fell English (narrative)
+
+## Features
+
+- **Full D&D 5e Character Creation** — 9 races, 13 classes (including Artificer), 20 official backgrounds with origin feats, starting equipment choices, spell/cantrip selection, and custom backstory
+- **AI Dungeon Master** — Claude generates narrative, NPC dialogue, encounter design, and reacts to player choices with structured JSON responses
+- **Companion System** — BG3-inspired party members with approval tracking (0-100), relationship stages, and personality-driven reactions
+- **Combat Engine** — Turn-based with telegraphed enemy intentions (Into the Breach style), XP rewards, loot drops, and level-up progression
+- **11-Slot Equipment System** — Head, body, cloak, hands, feet, neck, rings, waist, main hand, off hand with interactive equip/unequip UI and AC recalculation
+- **The Threshold** — Hades-inspired death hub — death is progression, not game over
+- **Living Codex** — Tappable lore entries that build as you explore
+- **Adventure Map** — Slay the Spire branching node map for campaign progression
+- **Fantasy UI Kit** — Wood-framed panels, corner studs, inventory slots, parchment character sheet with scroll curls
 
 ## Getting Started
 
@@ -51,7 +64,6 @@ AI-powered solo D&D 5e mobile RPG. Claude serves as the Dungeon Master, narratin
    > **Important:** `--no-verify-jwt` is required. This project verifies JWTs inside
    > each function via `supabase.auth.getUser()`. The Supabase gateway's legacy JWT
    > verification must remain disabled — CLI deploys reset it to enabled by default.
-   > The `supabase/config.toml` also sets `verify_jwt = false` per function.
 
 6. Start the dev server:
    ```bash
@@ -75,15 +87,20 @@ npx expo start
 
 ```
 app/                    Expo Router screens (file-based routing)
+  create/               Character creation flow (8 steps)
+  game/                 Gameplay screens (narrative, combat, character sheet)
+  (auth)/               Authentication screens
 src/
-  engine/               D&D 5e mechanics (dice, combat, HP — no AI)
+  engine/               D&D 5e mechanics (dice, combat, HP, AC, progression — no AI)
   ai/                   Prompt building, response parsing, model routing
-  components/game/      Game UI (NarrativeText, ChoiceButton, PartyCard, etc.)
-  stores/               Zustand state (useGameStore, useSettingsStore)
+  components/
+    game/               Game UI (NarrativeText, ChoiceButton, PartyCard, MoodParticles)
+    ui/                 Fantasy UI kit (FantasyPanel, InventorySlot, CreationHeader)
+  data/                 D&D 5e data (races, classes, backgrounds, feats, spells, origins)
+  stores/               Zustand state (useGameStore, useCharacterCreationStore)
   services/             Supabase client, campaign/character API calls
   theme/                Colors, typography, spacing
   types/                TypeScript definitions
-  data/                 Companion roster, dice skins
 supabase/
   functions/
     game-turn/          Main gameplay loop (player action -> Claude -> dice -> narrate)
@@ -98,6 +115,19 @@ supabase/
 2. **Supabase stores all persistent state.** Campaigns, characters, companions, NPCs, quests — all in Postgres with RLS.
 3. **Structured AI responses.** Claude returns JSON matching the `AIResponse` type. A shared parser handles malformed output.
 4. **Model routing.** Haiku for exploration turns, Sonnet for combat/social/boss encounters.
+
+## Character Creation
+
+8-step flow with back navigation:
+
+1. **Race** — 9 races with tappable trait descriptions
+2. **Class** — 13 classes with tappable feature descriptions and hit die display
+3. **Abilities** — Standard array assignment with recommended distribution per class
+4. **Background** — 20 D&D 5e backgrounds (13 PHB + 7 expansion) with skill proficiencies, tool proficiencies, languages, features, and origin feat selection
+5. **Origin** — 6 narrative origins with personal quests, suggested backstory prompts, or custom backstory (1200 chars)
+6. **Equipment** — Class-specific gear choices with full stat comparison (AC, DEX cap, stealth, weight, damage type, range)
+7. **Spells** — Cantrip and 1st-level spell selection for caster classes with recommended quick-fill
+8. **Summary** — Review all choices, name your character, begin adventure
 
 ## Database
 
@@ -127,27 +157,25 @@ supabase/
 - JWT gateway verification disabled; each Edge Function verifies tokens via `supabase.auth.getUser()`
 - Anthropic API key lives only in Supabase secrets (never in client code)
 
-See `docs/security-smoke-tests.md` for the full verification checklist.
-
 ## Design
 
 Dark fantasy aesthetic inspired by BG3, Hades, and Slay the Spire:
 
 - **Colors:** Near-black background (#0d0a08), gold accents (#b48c3c), warm off-white text (#e8dcc8)
 - **Mood shifts:** Dungeon, combat, tavern, forest, town, camp, threshold — each with distinct palettes
-- **Fonts:** Cinzel (headings), Crimson Text (body), IM Fell English (narrative)
+- **UI Kit:** Wood-framed FantasyPanels with corner studs, dark inset InventorySlots, parchment scroll character sheet
 - **Companions:** BG3-style approval system (0-100), camp conversations, personal quests
 - **Death:** Hades-inspired Threshold hub — death is progression, not game over
 - **Combat:** Into the Breach-style telegraphed enemy intentions
+- **Haptics:** Dice rolls, combat hits, choice selection, equipment changes
 
 ## Scripts
 
 ```bash
-npx tsc --noEmit          # Type check
-npx expo start            # Dev server
-npx expo prebuild --clean # Generate native projects
-eas build --platform ios  # Production iOS build
-eas submit --platform ios # Submit to TestFlight
+npx tsc --noEmit                              # Type check
+npx expo start                                # Dev server
+npx expo prebuild --clean                     # Generate native projects
+eas build --platform ios --profile production  # Build + auto-submit to TestFlight
 ```
 
 ## License
