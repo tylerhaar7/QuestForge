@@ -12,16 +12,16 @@ try {
 // ─── Track mapping ──────────────────────────────────────────────────────────
 
 const TRACKS = {
-  'battle-1': require('../../assets/audio/music/battle-1.mp3'),
-  'battle-2': require('../../assets/audio/music/battle-2.mp3'),
-  'dungeon-1': require('../../assets/audio/music/dungeon-1.mp3'),
-  'event-1': require('../../assets/audio/music/event-1.mp3'),
-  'event-2': require('../../assets/audio/music/event-2.mp3'),
-  'event-3': require('../../assets/audio/music/event-3.mp3'),
-  'event-4': require('../../assets/audio/music/event-4.mp3'),
-  'town-1': require('../../assets/audio/music/town-1.mp3'),
-  'town-2': require('../../assets/audio/music/town-2.mp3'),
-  'town-3': require('../../assets/audio/music/town-3.mp3'),
+  'battle-1': require('../../assets/audio/battle-1.mp3'),
+  'battle-2': require('../../assets/audio/battle-2.mp3'),
+  'dungeon-1': require('../../assets/audio/dungeon-1.mp3'),
+  'event-1': require('../../assets/audio/event-1.mp3'),
+  'event-2': require('../../assets/audio/event-2.mp3'),
+  'event-3': require('../../assets/audio/event-3.mp3'),
+  'event-4': require('../../assets/audio/event-4.mp3'),
+  'town-1': require('../../assets/audio/town-1.mp3'),
+  'town-2': require('../../assets/audio/town-2.mp3'),
+  'town-3': require('../../assets/audio/town-3.mp3'),
 } as const;
 
 type TrackKey = keyof typeof TRACKS;

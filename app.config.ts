@@ -13,7 +13,7 @@ export default {
       resizeMode: "contain",
       backgroundColor: "#0d0a08",
     },
-    assetBundlePatterns: ["**/*"],
+    assetBundlePatterns: ["assets/**/*"],
     ios: {
       supportsTablet: true,
       bundleIdentifier: IS_DEV

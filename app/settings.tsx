@@ -1,7 +1,7 @@
 // Settings Screen — Accessibility & Preferences
 // Sections: Display, Motion, Color, Input, Audio, Accessibility
 
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,8 @@ import {
   SafeAreaView,
   StyleSheet,
   Linking,
+  PanResponder,
+  LayoutChangeEvent,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors, PARCHMENT_TEXT } from '@/theme/colors';
@@ -243,6 +245,56 @@ const COLORBLIND_OPTIONS: { label: string; value: ColorblindMode }[] = [
   { label: 'Tritanopia', value: 'tritanopia' },
 ];
 
+function VolumeSlider({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const trackRef = useRef<View>(null);
+  const trackLayout = useRef({ x: 0, width: 0 });
+
+  const clamp = (v: number) => Math.max(0, Math.min(1, v));
+
+  const calcValue = (pageX: number) => {
+    const { x, width } = trackLayout.current;
+    if (width <= 0) return value;
+    return clamp((pageX - x) / width);
+  };
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: (evt) => {
+        onChange(calcValue(evt.nativeEvent.pageX));
+      },
+      onPanResponderMove: (evt) => {
+        onChange(calcValue(evt.nativeEvent.pageX));
+      },
+    })
+  ).current;
+
+  const handleLayout = () => {
+    trackRef.current?.measureInWindow((x, _y, width) => {
+      trackLayout.current = { x, width };
+    });
+  };
+
+  const pct = Math.round(value * 100);
+
+  return (
+    <View style={styles.volumeRow}>
+      <Text style={styles.volumeLabel}>Volume</Text>
+      <Text style={styles.volumePct}>{pct}%</Text>
+      <View
+        ref={trackRef}
+        style={styles.sliderTrack}
+        onLayout={handleLayout}
+        {...panResponder.panHandlers}
+      >
+        <View style={[styles.sliderFill, { width: `${pct}%` }]} />
+        <View style={[styles.sliderThumb, { left: `${pct}%` }]} />
+      </View>
+    </View>
+  );
+}
+
 export default function SettingsScreen() {
   const router = useRouter();
   const {
@@ -377,22 +429,7 @@ export default function SettingsScreen() {
               onToggle={setMusicEnabled}
             />
             {musicEnabled && (
-              <View style={styles.volumeRow}>
-                <Text style={styles.volumeLabel}>Volume</Text>
-                <View style={styles.volumeButtons}>
-                  {[0.2, 0.4, 0.6, 0.8, 1.0].map((v) => (
-                    <Pressable
-                      key={v}
-                      onPress={() => setMusicVolume(v)}
-                      style={[styles.volumeBtn, musicVolume === v && styles.volumeBtnActive]}
-                    >
-                      <Text style={[styles.volumeBtnText, musicVolume === v && styles.volumeBtnTextActive]}>
-                        {Math.round(v * 100)}%
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
-              </View>
+              <VolumeSlider value={musicVolume} onChange={setMusicVolume} />
             )}
           </FantasyPanel>
 
@@ -584,42 +621,55 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   volumeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     marginTop: spacing.sm,
     paddingTop: spacing.sm,
     borderTopWidth: 1,
     borderTopColor: 'rgba(184,160,112,0.3)',
+    gap: spacing.xs,
   },
   volumeLabel: {
     fontFamily: fonts.body,
     fontSize: 14,
     color: PARCHMENT_TEXT.primary,
   },
-  volumeButtons: {
-    flexDirection: 'row',
-    gap: 4,
-  },
-  volumeBtn: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: 'rgba(184,160,112,0.4)',
-  },
-  volumeBtnActive: {
-    backgroundColor: colors.gold.primary,
-    borderColor: colors.gold.primary,
-  },
-  volumeBtnText: {
+  volumePct: {
     fontFamily: fonts.headingRegular,
     fontSize: 10,
     color: PARCHMENT_TEXT.secondary,
-    letterSpacing: 0.5,
+    position: 'absolute',
+    right: 0,
+    top: spacing.sm,
   },
-  volumeBtnTextActive: {
-    color: '#f0e6d0',
+  sliderTrack: {
+    height: 24,
+    justifyContent: 'center',
+    marginTop: 2,
+    backgroundColor: 'rgba(184,160,112,0.2)',
+    borderRadius: 3,
+  },
+  sliderFill: {
+    position: 'absolute',
+    left: 0,
+    top: 9,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.gold.primary,
+  },
+  sliderThumb: {
+    position: 'absolute',
+    top: 4,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#e8d8b4',
+    borderWidth: 2,
+    borderColor: colors.gold.primary,
+    marginLeft: -8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    elevation: 2,
   },
   versionText: {
     fontFamily: fonts.headingRegular,
