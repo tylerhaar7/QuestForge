@@ -256,6 +256,10 @@ export default function SettingsScreen() {
     setTextSpeed,
     setHapticFeedback,
     resetAccessibility,
+    musicEnabled,
+    musicVolume,
+    setMusicEnabled,
+    setMusicVolume,
   } = useSettingsStore();
 
   return (
@@ -368,6 +372,32 @@ export default function SettingsScreen() {
 
           <FantasyPanel variant="card" style={styles.settingCard}>
             <ToggleRow
+              label="Background Music"
+              value={musicEnabled}
+              onToggle={setMusicEnabled}
+            />
+            {musicEnabled && (
+              <View style={styles.volumeRow}>
+                <Text style={styles.volumeLabel}>Volume</Text>
+                <View style={styles.volumeButtons}>
+                  {[0.2, 0.4, 0.6, 0.8, 1.0].map((v) => (
+                    <Pressable
+                      key={v}
+                      onPress={() => setMusicVolume(v)}
+                      style={[styles.volumeBtn, musicVolume === v && styles.volumeBtnActive]}
+                    >
+                      <Text style={[styles.volumeBtnText, musicVolume === v && styles.volumeBtnTextActive]}>
+                        {Math.round(v * 100)}%
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            )}
+          </FantasyPanel>
+
+          <FantasyPanel variant="card" style={styles.settingCard}>
+            <ToggleRow
               label="Haptic Feedback"
               value={accessibility.hapticFeedback}
               onToggle={setHapticFeedback}
@@ -436,6 +466,30 @@ export default function SettingsScreen() {
               QuestForge uses AI (Claude by Anthropic) as the Dungeon Master to
               narrate your adventure. Game mechanics are resolved
               deterministically by the app's rules engine.
+            </Text>
+          </FantasyPanel>
+
+          <FantasyPanel variant="card" style={styles.settingCard}>
+            <Text style={styles.legalText}>
+              Music by{' '}
+              <Text
+                style={styles.legalLink}
+                onPress={() =>
+                  Linking.openURL('https://www.youtube.com/c/JPSoundworks/')
+                }
+              >
+                JP Soundworks
+              </Text>
+              , published by Platonic Game Studio. Licensed under{' '}
+              <Text
+                style={styles.legalLink}
+                onPress={() =>
+                  Linking.openURL('https://creativecommons.org/licenses/by/4.0/')
+                }
+              >
+                CC BY 4.0
+              </Text>
+              .
             </Text>
           </FantasyPanel>
 
@@ -528,6 +582,44 @@ const styles = StyleSheet.create({
   },
   legalSpacing: {
     marginTop: spacing.sm,
+  },
+  volumeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(184,160,112,0.3)',
+  },
+  volumeLabel: {
+    fontFamily: fonts.body,
+    fontSize: 14,
+    color: PARCHMENT_TEXT.primary,
+  },
+  volumeButtons: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  volumeBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(184,160,112,0.4)',
+  },
+  volumeBtnActive: {
+    backgroundColor: colors.gold.primary,
+    borderColor: colors.gold.primary,
+  },
+  volumeBtnText: {
+    fontFamily: fonts.headingRegular,
+    fontSize: 10,
+    color: PARCHMENT_TEXT.secondary,
+    letterSpacing: 0.5,
+  },
+  volumeBtnTextActive: {
+    color: '#f0e6d0',
   },
   versionText: {
     fontFamily: fonts.headingRegular,

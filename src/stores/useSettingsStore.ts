@@ -25,6 +25,10 @@ interface SettingsState {
   resetAccessibility: () => void;
   selectedDiceSkin: string;
   setDiceSkin: (skinId: string) => void;
+  musicEnabled: boolean;
+  musicVolume: number;
+  setMusicEnabled: (enabled: boolean) => void;
+  setMusicVolume: (volume: number) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -51,6 +55,10 @@ export const useSettingsStore = create<SettingsState>()(
         set({ accessibility: DEFAULT_ACCESSIBILITY }),
       selectedDiceSkin: 'obsidian',
       setDiceSkin: (selectedDiceSkin) => set({ selectedDiceSkin }),
+      musicEnabled: true,
+      musicVolume: 0.15,
+      setMusicEnabled: (musicEnabled) => set({ musicEnabled }),
+      setMusicVolume: (musicVolume) => set({ musicVolume }),
     }),
     {
       name: 'settings-storage',

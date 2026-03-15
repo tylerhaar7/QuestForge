@@ -1,7 +1,7 @@
 // Game Session — Main gameplay screen
 // Layout: Narrative (60%) → Party strip (15%) → Choices (25%)
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, StyleSheet, FlatList, Text, SafeAreaView, TextInput, Pressable, Keyboard, ScrollView, KeyboardAvoidingView, Platform, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors, PARCHMENT_TEXT } from '@/theme/colors';
@@ -20,6 +20,8 @@ import { EnemyIntentions } from '@/components/game/EnemyIntentions';
 import { CharacterHudButton } from '@/components/game/CharacterHudButton';
 import { DMChanneling } from '@/components/game/DMChanneling';
 import { MoodParticles } from '@/components/game/MoodParticles';
+import { MusicService } from '@/services/music';
+import { useSettingsStore } from '@/stores/useSettingsStore';
 
 export default function GameSessionScreen() {
   const router = useRouter();
@@ -55,6 +57,22 @@ export default function GameSessionScreen() {
   const setNarrationComplete = useGameStore((s) => s.setNarrationComplete);
   const shiftDiceRoll = useGameStore((s) => s.shiftDiceRoll);
   const resetSession = useGameStore((s) => s.resetSession);
+  const musicEnabled = useSettingsStore((s) => s.musicEnabled);
+  const musicVolume = useSettingsStore((s) => s.musicVolume);
+
+  // Play mood-based music
+  useEffect(() => {
+    MusicService.setEnabled(musicEnabled);
+    MusicService.setVolume(musicVolume);
+  }, [musicEnabled, musicVolume]);
+
+  useEffect(() => {
+    const mood = campaign?.currentMood;
+    if (mood && musicEnabled) {
+      MusicService.playForMood(mood);
+    }
+    return () => { MusicService.stop(); };
+  }, [campaign?.currentMood, musicEnabled]);
 
   const handleDiceComplete = useCallback(() => {
     shiftDiceRoll();

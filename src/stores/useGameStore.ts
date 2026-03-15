@@ -177,11 +177,15 @@ export const useGameStore = create<GameState>((set, get) => ({
       pendingApprovalChanges: response.approvalChanges || [],
     });
 
-    // Update campaign location if changed
-    if (response.location) {
+    // Update campaign location and mood if changed
+    if (response.location || response.mood) {
       const campaign = get().campaign;
       if (campaign) {
-        set({ campaign: { ...campaign, currentLocation: response.location } });
+        set({ campaign: {
+          ...campaign,
+          ...(response.location && { currentLocation: response.location }),
+          ...(response.mood && { currentMood: response.mood }),
+        } });
       }
     }
 

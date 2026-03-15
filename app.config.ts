@@ -33,7 +33,7 @@ export default {
         : "com.fauni.questforge",
     },
     scheme: "questforge",
-    plugins: ["expo-router", "expo-font", "expo-secure-store"],
+    plugins: ["expo-router", "expo-font", "expo-secure-store", "expo-av"],
     extra: {
       router: {},
       eas: {
