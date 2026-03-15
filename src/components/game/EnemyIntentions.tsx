@@ -41,24 +41,18 @@ function IntentionRow({ intention, index }: { intention: EnemyIntention; index: 
   return (
     <Animated.View style={[styles.row, animatedStyle]}>
       <View style={styles.rowContent}>
-        {/* Enemy description */}
-        <Text style={styles.enemyText} numberOfLines={1}>
+        {/* Description */}
+        <Text style={styles.enemyText}>
           {intention.description}
         </Text>
 
-        {/* Arrow */}
-        <Text style={styles.arrow}>→</Text>
-
-        {/* Target + action */}
-        <View style={styles.actionBlock}>
-          <Text style={styles.targetText} numberOfLines={1}>
-            <Text style={styles.targetName}>{intention.target}</Text>
-            <Text style={styles.actionSeparator}>: </Text>
-            <Text style={styles.actionName}>{intention.action}</Text>
-          </Text>
-
-          {/* Predicted damage */}
-          <Text style={styles.damageText}>{intention.predictedDamage}</Text>
+        {/* Target + action + damage */}
+        <View style={styles.targetLine}>
+          <Text style={styles.arrow}>→ </Text>
+          <Text style={styles.targetName}>{intention.target}</Text>
+          <Text style={styles.actionSeparator}>: </Text>
+          <Text style={styles.actionName}>{intention.action}</Text>
+          <Text style={styles.damageText}>  {intention.predictedDamage}</Text>
         </View>
       </View>
 
@@ -143,49 +137,40 @@ const styles = StyleSheet.create({
 
   rowContent: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    flexWrap: 'nowrap',
+    gap: 2,
   },
 
   enemyText: {
     fontFamily: fonts.body,
     fontSize: 13,
     color: colors.text.secondary,
-    flexShrink: 1,
-    maxWidth: '35%',
+  },
+
+  targetLine: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
   },
 
   arrow: {
     fontFamily: fonts.body,
     fontSize: 13,
     color: colors.combat.red,
-    paddingHorizontal: 2,
   },
 
-  actionBlock: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
-  },
-
-  targetText: {
-    fontFamily: fonts.body,
-    fontSize: 13,
-    color: colors.text.primary,
-    flexShrink: 1,
-  },
   targetName: {
     fontFamily: fonts.bodyBold,
+    fontSize: 13,
     color: colors.text.primary,
   },
   actionSeparator: {
+    fontFamily: fonts.body,
+    fontSize: 13,
     color: colors.text.tertiary,
   },
   actionName: {
+    fontFamily: fonts.body,
+    fontSize: 13,
     color: colors.text.secondary,
     fontStyle: 'italic',
   },
@@ -194,7 +179,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.body,
     fontSize: 12,
     color: colors.combat.red,
-    flexShrink: 0,
   },
 
   specialBadge: {

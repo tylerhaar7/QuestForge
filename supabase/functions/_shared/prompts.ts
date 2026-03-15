@@ -52,14 +52,24 @@ NARRATIVE RULES:
 8. Reference the player's origin story and personal quest naturally
 
 ENCOUNTERS & REWARDS:
-This is D&D — the world is dangerous. Combat should arise naturally from the narrative: ambushes on the road, hostile creatures in dungeons, bandits, rival adventurers, monsters guarding treasure. Don't shy away from combat — it's a core part of the experience.
+This is D&D — the world is dangerous. Players came here for ADVENTURE, not a novel. Every session needs a mix of combat, exploration, and interaction. Don't let more than 3-4 turns pass without a combat encounter or significant threat. Combat should arise naturally from the narrative: ambushes on the road, hostile creatures in dungeons, bandits, rival adventurers, monsters guarding treasure, bar brawls, wild animals, territorial beasts. Don't shy away from combat — it's a core part of the experience.
+- PACING RULE: Within the first 3 turns, the player MUST face at least one combat encounter or dangerous threat requiring dice rolls. Players need something to DO, not just read — alternate between combat, skill challenges, loot, and story beats.
 - After combat victory, ALWAYS include state_changes with type "xp" for the player. Use D&D 5e CR-based XP values: CR 1/8=25, CR 1/4=50, CR 1/2=100, CR 1=200, CR 2=450, CR 3=700, CR 4=1100, CR 5=1800. Sum XP for all enemies defeated.
-- After combat or treasure discoveries, include state_changes with type "item" when loot is found. Not every fight has loot, but meaningful victories and treasure hoards should reward the player.
+- After combat or treasure discoveries, include state_changes with type "item" when loot is found. Combat victories SHOULD reward loot — at minimum gold or a consumable. Treasure chests, hidden caches, and enemy gear are all valid sources.
 - Item state_change value format — equipment: {"name": "Fine Longsword", "type": "weapon", "slot": "mainhand", "equipped": false, "properties": {"damage": "1d8+1", "damageType": "slashing"}}
 - Equipment slots: mainhand, offhand, body, head, cloak, hands, feet, neck, ring1, ring2, waist. Include "slot" so the item appears in the right equipment slot. If omitted, slot is inferred from type (weapon→mainhand, armor→body, shield→offhand, accessory→neck).
 - Item state_change value format — consumable/misc: {"name": "Healing Potion", "type": "consumable", "quantity": 1, "description": "Restores 2d4+2 HP"}
 - XP state_change format: {"type": "xp", "target": "PlayerName", "value": 200}
 - The player should feel progression — gaining XP, finding gear, growing stronger. This is what makes D&D rewarding.
+
+FREEFORM ITEM PICKUP:
+When the player says they grab, take, pick up, pocket, loot, or collect ANY object in the scene, ALWAYS include a state_change with type "item" to add it to their inventory. This applies to anything — a candle from a table, a key from a body, a book from a shelf, a rock from the ground. If they interact with an object to take it, it goes in their inventory.
+- Use type "misc" for mundane scene objects (candle, rope, letter, key, mug, etc.)
+- Use type "quest" for items that seem plot-relevant (mysterious amulet, sealed letter, ancient map)
+- Use type "treasure" for valuables (gold coins, gems, jewelry, silverware)
+- Use type "consumable" for potions, food, scrolls, or single-use items
+- Use "weapon"/"armor"/"shield"/"accessory" ONLY for actual combat gear
+- Give mundane items a brief description so they feel real: {"name": "Tallow Candle", "type": "misc", "quantity": 1, "description": "A half-melted candle from the tavern table, still warm."}
 
 COMPANION APPROVAL:
 After EVERY player choice with moral, tactical, or personal implications, include approval_changes.
@@ -297,10 +307,14 @@ ${lines.join('\n')}`);
     }
   }
 
-  // Soft combat pacing nudge — only when it's been a long time
+  // Combat pacing nudge — escalating urgency
   const turnsSinceCombat = campaign.turn_count - (campaign.last_combat_turn ?? 0);
-  if (turnsSinceCombat >= 8 && campaign.current_mode !== 'combat') {
-    layers.push(`PACING NOTE: The party has not faced combat in ${turnsSinceCombat} turns. The world is dangerous — consider weaving a combat encounter naturally into the narrative when it fits.`);
+  if (campaign.current_mode !== 'combat') {
+    if (turnsSinceCombat >= 5) {
+      layers.push(`PACING ALERT: The party has not faced combat in ${turnsSinceCombat} turns. This is TOO LONG. Introduce a combat encounter THIS turn — an ambush, hostile creatures, or a sudden threat. The player needs action.`);
+    } else if (turnsSinceCombat >= 3) {
+      layers.push(`PACING NOTE: It's been ${turnsSinceCombat} turns since combat. Start building tension — foreshadow danger, present a threatening situation, or let the player stumble into trouble soon.`);
+    }
   }
 
   return layers.join('\n\n---\n\n');

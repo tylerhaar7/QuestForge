@@ -200,6 +200,10 @@ export const useGameStore = create<GameState>((set, get) => ({
       if (char) {
         let updated = { ...char };
         for (const change of response.stateChanges) {
+          if (change.type === 'hp' && change.target === char.name) {
+            const newHp = Math.max(0, Math.min(updated.maxHp, updated.hp + Number(change.value)));
+            updated = { ...updated, hp: newHp };
+          }
           if (change.type === 'xp' && change.target === char.name) {
             updated = { ...updated, xp: (updated.xp || 0) + Number(change.value) };
           }

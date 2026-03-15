@@ -240,7 +240,7 @@ export function MoodParticles() {
   const { skipAnimations } = useAccessibility();
   const containerOpacity = useSharedValue(1);
 
-  const config = MOOD_CONFIGS[currentMood];
+  const config = MOOD_CONFIGS[currentMood] || MOOD_CONFIGS.dungeon;
 
   // Generate particle keys that remount on mood change
   const particles = useMemo(() => {

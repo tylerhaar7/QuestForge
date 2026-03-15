@@ -237,14 +237,20 @@ export function DiceOverlay2D({ roll, onComplete }: DiceOverlay2DProps) {
             settled && roll.isCritical && critGlowStyle,
           ]}
         >
-          <Text style={styles.rollLabel}>{roll.label.toUpperCase()}</Text>
+          <Text style={styles.rollType}>
+            {roll.type === 'attack_roll' ? 'ATTACK ROLL' : roll.type === 'skill_check' ? 'SKILL CHECK' : roll.type === 'saving_throw' ? 'SAVING THROW' : 'DAMAGE ROLL'}
+          </Text>
+          <Text style={styles.rollLabel}>{roll.roller.toUpperCase()}</Text>
+          <Text style={styles.rollTarget}>{roll.label.replace(/\b\w/g, c => c.toUpperCase())}</Text>
 
           <View style={styles.numberRow}>
             <Text style={[styles.totalNumber, { color: resultColor }]}>
               {roll.total}
             </Text>
             {roll.dc != null && (
-              <Text style={styles.dcText}>vs DC {roll.dc}</Text>
+              <Text style={styles.dcText}>
+                vs {roll.type === 'attack_roll' ? 'AC' : 'DC'} {roll.dc}
+              </Text>
             )}
           </View>
 
@@ -275,7 +281,7 @@ const styles = StyleSheet.create({
   },
   dieContainer: {
     alignItems: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.xl + spacing.md,
   },
   dieFace: {
     width: 120,
@@ -312,11 +318,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minWidth: 220,
   },
-  rollLabel: {
+  rollType: {
     fontFamily: fonts.headingRegular,
-    fontSize: 10,
-    color: colors.text.tertiary,
-    letterSpacing: 2,
+    fontSize: 9,
+    color: colors.gold.primary,
+    letterSpacing: 3,
+    marginBottom: 2,
+  },
+  rollLabel: {
+    fontFamily: fonts.heading,
+    fontSize: 14,
+    color: colors.text.primary,
+    letterSpacing: 1,
+    marginBottom: 2,
+  },
+  rollTarget: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    color: colors.text.secondary,
+    fontStyle: 'italic',
     marginBottom: spacing.xs,
   },
   numberRow: {

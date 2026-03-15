@@ -107,39 +107,80 @@ export function processDiceRequests(
   for (const req of requests) {
     switch (req.type) {
       case 'attack_roll': {
-        const attackMod = getAttackModifier(character);
-        const target = enemies.find(e => e.name === req.target);
-        const targetAC = target?.ac ?? 10;
-        const d20 = rollD20();
-        const isCrit = d20 === 20;
-        const isFumble = d20 === 1;
-        const total = d20 + attackMod;
-        const hit = isCrit || (!isFumble && total >= targetAC);
+        // Determine if this is an enemy attacking the player or the player attacking an enemy
+        const isEnemyAttack = req.roller !== character.name && !enemies.find(e => e.name === req.target);
+        const isPlayerTarget = req.target === character.name || req.target === 'Player';
 
-        if (hit) {
-          const formula = req.formula || '1d8+3';
-          const dmg = rollFormula(formula, isCrit ? 2 : 1);
-          results.push(
-            `MECHANICAL RESULT: ${req.roller}'s ${req.ability || 'attack'} ${isCrit ? 'CRITS' : 'hits'} ${req.target || 'target'} (rolled ${total} vs AC ${targetAC}) for ${dmg.total} damage.${target ? ` ${target.name} HP: ${Math.max(0, target.hp - dmg.total)}/${target.maxHp}.` : ''}`
-          );
-          if (req.target) hpChanges.push({ target: req.target, delta: -dmg.total });
+        if (isEnemyAttack || isPlayerTarget) {
+          // Enemy attacking the player — use DC from request as attack bonus, roll against player AC
+          const enemyAttackMod = req.dc || 3; // AI can pass enemy attack bonus via dc field
+          const targetAC = character.ac;
+          const d20 = rollD20();
+          const isCrit = d20 === 20;
+          const isFumble = d20 === 1;
+          const total = d20 + enemyAttackMod;
+          const hit = isCrit || (!isFumble && total >= targetAC);
+
+          if (hit) {
+            const formula = req.formula || '1d6+2';
+            const dmg = rollFormula(formula, isCrit ? 2 : 1);
+            results.push(
+              `MECHANICAL RESULT: ${req.roller}'s ${req.ability || 'attack'} ${isCrit ? 'CRITS' : 'hits'} ${character.name} (rolled ${total} vs AC ${targetAC}) for ${dmg.total} damage. ${character.name} HP: ${Math.max(0, character.hp - dmg.total)}/${character.max_hp}.`
+            );
+            hpChanges.push({ target: character.name, delta: -dmg.total });
+          } else {
+            results.push(
+              `MECHANICAL RESULT: ${req.roller}'s ${req.ability || 'attack'} misses ${character.name} (rolled ${total} vs AC ${targetAC}).`
+            );
+          }
+          structuredResults.push({
+            type: 'attack_roll',
+            roller: req.roller || 'Enemy',
+            roll: d20,
+            modifier: enemyAttackMod,
+            total,
+            dc: targetAC,
+            success: hit,
+            isCritical: isCrit,
+            isFumble,
+            label: `${req.ability || 'Attack'} vs ${character.name}`,
+          });
         } else {
-          results.push(
-            `MECHANICAL RESULT: ${req.roller}'s ${req.ability || 'attack'} misses ${req.target || 'target'} (rolled ${total} vs AC ${targetAC}).`
-          );
+          // Player (or companion) attacking an enemy
+          const attackMod = getAttackModifier(character);
+          const target = enemies.find(e => e.name === req.target);
+          const targetAC = target?.ac ?? 10;
+          const d20 = rollD20();
+          const isCrit = d20 === 20;
+          const isFumble = d20 === 1;
+          const total = d20 + attackMod;
+          const hit = isCrit || (!isFumble && total >= targetAC);
+
+          if (hit) {
+            const formula = req.formula || '1d8+3';
+            const dmg = rollFormula(formula, isCrit ? 2 : 1);
+            results.push(
+              `MECHANICAL RESULT: ${req.roller}'s ${req.ability || 'attack'} ${isCrit ? 'CRITS' : 'hits'} ${req.target || 'target'} (rolled ${total} vs AC ${targetAC}) for ${dmg.total} damage.${target ? ` ${target.name} HP: ${Math.max(0, target.hp - dmg.total)}/${target.maxHp}.` : ''}`
+            );
+            if (req.target) hpChanges.push({ target: req.target, delta: -dmg.total });
+          } else {
+            results.push(
+              `MECHANICAL RESULT: ${req.roller}'s ${req.ability || 'attack'} misses ${req.target || 'target'} (rolled ${total} vs AC ${targetAC}).`
+            );
+          }
+          structuredResults.push({
+            type: 'attack_roll',
+            roller: req.roller || character.name,
+            roll: d20,
+            modifier: attackMod,
+            total,
+            dc: targetAC,
+            success: hit,
+            isCritical: isCrit,
+            isFumble,
+            label: `${req.ability || 'Attack'} vs ${req.target || 'target'}`,
+          });
         }
-        structuredResults.push({
-          type: 'attack_roll',
-          roller: req.roller || character.name,
-          roll: d20,
-          modifier: attackMod,
-          total,
-          dc: targetAC,
-          success: hit,
-          isCritical: isCrit,
-          isFumble,
-          label: `${req.ability || 'Attack'} vs ${req.target || 'target'}`,
-        });
         break;
       }
 
@@ -206,9 +247,28 @@ export function processDiceRequests(
         break;
       }
 
-      case 'initiative':
-        // Handled separately if needed
+      case 'initiative': {
+        const roller = req.roller || character.name;
+        const isPlayer = roller === character.name || roller === 'Player';
+        const dexMod = isPlayer ? getModifier(character.ability_scores.dexterity) : (req.dc || 1);
+        const d20 = rollD20();
+        const total = d20 + dexMod;
+        results.push(
+          `MECHANICAL RESULT: ${roller} rolls initiative: ${total} (rolled ${d20} + ${dexMod}).`
+        );
+        structuredResults.push({
+          type: 'skill_check',
+          roller,
+          roll: d20,
+          modifier: dexMod,
+          total,
+          success: true,
+          isCritical: d20 === 20,
+          isFumble: d20 === 1,
+          label: `${roller} Initiative`,
+        });
         break;
+      }
     }
   }
 

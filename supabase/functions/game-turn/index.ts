@@ -285,6 +285,7 @@ Deno.serve(async (req) => {
     const diceRequests = aiResponse.dice_requests || aiResponse.diceRequests || [];
     let diceResults: string[] = [...preRolledResults];
     let structuredResults: any[] = [...preRolledStructured];
+    let playerHpDelta = 0;
 
     if (diceRequests.length > 0) {
       // Extract enemies from combat state
@@ -306,6 +307,13 @@ Deno.serve(async (req) => {
           if (enemy) {
             enemy.hp = Math.max(0, enemy.hp + change.delta);
           }
+        }
+      }
+
+      // Collect player HP changes from dice results — will be injected into stateChanges after normalization
+      for (const change of hpChanges) {
+        if (change.target === character.name) {
+          playerHpDelta += change.delta;
         }
       }
 
@@ -335,6 +343,12 @@ Deno.serve(async (req) => {
     }
 
     const normalized = normalizeResponse(aiResponse);
+
+    // Inject player HP changes from dice engine into stateChanges
+    if (playerHpDelta !== 0) {
+      if (!normalized.stateChanges) normalized.stateChanges = [];
+      normalized.stateChanges.push({ type: 'hp', target: character.name, value: playerHpDelta });
+    }
 
     // ─── Update state ────────────────────────────────
 
@@ -547,9 +561,10 @@ Deno.serve(async (req) => {
         // Add to the outer updatedCompanions so the response includes them
         updatedCompanions.push(activeCompanion);
 
-        // Persist updated pool
+        // Persist updated pool and companions list
         await adminClient.from('campaigns').update({
           companion_pool: pool,
+          companions: updatedCompanions,
         }).eq('id', campaignId);
 
         // Create companion_states row for persistence
