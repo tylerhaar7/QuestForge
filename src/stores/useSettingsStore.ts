@@ -29,6 +29,8 @@ interface SettingsState {
   musicVolume: number;
   setMusicEnabled: (enabled: boolean) => void;
   setMusicVolume: (volume: number) => void;
+  dice3DEnabled: boolean;
+  setDice3DEnabled: (enabled: boolean) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -59,6 +61,8 @@ export const useSettingsStore = create<SettingsState>()(
       musicVolume: 0.15,
       setMusicEnabled: (musicEnabled) => set({ musicEnabled }),
       setMusicVolume: (musicVolume) => set({ musicVolume }),
+      dice3DEnabled: true,
+      setDice3DEnabled: (dice3DEnabled) => set({ dice3DEnabled }),
     }),
     {
       name: 'settings-storage',

@@ -14,6 +14,7 @@ import { ChoiceButton } from '@/components/game/ChoiceButton';
 import { PartyCard } from '@/components/game/PartyCard';
 import { ApprovalStack } from '@/components/game/ApprovalIndicator';
 import { DiceOverlay2D } from '@/components/game/DiceOverlay2D';
+import { DiceOverlay3D } from '@/components/game/DiceOverlay3D';
 import { submitAction, SubmitActionResult } from '@/services/campaign';
 import type { Choice, Companion } from '@/types/game';
 import { EnemyIntentions } from '@/components/game/EnemyIntentions';
@@ -59,6 +60,7 @@ export default function GameSessionScreen() {
   const resetSession = useGameStore((s) => s.resetSession);
   const musicEnabled = useSettingsStore((s) => s.musicEnabled);
   const musicVolume = useSettingsStore((s) => s.musicVolume);
+  const dice3DEnabled = useSettingsStore((s) => s.dice3DEnabled);
 
   // Play mood-based music
   useEffect(() => {
@@ -434,7 +436,9 @@ export default function GameSessionScreen() {
 
         {/* Dice Roll Overlay */}
         {activeDiceRoll && (
-          <DiceOverlay2D roll={activeDiceRoll} onComplete={handleDiceComplete} />
+          dice3DEnabled
+            ? <DiceOverlay3D roll={activeDiceRoll} onComplete={handleDiceComplete} />
+            : <DiceOverlay2D roll={activeDiceRoll} onComplete={handleDiceComplete} />
         )}
       </KeyboardAvoidingView>
 
