@@ -80,6 +80,7 @@ export default function CampaignStartScreen() {
         deathCount: 0,
         deathHistory: [],
         thresholdUnlocks: [],
+        deathDefianceUsed: false,
         difficultyProfile: {
           winRateLast10: 0.5,
           avgHpAtCombatEnd: 0.6,

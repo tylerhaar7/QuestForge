@@ -40,6 +40,8 @@ export interface SubmitActionResult {
   companions: Companion[];
   turnCount: number;
   levelUpMeta?: LevelUpMeta;
+  deathMeta?: { deathCount: number; newUnlocks: string[]; deathRecord: any };
+  deathDefianceMeta?: { triggered: boolean; message: string };
 }
 
 export async function submitAction(campaignId: string, action: string): Promise<SubmitActionResult> {
@@ -131,6 +133,7 @@ interface CampaignRow {
   death_count: number;
   death_history: DeathRecord[] | null;
   threshold_unlocks: string[] | null;
+  death_defiance_used: boolean;
   difficulty_profile: DifficultyProfile | null;
   adventure_map: AdventureMap | null;
   turn_count: number;
@@ -157,6 +160,7 @@ function campaignFromRow(row: CampaignRow): Campaign {
     deathCount: row.death_count || 0,
     deathHistory: row.death_history || [],
     thresholdUnlocks: row.threshold_unlocks || [],
+    deathDefianceUsed: row.death_defiance_used || false,
     difficultyProfile: row.difficulty_profile || {
       winRateLast10: 0.5,
       avgHpAtCombatEnd: 0.6,

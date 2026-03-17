@@ -413,51 +413,144 @@ Deno.serve(async (req) => {
 
     // Apply state changes to character
     let deathMeta: any = null;
+    let deathDefianceMeta: any = null;
     let levelUpMeta: any = null;
     if (normalized.stateChanges) {
       for (const change of normalized.stateChanges) {
         // ─── HP changes + death detection ───
         if (change.type === 'hp' && change.target === character.name) {
-          const newHp = Math.max(0, Math.min(character.max_hp, character.hp + Number(change.value)));
-          const { error: hpUpdateErr } = await adminClient.from('characters').update({ hp: newHp }).eq('id', character.id);
-          if (hpUpdateErr) {
-            console.error('character HP update failed', { characterId: character.id, error: hpUpdateErr.message });
-          }
+          let newHp = Math.max(0, Math.min(character.max_hp, character.hp + Number(change.value)));
 
           // Death detection
           if (newHp <= 0) {
-            const deathRecord = {
-              turn: campaign.turn_count + 1,
-              cause: action.substring(0, 200),
-              location: campaign.current_location,
-              companionsPresent: (campaign.companions || []).map((c: any) => c.name),
-            };
-            const newDeathCount = (campaign.death_count || 0) + 1;
-            const deathHistory = [...(campaign.death_history || []), deathRecord];
+            // ─── Death Defiance check ───
+            // If the player has the death_defiance unlock and hasn't used it this campaign,
+            // revive at 1 HP instead of triggering death.
+            const hasDefiance = (campaign.threshold_unlocks || []).includes('death_defiance');
+            const defianceUsed = campaign.death_defiance_used || false;
 
-            const DEATH_UNLOCK_THRESHOLDS = [
-              { death: 1, unlock: 'threshold_access' },
-              { death: 2, unlock: 'keeper_lore_1' },
-              { death: 3, unlock: 'spectral_gift' },
-              { death: 5, unlock: 'death_defiance' },
-              { death: 7, unlock: 'keeper_quest' },
-              { death: 10, unlock: 'threshold_companion' },
-            ];
-            const existingUnlocks = campaign.threshold_unlocks || [];
-            const newUnlocks = DEATH_UNLOCK_THRESHOLDS
-              .filter(t => newDeathCount >= t.death && !existingUnlocks.includes(t.unlock))
-              .map(t => t.unlock);
-            const allUnlocks = [...existingUnlocks, ...newUnlocks];
+            if (hasDefiance && !defianceUsed) {
+              // Revive at 1 HP instead of dying
+              newHp = 1;
+              await adminClient.from('characters').update({ hp: 1 }).eq('id', character.id);
+              await adminClient.from('campaigns').update({ death_defiance_used: true }).eq('id', campaignId);
 
-            await adminClient.from('campaigns').update({
-              death_count: newDeathCount,
-              death_history: deathHistory,
-              threshold_unlocks: allUnlocks,
-              current_mode: 'threshold',
-            }).eq('id', campaignId);
+              // Communicate the near-death revival to the client for narration
+              deathDefianceMeta = {
+                triggered: true,
+                message: 'A spectral force pulls you back from the brink.',
+              };
 
-            normalized.mode = 'threshold';
-            deathMeta = { deathCount: newDeathCount, newUnlocks, deathRecord };
+              // Add a state change note so the AI context reflects the near-death experience
+              if (!normalized.stateChanges) normalized.stateChanges = [];
+              normalized.stateChanges.push({
+                type: 'event',
+                target: character.name,
+                value: 'death_defiance_triggered',
+              });
+            } else {
+              // ─── Normal death flow ───
+              const deathRecord = {
+                turn: campaign.turn_count + 1,
+                cause: action.substring(0, 200),
+                location: campaign.current_location,
+                companionsPresent: (campaign.companions || []).map((c: any) => c.name),
+              };
+              const newDeathCount = (campaign.death_count || 0) + 1;
+              const deathHistory = [...(campaign.death_history || []), deathRecord];
+
+              const DEATH_UNLOCK_THRESHOLDS = [
+                { death: 1, unlock: 'threshold_access' },
+                { death: 2, unlock: 'keeper_lore_1' },
+                { death: 3, unlock: 'spectral_gift' },
+                { death: 5, unlock: 'death_defiance' },
+                { death: 7, unlock: 'keeper_quest' },
+                { death: 10, unlock: 'threshold_companion' },
+              ];
+              const existingUnlocks = campaign.threshold_unlocks || [];
+              const newUnlocks = DEATH_UNLOCK_THRESHOLDS
+                .filter(t => newDeathCount >= t.death && !existingUnlocks.includes(t.unlock))
+                .map(t => t.unlock);
+              const allUnlocks = [...existingUnlocks, ...newUnlocks];
+
+              // ─── Spectral Candle (spectral_gift unlock at death 3) ───
+              if (newUnlocks.includes('spectral_gift')) {
+                const inventory = character.inventory || [];
+                const hasCandle = inventory.some((i: any) => i.id === 'spectral-candle');
+                if (!hasCandle) {
+                  inventory.push({
+                    id: 'spectral-candle',
+                    name: 'Spectral Candle',
+                    quantity: 1,
+                    description: 'A pale, flickering candle from The Threshold. Its light reveals what the living cannot see.',
+                    type: 'quest_item',
+                  });
+                  await adminClient.from('characters').update({ inventory }).eq('id', character.id);
+                }
+              }
+
+              // ─── Threshold Companion "Vesper" (threshold_companion unlock at death 10) ───
+              if (newUnlocks.includes('threshold_companion')) {
+                const vesper = {
+                  name: 'Vesper',
+                  className: 'Specter',
+                  race: 'Spirit',
+                  level: 1,
+                  hp: 15,
+                  maxHp: 15,
+                  ac: 13,
+                  ability_scores: {
+                    strength: 8,
+                    dexterity: 16,
+                    constitution: 10,
+                    intelligence: 14,
+                    wisdom: 12,
+                    charisma: 16,
+                  },
+                  conditions: [],
+                  recruited: true,
+                  introduced: true,
+                  approvalScore: 60,
+                  relationshipStage: 'friendly',
+                  personality: 'Enigmatic and melancholic, but fiercely loyal to those who have crossed the veil',
+                };
+
+                // Add to active companions
+                updatedCompanions.push(vesper as any);
+
+                // Create companion_states row for persistence
+                await adminClient.from('companion_states').insert({
+                  campaign_id: campaignId,
+                  companion_name: 'Vesper',
+                  approval_score: 60,
+                  relationship_stage: 'friendly',
+                  personal_quest_stage: 0,
+                  personal_quest_flags: {},
+                  memorable_moments: [],
+                  unlocked_abilities: [],
+                  gift_history: [],
+                });
+              }
+
+              await adminClient.from('campaigns').update({
+                death_count: newDeathCount,
+                death_history: deathHistory,
+                threshold_unlocks: allUnlocks,
+                current_mode: 'threshold',
+                ...(newUnlocks.includes('threshold_companion') ? { companions: updatedCompanions } : {}),
+              }).eq('id', campaignId);
+
+              normalized.mode = 'threshold';
+              deathMeta = { deathCount: newDeathCount, newUnlocks, deathRecord };
+            }
+          }
+
+          // Persist HP (for non-death and death-defiance cases; death case sets HP to 0 implicitly)
+          if (newHp > 0) {
+            const { error: hpUpdateErr } = await adminClient.from('characters').update({ hp: newHp }).eq('id', character.id);
+            if (hpUpdateErr) {
+              console.error('character HP update failed', { characterId: character.id, error: hpUpdateErr.message });
+            }
           }
         }
 
@@ -629,6 +722,7 @@ Deno.serve(async (req) => {
       companions: updatedCompanions,
       turnCount: campaign.turn_count + 1,
       ...(deathMeta ? { deathMeta } : {}),
+      ...(deathDefianceMeta ? { deathDefianceMeta } : {}),
       ...(levelUpMeta ? { levelUpMeta } : {}),
     }), {
       headers: { ...headers, 'Content-Type': 'application/json' },

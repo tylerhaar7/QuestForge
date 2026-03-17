@@ -98,6 +98,7 @@ export interface CampaignRow {
   last_session_at: string;
   death_history: any;
   threshold_unlocks: any;
+  death_defiance_used: boolean;
   last_combat_turn: number | null;
   is_tutorial?: boolean;
 }

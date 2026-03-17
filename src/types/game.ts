@@ -222,6 +222,7 @@ export interface Campaign {
   deathCount: number;
   deathHistory: DeathRecord[];
   thresholdUnlocks: string[];
+  deathDefianceUsed: boolean;
   difficultyProfile: DifficultyProfile;
   adventureMap?: AdventureMap;
   turnCount: number;

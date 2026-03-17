@@ -134,11 +134,18 @@ export default function ThresholdScreen() {
     store.setNarrationComplete(false);
     store.setError(null);
 
+    // Build a context-rich message so the AI knows what to reference
+    const allUnlocks = campaign.thresholdUnlocks || [];
+    const unlockList = allUnlocks.length > 0 ? allUnlocks.join(', ') : 'none';
+    const hasKeeperQuest = allUnlocks.includes('keeper_quest');
+
+    let actionMessage = `I have died and arrived at the Threshold. This is visit #${deathCount}. My unlocks: [${unlockList}].`;
+    if (hasKeeperQuest) {
+      actionMessage += ' I am searching for the Keeper\'s true name.';
+    }
+
     try {
-      const result = await submitAction(
-        campaign.id,
-        'I have died and arrived at the Threshold',
-      );
+      const result = await submitAction(campaign.id, actionMessage);
 
       if (result.companions) {
         store.setCampaign({
@@ -155,7 +162,7 @@ export default function ThresholdScreen() {
     } finally {
       store.setLoading(false);
     }
-  }, [campaign]);
+  }, [campaign, deathCount]);
 
   // On mount: fade in intro text, then after 2 s transition to Keeper phase
   useEffect(() => {

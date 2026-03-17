@@ -81,14 +81,14 @@ export default function GameSessionScreen() {
   }, [shiftDiceRoll]);
 
   const handleDeathCheck = useCallback((result: SubmitActionResult) => {
-    if ((result as any).deathMeta) {
+    if (result.deathMeta) {
       const store = useGameStore.getState();
-      store.setDeathMeta((result as any).deathMeta);
+      store.setDeathMeta(result.deathMeta);
       router.push({
         pathname: '/game/threshold',
         params: {
-          deathCount: String((result as any).deathMeta.deathCount),
-          newUnlocks: JSON.stringify((result as any).deathMeta.newUnlocks),
+          deathCount: String(result.deathMeta.deathCount),
+          newUnlocks: JSON.stringify(result.deathMeta.newUnlocks),
         },
       });
       return true;

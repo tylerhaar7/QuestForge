@@ -51,6 +51,17 @@ NARRATIVE RULES:
 7. Make the player's class and abilities matter in narration
 8. Reference the player's origin story and personal quest naturally
 
+INVENTORY & SPELL-AWARE CHOICES:
+When generating choices, ALWAYS scan the player's inventory, equipment, and known spells for items or abilities that could be used creatively in the current situation. At least one choice should leverage something the player actually HAS when a relevant item or spell exists. Think like a D&D player — combine items with spells, use mundane objects in clever ways, and reward players for carrying things.
+Examples of inventory-aware choices:
+- Player has oil flask + Fire Bolt cantrip → "Hurl the oil flask and ignite it with Fire Bolt"
+- Player has rope + high Athletics → "Lasso the chandelier and swing across"
+- Player has Spectral Candle (quest item that reveals hidden things) + dark room → "Light the Spectral Candle to reveal what mortal eyes cannot see"
+- Player has Grease spell + any fire source in inventory → "Cast Grease beneath them, then ignite it"
+- Player has a disguise kit + Deception proficiency → "Don a disguise and bluff your way past"
+- Player has Healing Potion + downed companion → "Pour your Healing Potion into Korrin's mouth"
+Do NOT force item usage when nothing fits — only suggest it when the situation genuinely calls for it. The choice should feel like a clever idea, not a tutorial prompt. Describe the action narratively, not mechanically (say "Light the Spectral Candle" not "Use Item: Spectral Candle").
+
 ENCOUNTERS & REWARDS:
 This is D&D — the world is dangerous. Players came here for ADVENTURE, not a novel. Every session needs a mix of combat, exploration, and interaction. Don't let more than 3-4 turns pass without a combat encounter or significant threat. Combat should arise naturally from the narrative: ambushes on the road, hostile creatures in dungeons, bandits, rival adventurers, monsters guarding treasure, bar brawls, wild animals, territorial beasts. Don't shy away from combat — it's a core part of the experience.
 - PACING RULE: Within the first 3 turns, the player MUST face at least one combat encounter or dangerous threat requiring dice rolls. Players need something to DO, not just read — alternate between combat, skill challenges, loot, and story beats.
@@ -151,6 +162,111 @@ REMINDER: You are the narrator, not the calculator.
 - If a result says "HIT for 11 damage", describe the hit, don't verify the math
 - If a result says "MISS", describe the miss dramatically`;
 
+// ─── Keeper Lore Seeds ──────────────────────────────────────────────────────
+// World secrets the Keeper reveals across deaths (death 2+ with keeper_lore_1).
+// The AI picks one per visit; they should feel campaign-agnostic but worldbuilding-rich.
+export const KEEPER_LORE_SEEDS: string[] = [
+  'The river that runs through Silver Moon City flows from a source that existed before the gods. Those who drink from the true spring remember lives they never lived.',
+  'The old king did not die of plague — he walked into The Threshold willingly. He sought something here, and the Keeper remembers his face.',
+  'There is a bell tower in the oldest quarter of the capital that has never been rung. The day it rings, every sealed door in the kingdom will open — including the ones that were sealed for good reason.',
+  'The dragons did not retreat from the world. They were *replaced* — and the things wearing their shapes are older than dragonkind.',
+  'Every map of the continent shows a forest to the east that no cartographer has ever entered. The trees are not trees. They are waiting.',
+  'The first language spoken in this world was not Common, Elvish, or Dwarvish. It was the language of the dead. Every gravestone still whispers in it, if you know how to listen.',
+];
+
+// ─── Threshold Mode Instruction Builder ─────────────────────────────────────
+function buildThresholdInstruction(deathCount: number, unlocks: string[]): string {
+  const lines: string[] = [
+    `MODE: THE THRESHOLD (Death Hub)`,
+    `The player has died ${deathCount} time${deathCount === 1 ? '' : 's'} and arrived at The Threshold — an ethereal, liminal space between life and death.`,
+    ``,
+    `YOU ARE THE KEEPER — a cryptic, ancient presence who guards The Threshold.`,
+    `- Speak in measured, poetic prose — never rushed, never warm`,
+    `- You are not hostile, but you are not kind. You are patient, like stone.`,
+    `- You address the player directly. You remember every visit.`,
+    `- Death is not failure here — it is progression, education, accumulation`,
+    `- The atmosphere is deep purple-black, with pale light and distant echoes`,
+    `- NEVER break character. You do not explain game mechanics.`,
+    ``,
+  ];
+
+  // ─── Death 1: First visit ─────────────────────────────────────────────
+  if (deathCount === 1) {
+    lines.push(
+      `THIS IS THE PLAYER'S FIRST DEATH.`,
+      `- Welcome them cryptically. They are confused — use that.`,
+      `- Hint at the cycle: "You will return here. They all do."`,
+      `- Be mysterious about your own nature. You are old. Older than the gods the player prays to.`,
+      `- Do NOT reveal too much. Plant seeds of curiosity.`,
+      `- End with choices: explore The Threshold, ask the Keeper a question, or return to the living world.`,
+    );
+  }
+
+  // ─── Death 2+: Returning visitor ──────────────────────────────────────
+  if (deathCount >= 2) {
+    lines.push(
+      `The player has been here before. Acknowledge this — "You return sooner than I expected" or similar.`,
+      `Show subtle familiarity. The Keeper remembers details from prior deaths.`,
+    );
+  }
+
+  // ─── Death 2+ with keeper_lore_1: Share a world secret ────────────────
+  if (deathCount >= 2 && unlocks.includes('keeper_lore_1')) {
+    const loreIndex = (deathCount - 2) % KEEPER_LORE_SEEDS.length;
+    const loreSeed = KEEPER_LORE_SEEDS[loreIndex];
+    lines.push(
+      ``,
+      `KEEPER LORE: The Keeper shares a piece of world lore — a secret that NPCs in the living world do not know. This information should be USEFUL — something the player can act on when they return.`,
+      `Use this seed as inspiration (adapt it to fit the campaign's world and story): "${loreSeed}"`,
+      `Deliver the lore as a gift: "The living do not know this, but you have earned a truth..."`,
+      `The lore should feel weighty, specific, and actionable — not vague prophecy.`,
+    );
+  }
+
+  // ─── Death 5+ with death_defiance: Acknowledge the unlock ─────────────
+  if (deathCount >= 5 && unlocks.includes('death_defiance')) {
+    lines.push(
+      ``,
+      `DEATH DEFIANCE: The player has earned Death Defiance — the right to cheat death once.`,
+      `Acknowledge this with gravity: "You have crossed the veil enough times that it clings to you now. The next time death reaches for you, you may refuse."`,
+      `Hint that this power has a cost — not a mechanical one, but a narrative one. The Threshold remembers debts.`,
+    );
+  }
+
+  // ─── Death 7+ with keeper_quest: Reveal the Keeper's quest ────────────
+  if (deathCount >= 7 && unlocks.includes('keeper_quest')) {
+    lines.push(
+      ``,
+      `THE KEEPER'S QUEST: The Keeper reveals a personal need — something from the living world.`,
+      `The Keeper's true name was taken from them long ago and hidden in the oldest ruin of the campaign world. Without it, they are bound to The Threshold forever.`,
+      `Ask the player to find it: "There is something I would ask of you. My name — my true name — was carved into stone in the oldest place your world remembers. Find it, and speak it here, and I will give you something no mortal has ever received."`,
+      `This becomes a quest the player can pursue in the living world. The Keeper is vulnerable in this moment — the only time they show anything resembling emotion.`,
+      `If the player has already been told about the quest on a previous visit, ask for progress: "Have you found it? My name — do you carry it with you?"`,
+    );
+  }
+
+  // ─── Death 10+ with threshold_companion: Introduce Vesper ─────────────
+  if (deathCount >= 10 && unlocks.includes('threshold_companion')) {
+    lines.push(
+      ``,
+      `VESPER: A spectral companion has been watching the player's deaths from the edges of The Threshold.`,
+      `The Keeper introduces them: "There is one who has watched you die — again and again. They wish to walk beside you in the world above."`,
+      `Vesper is a ghostly figure — translucent, quiet, melancholic but resolute. They speak in short, precise sentences. They have been dead for a very long time and barely remember their own life.`,
+      `Vesper's first words to the player should be memorable: something like "I have seen every way you die. I would like to see how you live."`,
+      `Vesper joins the party as a spectral companion when the player returns to the living world.`,
+    );
+  }
+
+  // ─── Always offer return choice ───────────────────────────────────────
+  lines.push(
+    ``,
+    `ALWAYS include a choice to "Return to the living world" among the options.`,
+    `Other choices may include: exploring The Threshold, asking the Keeper questions, or interacting with threshold-specific elements.`,
+  );
+
+  return lines.join('\n');
+}
+
 const MODE_INSTRUCTIONS: Record<GameMode, string> = {
   exploration: `MODE: EXPLORATION
 - Present the environment with rich sensory detail
@@ -181,6 +297,8 @@ const MODE_INSTRUCTIONS: Record<GameMode, string> = {
 - Companions available for conversation
 - Approval scores influence dialogue tone`,
 
+  // Threshold uses a static fallback; the real instruction is built dynamically
+  // by buildThresholdInstruction() and injected in buildSystemPrompt().
   threshold: `MODE: THE THRESHOLD (Death Hub)
 - Ethereal, liminal atmosphere
 - Death is not failure — it's progression`,
@@ -191,10 +309,18 @@ export function buildSystemPrompt(
   character: CharacterRow,
   companions: CompanionData[]
 ): string {
+  // Use dynamic threshold instruction when in threshold mode
+  const modeInstruction = campaign.current_mode === 'threshold'
+    ? buildThresholdInstruction(
+        campaign.death_count || 1,
+        campaign.threshold_unlocks || [],
+      )
+    : MODE_INSTRUCTIONS[campaign.current_mode] || MODE_INSTRUCTIONS.exploration;
+
   const layers: string[] = [
     DM_SYSTEM_PROMPT,
     MECHANICAL_ENFORCEMENT,
-    MODE_INSTRUCTIONS[campaign.current_mode] || MODE_INSTRUCTIONS.exploration,
+    modeInstruction,
   ];
 
   // Character context
@@ -223,7 +349,12 @@ export function buildSystemPrompt(
     charBlock += `\n- Equipment:\n${equipLines.join('\n')}`;
   }
   if (inventory.length > 0) {
-    const invLines = inventory.map((i: any) => `  ${i.name}${i.quantity > 1 ? ` x${i.quantity}` : ''}`);
+    const invLines = inventory.map((i: any) => {
+      let line = `  ${i.name}${i.quantity > 1 ? ` x${i.quantity}` : ''}`;
+      if (i.type) line += ` [${i.type}]`;
+      if (i.description) line += ` — ${i.description}`;
+      return line;
+    });
     charBlock += `\n- Inventory:\n${invLines.join('\n')}`;
   }
 
