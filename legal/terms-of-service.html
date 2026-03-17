@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuestForge — Terms of Service</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #0d0a08;
+      color: #e8dcc8;
+      font-family: 'Crimson Text', Georgia, 'Times New Roman', serif;
+      font-size: 17px;
+      line-height: 1.7;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .page-border {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      border: 1px solid rgba(180, 140, 60, 0.15);
+      z-index: 100;
+    }
+
+    .page-border::before {
+      content: '';
+      position: absolute;
+      inset: 4px;
+      border: 1px solid rgba(180, 140, 60, 0.08);
+    }
+
+    .header {
+      text-align: center;
+      padding: 60px 24px 40px;
+      border-bottom: 1px solid rgba(180, 140, 60, 0.2);
+      background: linear-gradient(180deg, rgba(180, 140, 60, 0.06) 0%, transparent 100%);
+    }
+
+    .header-ornament {
+      color: #8a7040;
+      font-size: 14px;
+      letter-spacing: 8px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .header h1 {
+      font-family: 'Cinzel', serif;
+      font-weight: 600;
+      font-size: clamp(26px, 5vw, 38px);
+      color: #d4a843;
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+    }
+
+    .header .subtitle {
+      font-family: 'Cinzel', serif;
+      font-weight: 400;
+      font-size: clamp(14px, 2.5vw, 17px);
+      color: #b4a888;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+    }
+
+    .effective-date {
+      margin-top: 20px;
+      font-size: 14px;
+      color: #8a7e68;
+      font-style: italic;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+
+    .intro {
+      font-size: 18px;
+      color: #b4a888;
+      text-align: center;
+      margin-bottom: 48px;
+      padding-bottom: 32px;
+      border-bottom: 1px solid rgba(180, 140, 60, 0.12);
+      font-style: italic;
+    }
+
+    .section {
+      margin-bottom: 40px;
+    }
+
+    .section-number {
+      font-family: 'Cinzel', serif;
+      font-size: 12px;
+      color: #5a4a2a;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    h2 {
+      font-family: 'Cinzel', serif;
+      font-weight: 600;
+      font-size: 22px;
+      color: #d4a843;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(180, 140, 60, 0.15);
+    }
+
+    h3 {
+      font-family: 'Cinzel', serif;
+      font-weight: 400;
+      font-size: 17px;
+      color: #b48c3c;
+      margin-top: 20px;
+      margin-bottom: 10px;
+    }
+
+    p {
+      margin-bottom: 14px;
+      color: #e8dcc8;
+    }
+
+    ul {
+      margin: 12px 0 16px 20px;
+      list-style: none;
+    }
+
+    ul li {
+      position: relative;
+      padding-left: 18px;
+      margin-bottom: 8px;
+      color: #e8dcc8;
+    }
+
+    ul li::before {
+      content: '\2726';
+      position: absolute;
+      left: 0;
+      color: #8a7040;
+      font-size: 10px;
+      top: 4px;
+    }
+
+    strong {
+      color: #d4a843;
+      font-weight: 600;
+    }
+
+    a {
+      color: #d4a843;
+      text-decoration: none;
+      border-bottom: 1px solid rgba(212, 168, 67, 0.3);
+      transition: border-color 0.2s;
+    }
+
+    a:hover {
+      border-bottom-color: #d4a843;
+    }
+
+    .divider {
+      text-align: center;
+      margin: 48px 0;
+      color: #5a4a2a;
+      font-size: 18px;
+      letter-spacing: 12px;
+    }
+
+    .callout {
+      background: rgba(180, 140, 60, 0.06);
+      border-left: 3px solid #8a7040;
+      padding: 16px 20px;
+      margin: 20px 0;
+      border-radius: 0 4px 4px 0;
+    }
+
+    .callout p {
+      margin-bottom: 0;
+      color: #b4a888;
+      font-style: italic;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 40px 24px;
+      border-top: 1px solid rgba(180, 140, 60, 0.15);
+      color: #8a7e68;
+      font-size: 14px;
+    }
+
+    .footer .app-name {
+      font-family: 'Cinzel', serif;
+      color: #b48c3c;
+      font-size: 16px;
+      margin-bottom: 8px;
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 28px 18px 60px;
+      }
+      .header {
+        padding: 40px 18px 28px;
+      }
+      body {
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-border"></div>
+
+  <header class="header">
+    <div class="header-ornament">&mdash; QuestForge &mdash;</div>
+    <h1>Terms of Service</h1>
+    <p class="subtitle">The Adventurer's Accord</p>
+    <p class="effective-date">Effective Date: March 1, 2026</p>
+  </header>
+
+  <main class="container">
+    <p class="intro">
+      By using QuestForge, you agree to the following terms. Please read them
+      carefully before embarking on your adventure.
+    </p>
+
+    <section class="section">
+      <div class="section-number">Section I</div>
+      <h2>Acceptance of Terms</h2>
+      <p>
+        By downloading, installing, or using QuestForge ("the App"), you agree
+        to be bound by these Terms of Service ("Terms"). If you do not agree to
+        these Terms, do not use the App.
+      </p>
+      <p>
+        We reserve the right to update these Terms at any time. Continued use of
+        the App after changes are posted constitutes acceptance of the revised
+        Terms. We will make reasonable efforts to notify users of significant
+        changes.
+      </p>
+    </section>
+
+    <section class="section">
+      <div class="section-number">Section II</div>
+      <h2>Description of Service</h2>
+      <p>
+        QuestForge is an AI-powered solo tabletop role-playing game for mobile
+        devices. The App uses artificial intelligence to generate narrative
+        content, serving as an automated Dungeon Master for D&amp;D 5e-inspired
+        adventures.
+      </p>
+      <p>
+        The App requires an internet connection to function. Features, content,
+        and availability may change without prior notice as we continue to
+        develop and improve the experience.
+      </p>
+    </section>
+
+    <section class="section">
+      <div class="section-number">Section III</div>
+      <h2>AI-Generated Content</h2>
+      <p>
+        QuestForge uses <strong>Claude</strong>, an AI model by
+        <strong>Anthropic</strong>, to generate game narratives, dialogue, and
+        story events. By using the App, you acknowledge and agree that:
+      </p>
+      <ul>
+        <li>AI-generated content is <strong>procedurally created</strong> and may produce unexpected, surprising, or imperfect narrative outcomes.</li>
+        <li>The AI does not have perfect memory or consistency. Story details may occasionally vary between sessions.</li>
+        <li>AI-generated content does not represent the views or opinions of QuestForge or its developers.</li>
+        <li>While we implement content guidelines and safety filters, no AI system is infallible. If you encounter content you find objectionable, please report it to us.</li>
+      </ul>
+      <div class="callout">
+        <p>
+          The game engine &mdash; not the AI &mdash; handles all mechanical
+          calculations such as dice rolls, damage, hit points, and spell slots.
+          The AI provides narration only.
+        </p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-number">Section IV</div>
+      <h2>User Accounts</h2>
+      <p>
+        To use QuestForge, you must create an account. You are responsible for:
+      </p>
+      <ul>
+        <li>Maintaining the confidentiality of your account credentials.</li>
+        <li>All activity that occurs under your account.</li>
+        <li>Notifying us immediately of any unauthorized use of your account.</li>
+      </ul>
+      <p>
+        You must be at least <strong>13 years of age</strong> to create an
+        account and use the App.
+      </p>
+    </section>
+
+    <section class="section">
+      <div class="section-number">Section V</div>
+      <h2>User Conduct</h2>
+      <p>You agree not to:</p>
+      <ul>
+        <li>Attempt to manipulate, exploit, or abuse the AI system to generate harmful, illegal, or inappropriate content.</li>
+        <li>Reverse-engineer, decompile, or disassemble any part of the App.</li>
+        <li>Use automated tools, bots, or scripts to interact with the App.</li>
+        <li>Interfere with or disrupt the App's servers, networks, or infrastructure.</li>
+        <li>Misrepresent your identity or impersonate another person.</li>
+        <li>Use the App for any unlawful purpose.</li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <div class="section-number">Section VI</div>
+      <h2>Intellectual Property</h2>
+      <p>
+        The App, including its design, code, artwork, and original content, is
+        the intellectual property of QuestForge and is protected by applicable
+        copyright and intellectual property laws.
+      </p>
+      <ul>
+        <li>AI-generated narrative content created during your gameplay is provided for your personal, non-commercial use.</li>
+        <li>You retain ownership of any original character concepts and backstories you create within the App.</li>
+        <li>D&amp;D 5e game mechanics referenced in the App are used under the Open Game License (OGL) and Systems Reference Document (SRD).</li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <div class="section-number">Section VII</div>
+      <h2>Account Termination</h2>
+      <p>
+        We reserve the right to suspend or terminate your account at our
+        discretion if you violate these Terms or engage in conduct that we
+        determine to be harmful to the App, its users, or its infrastructure.
+      </p>
+      <p>
+        You may delete your account at any time by contacting us at
+        <a href="mailto:questforge.app@gmail.com">questforge.app@gmail.com</a>.
+        Upon deletion, all associated data will be permanently removed in
+        accordance with our
+        <a href="privacy-policy.html">Privacy Policy</a>.
+      </p>
+    </section>
+
+    <section class="section">
+      <div class="section-number">Section VIII</div>
+      <h2>Disclaimer of Warranties</h2>
+      <p>
+        The App is provided <strong>"as is"</strong> and
+        <strong>"as available"</strong>, without warranties of any kind, whether
+        express, implied, or statutory. We specifically disclaim all implied
+        warranties of merchantability, fitness for a particular purpose, and
+        non-infringement.
+      </p>
+      <p>Without limiting the foregoing, we do not warrant that:</p>
+      <ul>
+        <li>The App will be uninterrupted, error-free, or free of harmful components.</li>
+        <li>AI-generated content will be accurate, consistent, or free of objectionable material.</li>
+        <li>Game data or progress will be preserved indefinitely.</li>
+        <li>The App will be compatible with all devices or operating systems.</li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <div class="section-number">Section IX</div>
+      <h2>Limitation of Liability</h2>
+      <p>
+        To the maximum extent permitted by applicable law, QuestForge and its
+        developers, officers, and affiliates shall not be liable for any
+        indirect, incidental, special, consequential, or punitive damages
+        arising out of or in connection with your use of the App, including but
+        not limited to:
+      </p>
+      <ul>
+        <li>Loss of data, game progress, or account information.</li>
+        <li>Content generated by the AI system.</li>
+        <li>Service interruptions or downtime.</li>
+        <li>Any unauthorized access to your account.</li>
+      </ul>
+      <p>
+        In no event shall our total aggregate liability exceed the amount you
+        have paid us in the twelve (12) months preceding the claim, or fifty
+        U.S. dollars ($50), whichever is greater.
+      </p>
+    </section>
+
+    <section class="section">
+      <div class="section-number">Section X</div>
+      <h2>Governing Law</h2>
+      <p>
+        These Terms shall be governed by and construed in accordance with the
+        laws of the United States. Any disputes arising from these Terms or your
+        use of the App shall be resolved through good-faith negotiation before
+        pursuing formal legal action.
+      </p>
+    </section>
+
+    <div class="divider">&loz; &loz; &loz;</div>
+
+    <section class="section">
+      <div class="section-number">Contact</div>
+      <h2>Questions or Concerns</h2>
+      <p>
+        If you have any questions about these Terms of Service, reach out to us:
+      </p>
+      <ul>
+        <li><strong>Email:</strong> <a href="mailto:questforge.app@gmail.com">questforge.app@gmail.com</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p class="app-name">QuestForge</p>
+    <p>&copy; 2026 QuestForge. All rights reserved.</p>
+  </footer>
+</body>
+</html>

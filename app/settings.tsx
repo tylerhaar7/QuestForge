@@ -1,7 +1,7 @@
 // Settings Screen — Accessibility & Preferences
 // Sections: Display, Motion, Color, Input, Audio, Accessibility
 
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,8 @@ import {
   Linking,
   PanResponder,
   LayoutChangeEvent,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors, PARCHMENT_TEXT } from '@/theme/colors';
@@ -20,6 +22,7 @@ import { fonts, spacing, textStyles } from '@/theme/typography';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import type { TextSize, TextSpeed, ColorblindMode } from '@/types/settings';
 import { FantasyPanel, FantasyButton } from '@/components/ui';
+import { supabase, getCurrentUserId } from '@/services/supabase';
 
 // --- Segmented Button Row ---
 
@@ -295,8 +298,21 @@ function VolumeSlider({ value, onChange }: { value: number; onChange: (v: number
   );
 }
 
+const USER_DATA_TABLES = [
+  'companion_states',
+  'journal_entries',
+  'npc_relationships',
+  'plot_threads',
+  'codex_entries',
+  'meta_progression',
+  'campaigns',
+  'characters',
+  'profiles',
+] as const;
+
 export default function SettingsScreen() {
   const router = useRouter();
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const {
     accessibility,
     setTextSize,
@@ -463,6 +479,69 @@ export default function SettingsScreen() {
           onPress={resetAccessibility}
           style={styles.resetButton}
         />
+
+        {/* ACCOUNT Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>ACCOUNT</Text>
+
+          <FantasyButton
+            variant="secondary"
+            label="SIGN OUT"
+            onPress={() => {
+              supabase.auth.signOut().then(() => {
+                router.replace('/menu');
+              });
+            }}
+            style={styles.accountButton}
+          />
+
+          <Pressable
+            style={[styles.deleteButton, isDeletingAccount && styles.deleteButtonDisabled]}
+            onPress={() => {
+              if (isDeletingAccount) return;
+              Alert.alert(
+                'Delete Account?',
+                'This will permanently delete your account and all game data. This cannot be undone.',
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: async () => {
+                      setIsDeletingAccount(true);
+                      try {
+                        const userId = await getCurrentUserId();
+                        for (const table of USER_DATA_TABLES) {
+                          await supabase
+                            .from(table)
+                            .delete()
+                            .eq('user_id', userId);
+                        }
+                        await supabase.auth.signOut();
+                        router.replace('/menu');
+                      } catch (err) {
+                        Alert.alert(
+                          'Error',
+                          'Failed to delete account data. Please try again.',
+                        );
+                      } finally {
+                        setIsDeletingAccount(false);
+                      }
+                    },
+                  },
+                ],
+              );
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Delete account"
+          >
+            {isDeletingAccount ? (
+              <ActivityIndicator size="small" color={colors.combat.red} />
+            ) : (
+              <Text style={styles.deleteButtonText}>DELETE ACCOUNT</Text>
+            )}
+          </Pressable>
+        </View>
 
         {/* Legal / Credits */}
         <View style={styles.section}>
@@ -678,5 +757,27 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: spacing.md,
     letterSpacing: 1,
+  },
+  accountButton: {
+    marginBottom: spacing.md,
+  },
+  deleteButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(220,50,50,0.4)',
+    backgroundColor: 'rgba(220,50,50,0.08)',
+  },
+  deleteButtonDisabled: {
+    opacity: 0.5,
+  },
+  deleteButtonText: {
+    fontFamily: fonts.heading,
+    fontSize: 14,
+    letterSpacing: 1.5,
+    color: colors.combat.red,
+    textTransform: 'uppercase',
   },
 });

@@ -51,88 +51,13 @@ export default function IndexScreen() {
       }
 
       if (!session) {
-        setDebugMsg('No session, going to login...');
-        router.replace('/(auth)/login');
+        setDebugMsg('No session, going to menu...');
+        router.replace('/menu');
         return;
       }
 
-      setDebugMsg('Logged in, checking characters...');
-      // Check if user has any characters
-      const { data: characters, error: charactersError } = await supabase
-        .from('characters')
-        .select('id')
-        .eq('user_id', session.user.id)
-        .order('created_at', { ascending: false })
-        .limit(1);
-
-      if (charactersError) {
-        console.error('Failed to load characters:', charactersError);
-        setDebugMsg(`Error loading characters: ${charactersError.message}`);
-        return;
-      }
-
-      if (!characters || characters.length === 0) {
-        setDebugMsg('No characters, going to create...');
-        router.replace('/create');
-        return;
-      }
-
-      setDebugMsg('Found character, checking campaigns...');
-      // Check for active campaign
-      const { data: campaigns, error: campaignsError } = await supabase
-        .from('campaigns')
-        .select('id, character_id, turn_history')
-        .eq('user_id', session.user.id)
-        .order('updated_at', { ascending: false })
-        .limit(1);
-
-      if (campaignsError) {
-        console.error('Failed to load campaigns:', campaignsError);
-        setDebugMsg(`Error loading campaigns: ${campaignsError.message}`);
-        return;
-      }
-
-      if (!campaigns || campaigns.length === 0) {
-        router.replace({
-          pathname: '/create/campaign-start',
-          params: { characterId: characters[0].id },
-        });
-        return;
-      }
-
-      setDebugMsg('Loading campaign...');
-      // Has campaign — use the single raw row as the authoritative source
-      const campaignRow = campaigns[0];
-
-      const { getCharacter } = await import('@/services/character');
-      const { getCampaign } = await import('@/services/campaign');
-      const { useGameStore } = await import('@/stores/useGameStore');
-
-      let character;
-      try {
-        character = await getCharacter(campaignRow.character_id);
-      } catch {
-        // Character for this campaign no longer exists
-        router.replace('/create');
-        return;
-      }
-
-      const campaign = await getCampaign(campaignRow.id);
-      const store = useGameStore.getState();
-      store.setCharacter(character);
-      store.setCampaign(campaign);
-
-      // Restore last narration from turn history
-      const turnHistory = (campaignRow.turn_history || []) as any[];
-      const lastAssistant = [...turnHistory].reverse().find((t: any) => t.role === 'assistant');
-      if (lastAssistant) {
-        const parsed = parseAIContent(lastAssistant.content);
-        if (parsed) {
-          store.processAIResponse(parsed);
-        }
-      }
-
-      router.replace('/game/session');
+      // Logged in — go to main menu (menu handles campaign loading)
+      router.replace('/menu');
     } catch (err) {
       setDebugMsg(`Error: ${err instanceof Error ? err.message : String(err)}`);
       setTimeout(() => router.replace('/(auth)/login'), 1000);
