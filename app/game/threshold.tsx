@@ -177,9 +177,20 @@ export default function ThresholdScreen() {
     async (choice: Choice) => {
       if (!campaign) return;
 
-      // "Return to the world" navigates back; let the server reset mode.
+      // "Return to the world" — reset mood and mode, then navigate back
       const text = choice.text.toLowerCase();
       if (text.includes('return') && (text.includes('world') || text.includes('living'))) {
+        const store = useGameStore.getState();
+        // Reset mood and mode so the session screen isn't stuck on threshold
+        if (store.campaign) {
+          store.setCampaign({ ...store.campaign, currentMood: 'town', currentMode: 'exploration' });
+        }
+        store.processAIResponse({
+          narration: 'You open your eyes. The world rushes back — color, sound, the ache of living. You are alive again.',
+          choices: [],
+          mode: 'exploration',
+          mood: 'town',
+        });
         router.replace('/game/session');
         return;
       }
