@@ -11,6 +11,7 @@ import { useGameStore } from '@/stores/useGameStore';
 import * as Haptics from 'expo-haptics';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { colors } from '@/theme/colors';
+import { parseAIContent } from '@/utils/parseAI';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
@@ -25,30 +26,6 @@ const SETTINGS_TOP = IMG_DISPLAY_H * 0.595;
 const SETTINGS_H = IMG_DISPLAY_H * 0.065;
 const BTN_LEFT = SCREEN_W * 0.15;
 const BTN_WIDTH = SCREEN_W * 0.70;
-
-function parseAIContent(content: string): any | null {
-  try {
-    const direct = JSON.parse(content);
-    if (typeof direct.narration === 'string' && direct.narration.includes('```')) {
-      const inner = extractJson(direct.narration);
-      if (inner?.narration) return inner;
-    }
-    if (direct.narration || direct.narrative) return direct;
-    return direct;
-  } catch {
-    return extractJson(content);
-  }
-}
-
-function extractJson(text: string): any | null {
-  try {
-    const codeBlock = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (codeBlock) return JSON.parse(codeBlock[1].trim());
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) return JSON.parse(jsonMatch[0]);
-  } catch {}
-  return null;
-}
 
 export default function MenuScreen() {
   const router = useRouter();

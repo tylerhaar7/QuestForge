@@ -4,31 +4,6 @@ import { useRouter } from 'expo-router';
 import { supabase } from '@/services/supabase';
 import { colors } from '@/theme/colors';
 
-function parseAIContent(content: string): any | null {
-  try {
-    const direct = JSON.parse(content);
-    // If narration contains a JSON code block (AI nested response), extract inner
-    if (typeof direct.narration === 'string' && direct.narration.includes('```')) {
-      const inner = extractJson(direct.narration);
-      if (inner?.narration) return inner;
-    }
-    if (direct.narration || direct.narrative) return direct;
-    return direct;
-  } catch {
-    return extractJson(content);
-  }
-}
-
-function extractJson(text: string): any | null {
-  try {
-    const codeBlock = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (codeBlock) return JSON.parse(codeBlock[1].trim());
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) return JSON.parse(jsonMatch[0]);
-  } catch {}
-  return null;
-}
-
 export default function IndexScreen() {
   const router = useRouter();
   const [debugMsg, setDebugMsg] = useState('Initializing...');
