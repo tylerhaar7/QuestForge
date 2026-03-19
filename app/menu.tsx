@@ -2,8 +2,7 @@
 // Uses the AI-generated background image with invisible Pressable hit zones
 
 import { useEffect, useState, useRef } from 'react';
-import { View, Image, Pressable, Text, StyleSheet, Dimensions, ActivityIndicator } from 'react-native';
-import * as WebBrowser from 'expo-web-browser';
+import { View, Image, Pressable, Text, StyleSheet, ActivityIndicator, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Audio } from 'expo-av';
 import { supabase } from '@/services/supabase';
@@ -12,20 +11,7 @@ import * as Haptics from 'expo-haptics';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { colors } from '@/theme/colors';
 import { parseAIContent } from '@/utils/parseAI';
-
-const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
-
-// Scale image to fill most of the screen — leave just enough for legal footer
-const FOOTER_H = 120;
-const IMG_DISPLAY_H = SCREEN_H - FOOTER_H;
-
-// Button positions as % of the image's displayed height
-const PLAY_TOP = IMG_DISPLAY_H * 0.505;
-const PLAY_H = IMG_DISPLAY_H * 0.065;
-const SETTINGS_TOP = IMG_DISPLAY_H * 0.595;
-const SETTINGS_H = IMG_DISPLAY_H * 0.065;
-const BTN_LEFT = SCREEN_W * 0.15;
-const BTN_WIDTH = SCREEN_W * 0.70;
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function MenuScreen() {
   const router = useRouter();
@@ -150,63 +136,67 @@ export default function MenuScreen() {
     router.push('/settings');
   };
 
+  const insets = useSafeAreaInsets();
+
   return (
     <View style={styles.container}>
       <Image
         source={require('../assets/main-menu-bg.png')}
-        style={{ width: SCREEN_W, height: IMG_DISPLAY_H }}
+        style={StyleSheet.absoluteFill}
         resizeMode="stretch"
       />
 
-      {/* Hit zones over painted buttons */}
-      <Pressable
-        style={[styles.hitZone, {
-          top: PLAY_TOP,
-          left: BTN_LEFT,
-          width: BTN_WIDTH,
-          height: PLAY_H,
-        }]}
-        onPress={handlePlay}
-        disabled={loading}
-      />
+      {/* Bottom content area */}
+      <View style={[styles.bottomArea, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+        {/* Buttons */}
+        <View style={styles.buttonGroup}>
+          <Pressable
+            onPress={handlePlay}
+            disabled={loading}
+            style={({ pressed }) => [
+              styles.btn,
+              styles.btnPlay,
+              pressed && styles.btnPressed,
+            ]}
+          >
+            <View style={styles.btnInner}>
+              <Text style={styles.btnPlayText}>Begin Adventure</Text>
+            </View>
+          </Pressable>
 
-      <Pressable
-        style={[styles.hitZone, {
-          top: SETTINGS_TOP,
-          left: BTN_LEFT,
-          width: BTN_WIDTH,
-          height: SETTINGS_H,
-        }]}
-        onPress={handleSettings}
-      />
+          <Pressable
+            onPress={handleSettings}
+            style={({ pressed }) => [
+              styles.btn,
+              styles.btnSettings,
+              pressed && styles.btnPressed,
+            ]}
+          >
+            <Text style={styles.btnSettingsText}>Settings</Text>
+          </Pressable>
+        </View>
 
-      {/* Legal footer in the black space below the image */}
-      <View style={styles.legalFooter}>
+        {/* Legal */}
         <Text style={styles.legalAI}>
-          Game narration powered by AI (Claude by Anthropic).{'\n'}
-          All game mechanics resolved by deterministic engine.
+          Game narration powered by AI (Claude by Anthropic)
         </Text>
         <View style={styles.legalLinks}>
           <Text
             style={styles.legalLink}
-            onPress={() => WebBrowser.openBrowserAsync('https://bsbdtdexdlyruojyabtn.supabase.co/storage/v1/object/public/legal/privacy-policy.html')}
+            onPress={() => Linking.openURL('https://bsbdtdexdlyruojyabtn.supabase.co/storage/v1/object/public/legal/privacy-policy.html')}
           >
             Privacy Policy
           </Text>
           <Text style={styles.legalDot}> · </Text>
           <Text
             style={styles.legalLink}
-            onPress={() => WebBrowser.openBrowserAsync('https://bsbdtdexdlyruojyabtn.supabase.co/storage/v1/object/public/legal/terms-of-service.html')}
+            onPress={() => Linking.openURL('https://bsbdtdexdlyruojyabtn.supabase.co/storage/v1/object/public/legal/terms-of-service.html')}
           >
             Terms of Service
           </Text>
         </View>
-        <Text style={styles.legalCopy}>
-          v0.1.0 · Made with ⚔️ in the Realm
-        </Text>
       </View>
 
-      {/* Loading spinner when Play is pressed */}
       {loading && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color={colors.gold.primary} />
@@ -221,39 +211,81 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0d0a08',
   },
-  hitZone: {
+  bottomArea: {
     position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    paddingHorizontal: 32,
   },
-  legalFooter: {
-    paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 40,
+  buttonGroup: {
+    width: '100%',
+    alignItems: 'center',
+    gap: 14,
+    marginBottom: 24,
+  },
+  btn: {
+    width: '85%',
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  btnPressed: {
+    opacity: 0.8,
+    transform: [{ scale: 0.97 }],
+  },
+  btnPlay: {
+    backgroundColor: 'rgba(13,10,8,0.7)',
+    borderWidth: 1.5,
+    borderColor: '#b48c3c',
+    paddingVertical: 16,
+  },
+  btnInner: {
     alignItems: 'center',
   },
+  btnPlayText: {
+    fontFamily: 'Cinzel_700Bold',
+    fontSize: 20,
+    color: '#e8dcc8',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    textShadowColor: 'rgba(180,140,60,0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 6,
+  },
+  btnSettings: {
+    backgroundColor: 'rgba(13,10,8,0.5)',
+    borderWidth: 1,
+    borderColor: 'rgba(180,140,60,0.35)',
+    paddingVertical: 12,
+  },
+  btnSettingsText: {
+    fontFamily: 'Cinzel_400Regular',
+    fontSize: 15,
+    color: 'rgba(232,220,200,0.7)',
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+  },
   legalAI: {
-    color: '#6b5d4d',
-    fontSize: 11,
+    color: 'rgba(232,220,200,0.35)',
+    fontSize: 10,
     textAlign: 'center',
-    lineHeight: 16,
-    marginBottom: 12,
+    marginBottom: 6,
   },
   legalLinks: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 4,
   },
   legalLink: {
-    color: '#b48c3c',
-    fontSize: 12,
+    color: 'rgba(180,140,60,0.5)',
+    fontSize: 11,
     textDecorationLine: 'underline',
   },
   legalDot: {
-    color: '#4a4035',
-    fontSize: 12,
-  },
-  legalCopy: {
-    color: '#4a4035',
-    fontSize: 10,
+    color: 'rgba(232,220,200,0.25)',
+    fontSize: 11,
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
