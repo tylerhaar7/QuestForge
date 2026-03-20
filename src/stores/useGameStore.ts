@@ -6,6 +6,7 @@ import type {
   Campaign, Character, Companion, CombatState,
   GameMode, MoodType, AIResponse, Choice,
   EnemyIntention, ApprovalChange, DiceRollResult, DeathRecord,
+  CombatAnimationStep, LootItem,
 } from '@/types/game';
 import type { LevelUpMeta } from '@/services/campaign';
 
@@ -34,6 +35,8 @@ interface GameState {
   pendingDiceRolls: DiceRollResult[];
   activeDiceRoll: DiceRollResult | null;
   pendingApprovalChanges: ApprovalChange[];
+  pendingCombatAnimations: CombatAnimationStep[];
+  pendingLootItems: LootItem[];
   isTutorialComplete: boolean;
 
   // Death / Threshold
@@ -71,6 +74,14 @@ interface GameState {
   // Equipment
   toggleEquip: (itemId: string) => void;
 
+  // Combat animations
+  queueCombatAnimations: (steps: CombatAnimationStep[]) => void;
+  clearCombatAnimations: () => void;
+
+  // Loot
+  queueLootItems: (items: LootItem[]) => void;
+  clearLootItems: () => void;
+
   // Approvals
   clearPendingApprovals: () => void;
 
@@ -92,6 +103,8 @@ const initialState = {
   pendingDiceRolls: [],
   activeDiceRoll: null,
   pendingApprovalChanges: [],
+  pendingCombatAnimations: [],
+  pendingLootItems: [],
   isTutorialComplete: false,
   deathMeta: null,
   levelUpMeta: null,
@@ -358,6 +371,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
     set({ character: { ...char, equipment, ac } });
   },
+
+  queueCombatAnimations: (steps) => set({ pendingCombatAnimations: steps }),
+  clearCombatAnimations: () => set({ pendingCombatAnimations: [] }),
+
+  queueLootItems: (items) => set({ pendingLootItems: items }),
+  clearLootItems: () => set({ pendingLootItems: [] }),
 
   clearPendingApprovals: () => set({ pendingApprovalChanges: [] }),
 

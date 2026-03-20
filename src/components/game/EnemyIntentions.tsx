@@ -7,9 +7,11 @@ import Animated, {
   withSequence,
   withTiming,
   Easing,
+  FadeInLeft,
 } from 'react-native-reanimated';
 import { colors } from '@/theme/colors';
 import { fonts, spacing, textStyles } from '@/theme/typography';
+import { UI, TRANSITIONS } from '@/constants/animations';
 import type { EnemyIntention } from '@/types/game';
 
 interface EnemyIntentionsProps {
@@ -38,8 +40,13 @@ function IntentionRow({ intention, index }: { intention: EnemyIntention; index: 
     opacity: opacity.value,
   }));
 
+  // Slide in from left with stagger, then start pulsing
+  const entering = FadeInLeft
+    .delay(index * UI.STAGGER_DELAY)
+    .duration(TRANSITIONS.SLIDE_IN);
+
   return (
-    <Animated.View style={[styles.row, animatedStyle]}>
+    <Animated.View style={[styles.row, animatedStyle]} entering={entering}>
       <View style={styles.rowContent}>
         {/* Description */}
         <Text style={styles.enemyText}>

@@ -350,10 +350,17 @@ export interface DiceRollResult {
 }
 
 export interface StateChange {
-  type: 'hp' | 'condition' | 'item' | 'xp' | 'spell_slot' | 'quest' | 'location';
+  type: 'hp' | 'condition' | 'item' | 'xp' | 'spell_slot' | 'quest' | 'location' | 'event';
   target: string;
   value: string | number | boolean | Record<string, unknown>;
 }
+
+// ─── Combat Animation Steps ────────────────────────
+export type CombatAnimationStep =
+  | { type: 'text_flash'; text: string; duration?: number }
+  | { type: 'damage'; value: number; damageType: 'damage' | 'heal' | 'critical'; targetName: string }
+  | { type: 'shake'; intensity: 'light' | 'heavy' }
+  | { type: 'pause'; duration: number };
 
 export interface ApprovalChange {
   companion: string;
@@ -365,6 +372,24 @@ export interface ThreadUpdate {
   threadId: string;
   action: 'advance' | 'resolve' | 'introduce';
   detail: string;
+}
+
+// ─── Level-Up Player Choices ───────────────────────
+export interface LevelUpPlayerChoices {
+  asiChoice?:
+    | { type: 'asi'; abilities: Partial<Record<AbilityScore, number>> }
+    | { type: 'feat'; featId: string };
+  subclassId?: string;
+  newSpells?: Spell[];
+  swappedSpell?: { old: string; newSpell: Spell };
+}
+
+// ─── Loot Item (for UI display) ───────────────────
+export interface LootItem {
+  name: string;
+  type: string;
+  rarity?: 'common' | 'uncommon' | 'rare' | 'legendary';
+  description?: string;
 }
 
 // ─── Companion Pool ────────────────────────────────

@@ -1,5 +1,6 @@
 // ChoiceButton — Interactive choice with skill check display
 // Format: "Choice text [Persuasion — 65%]"
+// Supports staggered entrance animation via `index` prop.
 
 import React from 'react';
 import { Text, StyleSheet, View } from 'react-native';
@@ -8,6 +9,7 @@ import Animated, {
   useAnimatedStyle,
   withSequence,
   withTiming,
+  FadeInDown,
 } from 'react-native-reanimated';
 import { Pressable } from 'react-native';
 import * as Haptics from 'expo-haptics';
@@ -15,16 +17,19 @@ import { colors } from '@/theme/colors';
 import { textStyles, spacing, fonts } from '@/theme/typography';
 import { useAccessibility } from '@/providers/AccessibilityProvider';
 import { formatSnakeCase } from '@/utils/formatting';
+import { UI, TRANSITIONS } from '@/constants/animations';
 import type { Choice } from '@/types/game';
 
 interface ChoiceButtonProps {
   choice: Choice;
   onPress: (choice: Choice) => void;
   disabled?: boolean;
+  /** Position in the choice list — controls stagger delay */
+  index?: number;
 }
 
-export function ChoiceButton({ choice, onPress, disabled }: ChoiceButtonProps) {
-  const { font: getFont, fontSize: scaleFontSize } = useAccessibility();
+export function ChoiceButton({ choice, onPress, disabled, index = 0 }: ChoiceButtonProps) {
+  const { font: getFont, fontSize: scaleFontSize, skipAnimations } = useAccessibility();
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -34,8 +39,8 @@ export function ChoiceButton({ choice, onPress, disabled }: ChoiceButtonProps) {
   const handlePress = () => {
     if (disabled) return;
     scale.value = withSequence(
-      withTiming(0.96, { duration: 80 }),
-      withTiming(1, { duration: 120 })
+      withTiming(UI.BUTTON_PRESS_SCALE, { duration: UI.BUTTON_PRESS_DOWN }),
+      withTiming(1, { duration: UI.BUTTON_PRESS_UP })
     );
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     onPress(choice);
@@ -44,37 +49,49 @@ export function ChoiceButton({ choice, onPress, disabled }: ChoiceButtonProps) {
   const hasSkillCheck = !!choice.skillCheck;
   const borderColor = hasSkillCheck ? colors.gold.primary : colors.gold.dim;
 
-  return (
-    <Pressable onPress={handlePress} disabled={disabled} accessibilityRole="button" accessibilityLabel={choice.text}>
-      <Animated.View
-        style={[
-          styles.container,
-          { borderColor, opacity: disabled ? 0.4 : 1 },
-          animatedStyle,
-        ]}
-      >
-        <View style={styles.row}>
-          {choice.icon ? <Text style={styles.icon}>{choice.icon}</Text> : null}
-          <Text style={[styles.text, hasSkillCheck && styles.textGold, { fontFamily: getFont('body'), fontSize: scaleFontSize(15) }]}>
-            {choice.text}
-          </Text>
-        </View>
+  // Staggered slide-up + fade entrance when choices first appear
+  const entering = skipAnimations
+    ? undefined
+    : FadeInDown
+        .delay(index * UI.STAGGER_DELAY)
+        .duration(TRANSITIONS.FADE_IN)
+        .springify()
+        .damping(18)
+        .stiffness(200);
 
-        {hasSkillCheck && choice.skillCheck && (
-          <View style={styles.skillCheckRow}>
-            <Text style={styles.skillLabel}>
-              {formatSnakeCase(choice.skillCheck.skill)}
-            </Text>
-            <Text style={[
-              styles.chance,
-              { color: getChanceColor(choice.skillCheck.successChance) },
-            ]}>
-              {choice.skillCheck.successChance}%
+  return (
+    <Animated.View entering={entering}>
+      <Pressable onPress={handlePress} disabled={disabled} accessibilityRole="button" accessibilityLabel={choice.text}>
+        <Animated.View
+          style={[
+            styles.container,
+            { borderColor, opacity: disabled ? 0.4 : 1 },
+            animatedStyle,
+          ]}
+        >
+          <View style={styles.row}>
+            {choice.icon ? <Text style={styles.icon}>{choice.icon}</Text> : null}
+            <Text style={[styles.text, hasSkillCheck && styles.textGold, { fontFamily: getFont('body'), fontSize: scaleFontSize(15) }]}>
+              {choice.text}
             </Text>
           </View>
-        )}
-      </Animated.View>
-    </Pressable>
+
+          {hasSkillCheck && choice.skillCheck && (
+            <View style={styles.skillCheckRow}>
+              <Text style={styles.skillLabel}>
+                {formatSnakeCase(choice.skillCheck.skill)}
+              </Text>
+              <Text style={[
+                styles.chance,
+                { color: getChanceColor(choice.skillCheck.successChance) },
+              ]}>
+                {choice.skillCheck.successChance}%
+              </Text>
+            </View>
+          )}
+        </Animated.View>
+      </Pressable>
+    </Animated.View>
   );
 }
 

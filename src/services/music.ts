@@ -47,7 +47,8 @@ let isEnabled = true;
 let currentVolume = 0.4;
 
 function pickTrack(mood: MoodType): TrackKey {
-  const pool = MOOD_TRACKS[mood];
+  const pool = MOOD_TRACKS[mood] || MOOD_TRACKS.dungeon;
+  if (!pool || pool.length === 0) return 'dungeon-1';
   // Avoid repeating the same track if there are alternatives
   if (pool.length > 1 && currentTrack && pool.includes(currentTrack)) {
     const filtered = pool.filter(t => t !== currentTrack);

@@ -1,18 +1,24 @@
-// NarrativeText — Typewriter text with tap-to-complete
-// Font: IM Fell English (narrative), warm off-white text on dark bg
+// NarrativeText — Variable-speed typewriter with paragraph queuing,
+// punctuation pauses, blinking cursor, and tap-to-skip.
+// Font: IM Fell English (narrative), warm off-white text on dark bg.
 
-import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import { Text, Pressable, StyleSheet, ScrollView, type TextStyle } from 'react-native';
+import React, { useEffect, useRef, useMemo, useCallback } from 'react';
+import { Text, Pressable, StyleSheet, ScrollView, View, type TextStyle } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
+  withRepeat,
+  withSequence,
+  cancelAnimation,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { colors, PARCHMENT_TEXT } from '@/theme/colors';
 import { textStyles, spacing, fonts } from '@/theme/typography';
 import { useAccessibility } from '@/providers/AccessibilityProvider';
 import { WritingQuill } from './WritingQuill';
+import { useTypewriter } from '@/hooks/useTypewriter';
+import { TYPEWRITER } from '@/constants/animations';
 
 type FontKey = keyof typeof fonts;
 
@@ -22,21 +28,12 @@ interface NarrativeTextProps {
   onComplete?: () => void;
 }
 
-const SPEED_MS: Record<string, number> = {
-  instant: 0,
-  fast: 15,
-  normal: 30,
-  slow: 50,
-};
-
 // Parse **bold** and *italic* markdown into styled Text spans
 function renderMarkdown(
   text: string,
   baseStyle: TextStyle,
   getFont: (key: FontKey) => string,
 ): React.ReactNode[] {
-  // Split on bold (**text**) and italic (*text*) patterns
-  // Order matters: check bold first since ** contains *
   const parts: React.ReactNode[] = [];
   const regex = /(\*\*(.+?)\*\*|\*(.+?)\*)/g;
   let lastIndex = 0;
@@ -44,7 +41,6 @@ function renderMarkdown(
   let key = 0;
 
   while ((match = regex.exec(text)) !== null) {
-    // Add preceding plain text
     if (match.index > lastIndex) {
       parts.push(text.slice(lastIndex, match.index));
     }
@@ -68,7 +64,6 @@ function renderMarkdown(
     lastIndex = match.index + match[0].length;
   }
 
-  // Add remaining text
   if (lastIndex < text.length) {
     parts.push(text.slice(lastIndex));
   }
@@ -77,114 +72,130 @@ function renderMarkdown(
 }
 
 export function NarrativeText({ text, speed, onComplete }: NarrativeTextProps) {
-  const { textSpeed: settingsSpeed, skipAnimations, hapticsEnabled, font: getFont, fontSize: scaleFontSize } = useAccessibility();
-  const effectiveSpeed = speed ?? settingsSpeed;
-  const delayMs = skipAnimations ? 0 : (SPEED_MS[effectiveSpeed] ?? SPEED_MS.normal);
+  const {
+    textSpeed: settingsSpeed,
+    skipAnimations,
+    hapticsEnabled,
+    font: getFont,
+    fontSize: scaleFontSize,
+  } = useAccessibility();
 
-  const [displayedText, setDisplayedText] = useState('');
-  const [isComplete, setIsComplete] = useState(false);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const indexRef = useRef(0);
-  const opacity = useSharedValue(0);
+  const effectiveSpeed = speed ?? settingsSpeed;
+  const scrollRef = useRef<ScrollView>(null);
   const quillX = useSharedValue(0);
   const quillY = useSharedValue(0);
-  const scrollRef = useRef<ScrollView>(null);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-  }));
-
-  const completeText = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-    setDisplayedText(text);
-    setIsComplete(true);
+  // ─── Typewriter hook ──────────────────────────────────
+  const handleComplete = useCallback(() => {
     if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onComplete?.();
-  }, [text, onComplete, hapticsEnabled]);
+  }, [hapticsEnabled, onComplete]);
 
-  const handleTextLayout = useCallback((e: { nativeEvent: { lines: { x: number; y: number; width: number; height: number }[] } }) => {
-    const { lines } = e.nativeEvent;
-    if (lines.length > 0) {
-      const lastLine = lines[lines.length - 1];
-      quillX.value = lastLine.x + lastLine.width;
-      quillY.value = lastLine.y;
-    }
-  }, []);
+  const { displayedText, isComplete, isTyping, skip } = useTypewriter({
+    text,
+    speed: effectiveSpeed,
+    skipAnimations,
+    onComplete: handleComplete,
+  });
 
+  // ─── Container fade-in ────────────────────────────────
+  const opacity = useSharedValue(0);
   useEffect(() => {
-    // Reset on new text
-    indexRef.current = 0;
-    setDisplayedText('');
-    setIsComplete(false);
-    quillX.value = 0;
-    quillY.value = 0;
-
     if (skipAnimations) {
       opacity.value = 1;
     } else {
-      opacity.value = withTiming(1, { duration: 300 });
+      opacity.value = withTiming(1, { duration: TYPEWRITER.FADE_IN_MS });
     }
+  }, [text, skipAnimations]);
 
-    if (delayMs === 0 || !text) {
-      setDisplayedText(text);
-      setIsComplete(true);
-      onComplete?.();
+  const fadeStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+  }));
+
+  // ─── Blinking cursor ─────────────────────────────────
+  const cursorOpacity = useSharedValue(1);
+
+  useEffect(() => {
+    if (isComplete || skipAnimations) {
+      // Fade out cursor after completion
+      cancelAnimation(cursorOpacity);
+      cursorOpacity.value = withTiming(0, { duration: 400 });
       return;
     }
 
-    // Advance multiple chars per tick to reduce render count while preserving perceived speed
-    const charsPerTick = delayMs <= 15 ? 3 : 2;
-    const tickInterval = delayMs * charsPerTick;
+    // Blink while typing
+    cursorOpacity.value = withRepeat(
+      withSequence(
+        withTiming(0, { duration: TYPEWRITER.CURSOR_BLINK_MS }),
+        withTiming(1, { duration: TYPEWRITER.CURSOR_BLINK_MS }),
+      ),
+      -1,
+    );
 
-    intervalRef.current = setInterval(() => {
-      indexRef.current = Math.min(indexRef.current + charsPerTick, text.length);
-      if (indexRef.current >= text.length) {
-        setDisplayedText(text);
-        setIsComplete(true);
-        if (intervalRef.current) clearInterval(intervalRef.current);
-        intervalRef.current = null;
-        if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        onComplete?.();
-      } else {
-        setDisplayedText(text.slice(0, indexRef.current));
+    return () => cancelAnimation(cursorOpacity);
+  }, [isComplete, skipAnimations]);
+
+  const cursorStyle = useAnimatedStyle(() => ({
+    opacity: cursorOpacity.value,
+  }));
+
+  // ─── Quill position tracking ──────────────────────────
+  const handleTextLayout = useCallback(
+    (e: { nativeEvent: { lines: { x: number; y: number; width: number; height: number }[] } }) => {
+      const { lines } = e.nativeEvent;
+      if (lines.length > 0) {
+        const lastLine = lines[lines.length - 1];
+        quillX.value = lastLine.x + lastLine.width;
+        quillY.value = lastLine.y;
       }
-    }, tickInterval);
+    },
+    [],
+  );
 
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [text, effectiveSpeed, delayMs, skipAnimations, hapticsEnabled]);
-
-  // Auto-scroll to follow text as it types
+  // ─── Auto-scroll ─────────────────────────────────────
   useEffect(() => {
     if (displayedText && !isComplete) {
       scrollRef.current?.scrollToEnd({ animated: false });
     }
   }, [displayedText, isComplete]);
 
-  const baseTextStyle: TextStyle = useMemo(() => ({
-    ...textStyles.narrative,
-    color: PARCHMENT_TEXT.primary,
-    fontFamily: getFont('narrative'),
-    fontSize: scaleFontSize(16),
-  }), [getFont, scaleFontSize]);
+  // ─── Text style ──────────────────────────────────────
+  const baseTextStyle: TextStyle = useMemo(
+    () => ({
+      ...textStyles.narrative,
+      color: PARCHMENT_TEXT.primary,
+      fontFamily: getFont('narrative'),
+      fontSize: scaleFontSize(16),
+    }),
+    [getFont, scaleFontSize],
+  );
 
-  const renderedText = useMemo(() => {
-    return renderMarkdown(displayedText, baseTextStyle, getFont);
-  }, [displayedText, baseTextStyle, getFont]);
+  const renderedText = useMemo(
+    () => renderMarkdown(displayedText, baseTextStyle, getFont),
+    [displayedText, baseTextStyle, getFont],
+  );
+
+  // ─── Speed for quill ─────────────────────────────────
+  const delayMs = skipAnimations
+    ? 0
+    : (TYPEWRITER.CHAR_MIN_MS + TYPEWRITER.CHAR_MAX_MS) / 2 *
+      (TYPEWRITER.SPEED_MULTIPLIER[effectiveSpeed] ?? 1);
 
   return (
-    <Pressable onPress={isComplete ? undefined : completeText} style={styles.container}>
+    <Pressable onPress={isComplete ? undefined : skip} style={styles.container}>
       <ScrollView ref={scrollRef} style={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Animated.View style={[animatedStyle, styles.textContainer]}>
+        <Animated.View style={[fadeStyle, styles.textContainer]}>
           <Text style={baseTextStyle} onTextLayout={handleTextLayout}>
             {renderedText}
+            {/* Inline blinking cursor */}
+            {!isComplete && displayedText.length > 0 && (
+              <Animated.Text style={[styles.cursor, cursorStyle]}>
+                {'\u258E'}
+              </Animated.Text>
+            )}
           </Text>
           <WritingQuill
-            isWriting={!isComplete && delayMs > 0}
+            isWriting={isTyping && delayMs > 0}
             speed={delayMs}
             posX={quillX}
             posY={quillY}
@@ -206,5 +217,9 @@ const styles = StyleSheet.create({
   },
   textContainer: {
     overflow: 'visible',
+  },
+  cursor: {
+    color: PARCHMENT_TEXT.accent,
+    fontSize: 16,
   },
 });

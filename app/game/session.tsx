@@ -3,6 +3,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, StyleSheet, FlatList, Text, SafeAreaView, TextInput, Pressable, Keyboard, ScrollView, KeyboardAvoidingView, Platform, Modal } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { colors, PARCHMENT_TEXT } from '@/theme/colors';
 import { fonts, spacing, textStyles } from '@/theme/typography';
@@ -15,14 +16,19 @@ import { PartyCard } from '@/components/game/PartyCard';
 import { ApprovalStack } from '@/components/game/ApprovalIndicator';
 import { DiceOverlay2D } from '@/components/game/DiceOverlay2D';
 import { DiceOverlay3D } from '@/components/game/DiceOverlay3D';
+import { CombatAnimationQueue } from '@/components/animations/CombatAnimationQueue';
+import { LootReveal } from '@/components/animations/LootReveal';
 import { submitAction, SubmitActionResult } from '@/services/campaign';
-import type { Choice, Companion } from '@/types/game';
+import type { Choice, Companion, MoodType } from '@/types/game';
 import { EnemyIntentions } from '@/components/game/EnemyIntentions';
 import { CharacterHudButton } from '@/components/game/CharacterHudButton';
 import { DMChanneling } from '@/components/game/DMChanneling';
 import { MoodParticles } from '@/components/game/MoodParticles';
+import { SceneBackground } from '@/components/atmosphere/SceneBackground';
 import { MusicService } from '@/services/music';
 import { useSettingsStore } from '@/stores/useSettingsStore';
+import { useScreenShake } from '@/hooks/useScreenShake';
+import { buildCombatAnimations } from '@/utils/buildCombatAnimations';
 
 export default function GameSessionScreen() {
   const router = useRouter();
@@ -37,6 +43,8 @@ export default function GameSessionScreen() {
     enemyIntentions,
     activeDiceRoll,
     pendingApprovalChanges,
+    pendingCombatAnimations,
+    pendingLootItems,
     isNarrationComplete,
     isTutorialComplete,
   } = useGameStore(
@@ -51,15 +59,22 @@ export default function GameSessionScreen() {
       enemyIntentions: s.enemyIntentions,
       activeDiceRoll: s.activeDiceRoll,
       pendingApprovalChanges: s.pendingApprovalChanges,
+      pendingCombatAnimations: s.pendingCombatAnimations,
+      pendingLootItems: s.pendingLootItems,
       isNarrationComplete: s.isNarrationComplete,
       isTutorialComplete: s.isTutorialComplete,
     })),
   );
   const setNarrationComplete = useGameStore((s) => s.setNarrationComplete);
   const shiftDiceRoll = useGameStore((s) => s.shiftDiceRoll);
+  const clearCombatAnimations = useGameStore((s) => s.clearCombatAnimations);
+  const clearLootItems = useGameStore((s) => s.clearLootItems);
   const resetSession = useGameStore((s) => s.resetSession);
   const musicEnabled = useSettingsStore((s) => s.musicEnabled);
   const musicVolume = useSettingsStore((s) => s.musicVolume);
+
+  // Screen shake for combat hits
+  const { shakeStyle, triggerShake } = useScreenShake();
   const dice3DEnabled = useSettingsStore((s) => s.dice3DEnabled);
 
   // Play mood-based music
@@ -131,13 +146,42 @@ export default function GameSessionScreen() {
 
       // Process AI response
       store.processAIResponse(result.aiResponse);
+
+      // Queue combat animations for HP changes (damage numbers, screen shake)
+      if (result.aiResponse.stateChanges && character) {
+        const combatSteps = buildCombatAnimations(
+          result.diceRollResults || [],
+          result.aiResponse.stateChanges,
+          character.name,
+        );
+        if (combatSteps.length > 0) {
+          store.queueCombatAnimations(combatSteps);
+        }
+
+        // Queue loot reveal for item drops
+        const items = result.aiResponse.stateChanges
+          .filter((c) => c.type === 'item')
+          .map((c) => {
+            const val = typeof c.value === 'object' && c.value !== null ? c.value as Record<string, any> : { name: String(c.value) };
+            return { name: val.name || 'Unknown Item', type: val.type || 'misc', rarity: val.rarity, description: val.description };
+          });
+        if (items.length > 0) {
+          store.queueLootItems(items);
+        }
+      }
+
+      // Level-up: navigate to level-up screen
+      if (result.levelUpMeta) {
+        store.setLevelUpMeta(result.levelUpMeta);
+        router.push('/game/level-up');
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Something went wrong';
       store.setError(message);
     } finally {
       store.setLoading(false);
     }
-  }, [campaign, handleDeathCheck]);
+  }, [campaign, character, handleDeathCheck, router]);
 
   const handleNarrationComplete = useCallback(() => {
     setNarrationComplete(true);
@@ -228,6 +272,35 @@ export default function GameSessionScreen() {
       }
 
       store.processAIResponse(result.aiResponse);
+
+      // Queue combat animations for HP changes
+      if (result.aiResponse.stateChanges && character) {
+        const combatSteps = buildCombatAnimations(
+          result.diceRollResults || [],
+          result.aiResponse.stateChanges,
+          character.name,
+        );
+        if (combatSteps.length > 0) {
+          store.queueCombatAnimations(combatSteps);
+        }
+
+        // Queue loot reveal
+        const items = result.aiResponse.stateChanges
+          .filter((c) => c.type === 'item')
+          .map((c) => {
+            const val = typeof c.value === 'object' && c.value !== null ? c.value as Record<string, any> : { name: String(c.value) };
+            return { name: val.name || 'Unknown Item', type: val.type || 'misc', rarity: val.rarity, description: val.description };
+          });
+        if (items.length > 0) {
+          store.queueLootItems(items);
+        }
+      }
+
+      // Level-up
+      if (result.levelUpMeta) {
+        store.setLevelUpMeta(result.levelUpMeta);
+        router.push('/game/level-up');
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Something went wrong';
       store.setError(message);
@@ -304,9 +377,15 @@ export default function GameSessionScreen() {
     );
   }
 
+  const handleCombatAnimationsComplete = useCallback(() => {
+    clearCombatAnimations();
+  }, [clearCombatAnimations]);
+
   return (
     <SafeAreaView style={styles.container}>
+      <SceneBackground />
       <MoodParticles />
+      <Animated.View style={[styles.flex, shakeStyle]}>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -391,6 +470,7 @@ export default function GameSessionScreen() {
               <ChoiceButton
                 key={index}
                 choice={choice}
+                index={index}
                 onPress={handleChoicePress}
                 disabled={isLoading}
               />
@@ -440,7 +520,25 @@ export default function GameSessionScreen() {
             ? <DiceOverlay3D roll={activeDiceRoll} onComplete={handleDiceComplete} />
             : <DiceOverlay2D roll={activeDiceRoll} onComplete={handleDiceComplete} />
         )}
+
+        {/* Combat Damage Numbers + Text Flashes */}
+        {pendingCombatAnimations.length > 0 && (
+          <CombatAnimationQueue
+            steps={pendingCombatAnimations}
+            onComplete={handleCombatAnimationsComplete}
+            onShake={triggerShake}
+          />
+        )}
+
+        {/* Loot Drop Reveal */}
+        {pendingLootItems.length > 0 && (
+          <LootReveal
+            items={pendingLootItems}
+            onDismiss={clearLootItems}
+          />
+        )}
       </KeyboardAvoidingView>
+      </Animated.View>
 
       {/* Menu Modal */}
       <Modal
@@ -480,6 +578,29 @@ export default function GameSessionScreen() {
                 <Text style={styles.modalOptionText}>New Character</Text>
                 <Text style={styles.modalOptionDesc}>Start over with a new character</Text>
               </Pressable>
+
+              {/* DEBUG: Mood Switcher — remove before release */}
+              <View style={styles.debugSection}>
+                <Text style={[styles.modalOptionText, { marginBottom: 6 }]}>Debug: Mood</Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
+                  {(['dungeon','combat','tavern','forest','town','camp','threshold','boss'] as MoodType[]).map((m) => (
+                    <Pressable
+                      key={m}
+                      style={[styles.debugMoodBtn, campaign?.currentMood === m && styles.debugMoodBtnActive]}
+                      onPress={() => {
+                        if (campaign) {
+                          useGameStore.getState().setCampaign({ ...campaign, currentMood: m });
+                          useGameStore.setState({ currentMood: m });
+                        }
+                      }}
+                    >
+                      <Text style={[styles.debugMoodText, campaign?.currentMood === m && styles.debugMoodTextActive]}>
+                        {m}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
             </ScrollView>
 
             <FantasyButton
@@ -726,5 +847,32 @@ const styles = StyleSheet.create({
   },
   tutorialCreateBtn: {
     marginBottom: spacing.sm,
+  },
+  debugSection: {
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(90,58,24,0.3)',
+  },
+  debugMoodBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(90,58,24,0.3)',
+    backgroundColor: 'rgba(90,58,24,0.05)',
+  },
+  debugMoodBtnActive: {
+    borderColor: PARCHMENT_TEXT.accent,
+    backgroundColor: 'rgba(139,69,19,0.2)',
+  },
+  debugMoodText: {
+    fontFamily: fonts.headingRegular,
+    fontSize: 10,
+    color: PARCHMENT_TEXT.secondary,
+    letterSpacing: 0.5,
+  },
+  debugMoodTextActive: {
+    color: PARCHMENT_TEXT.accent,
   },
 });

@@ -1,6 +1,6 @@
 // Campaign service — calls Supabase Edge Functions and manages campaign state
 import { supabase } from './supabase';
-import type { Campaign, Character, Companion, AIResponse, DiceRollResult, CombatState, Quest, DeathRecord, DifficultyProfile, AdventureMap, CompanionPoolEntry } from '@/types/game';
+import type { Campaign, Character, Companion, AIResponse, DiceRollResult, CombatState, Quest, DeathRecord, DifficultyProfile, AdventureMap, CompanionPoolEntry, LevelUpPlayerChoices, AbilityScore } from '@/types/game';
 import type { CompanionTemplate } from '@/data/companions';
 
 // ─── Edge Function callers ──────────────────────────
@@ -29,6 +29,7 @@ export interface LevelUpMeta {
   newLevel: number;
   newMaxHp: number;
   newProficiencyBonus: number;
+  newMaxSpellSlots?: number[];
   xpGain: number;
   totalXP: number;
 }
@@ -239,4 +240,73 @@ export async function getJournalEntries(campaignId: string, filter?: string): Pr
   const { data, error } = await query;
   if (error) throw new Error(`Journal fetch failed: ${error.message}`);
   return data || [];
+}
+
+// ─── Level-Up Choices ─────────────────────────────
+
+/**
+ * Persist player's level-up choices to the character record.
+ * Called after the level-up ceremony screen.
+ */
+export async function saveLevelUpChoices(
+  characterId: string,
+  choices: LevelUpPlayerChoices,
+  currentCharacter: Character,
+): Promise<void> {
+  const updates: Record<string, unknown> = {};
+
+  // ASI: bump ability scores
+  if (choices.asiChoice?.type === 'asi') {
+    const scores = { ...currentCharacter.abilityScores };
+    for (const [ability, bonus] of Object.entries(choices.asiChoice.abilities)) {
+      const key = ability as AbilityScore;
+      scores[key] = Math.min(20, scores[key] + (bonus ?? 0));
+    }
+    updates.ability_scores = scores;
+  }
+
+  // Feat: store feat ID and add to features list
+  if (choices.asiChoice?.type === 'feat') {
+    const features = [...(currentCharacter.features || []), choices.asiChoice.featId];
+    updates.features = features;
+    updates.feat_data = {
+      ...(currentCharacter.featData || {}),
+      [choices.asiChoice.featId]: { selected: true },
+    };
+  }
+
+  // Subclass
+  if (choices.subclassId) {
+    updates.subclass = choices.subclassId;
+  }
+
+  // New spells learned
+  if (choices.newSpells && choices.newSpells.length > 0) {
+    const spells = [...(currentCharacter.knownSpells || [])];
+    for (const spell of choices.newSpells) {
+      if (!spells.some((s) => s.name === spell.name)) {
+        spells.push(spell);
+      }
+    }
+    updates.known_spells = spells;
+  }
+
+  // Spell swap
+  if (choices.swappedSpell) {
+    const spells = [...(currentCharacter.knownSpells || [])];
+    const idx = spells.findIndex((s) => s.name === choices.swappedSpell!.old);
+    if (idx >= 0) {
+      spells[idx] = choices.swappedSpell.newSpell;
+    }
+    updates.known_spells = spells;
+  }
+
+  if (Object.keys(updates).length === 0) return;
+
+  const { error } = await supabase
+    .from('characters')
+    .update(updates)
+    .eq('id', characterId);
+
+  if (error) throw new Error(`Failed to save level-up choices: ${error.message}`);
 }
